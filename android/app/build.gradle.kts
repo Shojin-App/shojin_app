@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.tsukuba.atcoder.shojin"
+    namespace = "io.github.shojinapp.kyopro"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "28.0.13004108"
 
@@ -23,7 +23,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "io.github.tsukuba_denden.shojin_app"
+    applicationId = "io.github.shojinapp.kyopro"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

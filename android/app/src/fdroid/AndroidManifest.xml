@@ -2,7 +2,7 @@
     xmlns:tools="http://schemas.android.com/tools">
     <application android:usesCleartextTraffic="false" tools:targetApi="31">
         <!-- F-Droidビルドでは自己アップデート関連のインテント/プロバイダを削除 -->
-        <activity android:name="io.github.tsukuba_denden.shojin_app.MainActivity">
+    <activity android:name="io.github.shojinapp.kyopro.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

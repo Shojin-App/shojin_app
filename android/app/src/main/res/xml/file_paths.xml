@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- External storage directory for app files -->
-    <external-path name="external_files" path="Android/data/com.example.shojin_app/files/" />
+    <!-- Avoid hardcoded package name; allow full external storage under this provider as needed -->
+    <external-path name="external_files" path="." />
     <!-- Cache directory -->
     <external-cache-path name="external_cache" path="." />
     <!-- Files directory -->
