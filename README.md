@@ -2,12 +2,12 @@
 
 | リリース | コードベース | その他 |
 | --- | --- | --- |
-| [![Latest release](https://img.shields.io/github/v/release/yuubinnkyoku/Shojin_App?include_prereleases)](https://github.com/yuubinnkyoku/Shojin_App/releases) [![Downloads](https://img.shields.io/github/downloads/yuubinnkyoku/Shojin_App/total)](https://github.com/yuubinnkyoku/Shojin_App/releases) | [![License](https://img.shields.io/github/license/yuubinnkyoku/Shojin_App)](https://github.com/yuubinnkyoku/Shojin_App/blob/main/LICENSE) [![Repo Size](https://img.shields.io/github/repo-size/yuubinnkyoku/Shojin_App)](https://github.com/yuubinnkyoku/Shojin_App) [![Code Size](https://img.shields.io/github/languages/code-size/yuubinnkyoku/Shojin_App)](https://github.com/yuubinnkyoku/Shojin_App) [![Android Build](https://github.com/yuubinnkyoku/shojin_app/actions/workflows/build.yaml/badge.svg)](https://github.com/yuubinnkyoku/shojin_app/actions/workflows/build.yaml) | [![GitHub Stars](https://img.shields.io/github/stars/yuubinnkyoku/shojin_app)](https://github.com/yuubinnkyoku/shojin_app/stargazers) [![Forks](https://img.shields.io/github/forks/yuubinnkyoku/Shojin_App)](https://github.com/yuubinnkyoku/Shojin_App/network/members) [![Issues](https://img.shields.io/github/issues/yuubinnkyoku/Shojin_App)](https://github.com/yuubinnkyoku/Shojin_App/issues) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/yuubinnkyoku/shojin_app) |
+| [![Latest release](https://img.shields.io/github/v/release/Shojin-App/shojin_app?include_prereleases)](https://github.com/Shojin-App/shojin_app/releases) [![Downloads](https://img.shields.io/github/downloads/Shojin-App/shojin_app/total)](https://github.com/Shojin-App/shojin_app/releases) | [![License](https://img.shields.io/github/license/Shojin-App/shojin_app)](https://github.com/Shojin-App/shojin_app/blob/main/LICENSE) [![Repo Size](https://img.shields.io/github/repo-size/Shojin-App/shojin_app)](https://github.com/Shojin-App/shojin_app) [![Code Size](https://img.shields.io/github/languages/code-size/Shojin-App/shojin_app)](https://github.com/Shojin-App/shojin_app) [![Android Build](https://github.com/Shojin-App/shojin_app/actions/workflows/build.yaml/badge.svg)](https://github.com/Shojin-App/shojin_app/actions/workflows/build.yaml) | [![GitHub Stars](https://img.shields.io/github/stars/Shojin-App/shojin_app)](https://github.com/Shojin-App/shojin_app/stargazers) [![Forks](https://img.shields.io/github/forks/Shojin-App/shojin_app)](https://github.com/Shojin-App/shojin_app/network/members) [![Issues](https://img.shields.io/github/issues/Shojin-App/shojin_app)](https://github.com/Shojin-App/shojin_app/issues) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Shojin-App/shojin_app) |
 
 
 [<img src="https://github.com/machiav3lli/oandbackupx/blob/034b226cea5c1b30eb4f6a6f313e4dadcbb0ece4/badge_github.png"
     alt="Get it on GitHub"
-    height="80">](https://github.com/yuubinnkyoku/shojin_app/releases)
+    height="80">](https://github.com/Shojin-App/shojin_app/releases)
 
 AtCoderの精進をスマホでも。
 
@@ -32,7 +32,7 @@ AtCoderの精進をスマホでも。
 ### 📋 問題管理
 - **問題詳細表示**: 問題文、制約、入出力形式を見やすく整理
 - **URL自動解析**: AtCoder問題URLから問題情報を自動取得
-- **LaTeX記法対応**: 数式表示を含む問題文の適切な表示（flutter_math_fork使用）
+- **LaTeX記法対応**: 数式表示を含む問題文の適切な表示
 
 ### 🎨 カスタマイズ
 - **テーマ選択**: ライト/ダーク/ピュアブラック/システム追従の4つのテーマ
@@ -40,19 +40,17 @@ AtCoderの精進をスマホでも。
 - **透明度調整**: ナビゲーションバーの透明度をカスタマイズ可能
 
 ### 🚀 提出機能
-(- **WebView提出**: AtCoderの提出ページをアプリ内で開き、コードを自動入力)
-(- **言語自動選択**: 選択中の言語に応じて提出言語を自動設定)
+- **WebView提出**: AtCoderの提出ページをアプリ内で開いて提出
 
 ### 📱 モバイル最適化
 - **レスポンシブデザイン**: スマートフォンでの操作に最適化されたUI
 - **触覚フィードバック**: ボタン操作時の触覚フィードバック
-- **高速起動**: アプリの高速起動とスムーズな画面遷移
 
 ## インストール
 
 ### GitHubリリーズから
 
-ビルド済みのバイナリ（APKなど）は[GitHubリリーズページ](https://github.com/yuubinnkyoku/Shojin_App/releases)からダウンロードできます。これが最も簡単な開始方法です。
+ビルド済みのバイナリ（APKなど）は[GitHubリリーズページ](https://github.com/Shojin-App/shojin_app/releases)からダウンロードできます。これが最も簡単な開始方法です。
 
 ### ソースからビルド
 
@@ -62,11 +60,11 @@ AtCoderの精進をスマホでも。
     まず、Flutter開発環境がセットアップされていることを確認してください。まだの場合は、[Flutter公式インストールガイド](https://flutter.dev/docs/get-started/install)に従ってください。
 2.  **リポジトリをクローン:**
     ```bash
-    git clone https://github.com/yuubinnkyoku/Shojin_App.git
+    git clone https://github.com/Shojin-App/shojin_app.git
     ```
 3.  **プロジェクトディレクトリに移動:**
     ```bash
-    cd Shojin_App
+    cd shojin_app
     ```
 4.  **依存関係を取得:**
     ```bash
@@ -89,7 +87,7 @@ AtCoderの精進をスマホでも。
 
 ### バグ報告や機能要望
 
-*   バグ報告や機能要望は、GitHubの[Issuesページ](https://github.com/yuubinnkyoku/Shojin_App/issues)を利用して報告してください。
+*   バグ報告や機能要望は、GitHubの[Issuesページ](https://github.com/Shojin-App/shojin_app/issues)を利用して報告してください。
 
 ### 開発への参加
 
