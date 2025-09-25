@@ -34,6 +34,10 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // When building without specifying a flavor, pick 'oss' by default
+        // so Flutter can locate the output APK without ambiguity.
+        missingDimensionStrategy("dist", "oss")
     }
 
     flavorDimensions += listOf("dist")
