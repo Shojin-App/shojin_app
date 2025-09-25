@@ -1,13 +1,16 @@
 // ignore_for_file: unused_import
 import 'dart:io';
-import 'package:flutter/services.dart';
-import '../config/build_config.dart';
 
 // Conditional import for Android package installer - only for non-F-Droid builds
-import 'package:android_package_installer/android_package_installer.dart' as apm_installer
+import 'package:android_package_installer/android_package_installer.dart'
+    as apm_installer
     if (dart.library.js) 'package:android_package_installer/android_package_installer.dart';
-import 'package:android_package_manager/android_package_manager.dart' as apm_manager
+import 'package:android_package_manager/android_package_manager.dart'
+    as apm_manager
     if (dart.library.js) 'package:android_package_manager/android_package_manager.dart';
+import 'package:flutter/services.dart';
+
+import '../config/build_config.dart';
 
 /// Installation status - abstraction to avoid Git dependency issues
 enum InstallStatus {
@@ -30,14 +33,16 @@ class AndroidPackageService {
     if (!BuildConfig.enableSelfUpdate) {
       throw UnsupportedError('APK installation is disabled for F-Droid builds');
     }
-    
+
     if (!Platform.isAndroid) {
       throw UnsupportedError('APK installation is only supported on Android');
     }
 
     try {
       // Use the Android package installer for non-F-Droid builds
-      return await apm_installer.AndroidPackageInstaller.installApk(apkFilePath: path);
+      return await apm_installer.AndroidPackageInstaller.installApk(
+        apkFilePath: path,
+      );
     } catch (e) {
       throw Exception('Failed to install APK: $e');
     }
@@ -48,10 +53,10 @@ class AndroidPackageService {
     if (!BuildConfig.enableSelfUpdate) {
       return InstallStatus.failure;
     }
-    
+
     if (statusCode == null) return InstallStatus.unknown;
     if (statusCode == -1) return InstallStatus.pending;
-    
+
     try {
       // Map the status codes from android_package_installer
       // This is a simplified version to avoid direct dependency
@@ -85,7 +90,7 @@ class AndroidPackageService {
     if (!BuildConfig.enableSelfUpdate) {
       return false;
     }
-    
+
     if (!Platform.isAndroid) {
       return false;
     }
