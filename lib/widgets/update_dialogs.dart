@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/enhanced_update_service.dart';
 import '../services/update_manager.dart';
+import 'package:flutter/foundation.dart';
 
 class UpdateProgressDialog extends StatefulWidget {
   final EnhancedAppUpdateInfo updateInfo;
@@ -59,6 +60,19 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
   }
 
   void _startDownload() async {
+    if (!UpdateManager.kEnableSelfUpdate) {
+      if (mounted) {
+        setState(() {
+          _hasError = true;
+          _currentProgress = UpdateProgress(
+            progress: 0.0,
+            status: 'F-Droidビルドではアプリ内アップデートは無効です',
+            errorMessage: 'GitHubのリリースページから手動でダウンロードしてください。',
+          );
+        });
+      }
+      return;
+    }
     setState(() {
       _isDownloading = true;
       _hasError = false;

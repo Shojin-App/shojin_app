@@ -1,0 +1,19 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
+    <application android:usesCleartextTraffic="false" tools:targetApi="31">
+        <!-- F-Droidビルドでは自己アップデート関連のインテント/プロバイダを削除 -->
+        <activity android:name="io.github.tsukuba_denden.shojin_app.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- 自己アップデート用の独自アクションを無効化 -->
+            <intent-filter tools:node="removeAll" />
+        </activity>
+        <provider android:name="androidx.core.content.FileProvider" tools:node="remove" />
+    </application>
+
+    <!-- 不要権限をF-Droidビルドで削除 -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:node="remove" />
+</manifest>

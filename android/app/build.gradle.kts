@@ -32,6 +32,21 @@ android {
         versionName = flutter.versionName
     }
 
+    flavorDimensions += listOf("dist")
+    productFlavors {
+        create("fdroid") {
+            dimension = "dist"
+            applicationIdSuffix = ".fdroid"
+            resValue("bool", "enable_self_update", "false")
+            buildConfigField("boolean", "FDROID_BUILD", "true")
+        }
+        create("oss") {
+            dimension = "dist"
+            resValue("bool", "enable_self_update", "true")
+            buildConfigField("boolean", "FDROID_BUILD", "false")
+        }
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.

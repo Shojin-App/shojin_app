@@ -17,6 +17,7 @@ import 'package:flutter_localizations/flutter_localizations.dart'; // 追加
 import 'l10n/app_localizations.dart'; // 追加 (生成されるファイル)
 import 'services/auto_update_manager.dart'; // Add auto update manager
 import 'services/notification_service.dart'; // Import NotificationService
+import 'package:flutter/foundation.dart';
 
 void main() async {
   // Flutter Engineの初期化を保証
@@ -284,14 +285,18 @@ class _MainScreenState extends State<MainScreen> {
     super.initState();
     
     // Initialize auto update manager for startup update checks
-    _updateLifecycleManager = UpdateLifecycleManager(context);
-    _updateLifecycleManager!.startListening();
+    if (AutoUpdateManager.kEnableSelfUpdate) {
+      _updateLifecycleManager = UpdateLifecycleManager(context);
+      _updateLifecycleManager!.startListening();
+    }
     
     // Schedule initial update check after the first frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final autoUpdateManager = AutoUpdateManager();
-      autoUpdateManager.checkForUpdatesOnStartup(context);
-    });
+    if (AutoUpdateManager.kEnableSelfUpdate) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final autoUpdateManager = AutoUpdateManager();
+        autoUpdateManager.checkForUpdatesOnStartup(context);
+      });
+    }
   }
 
   @override

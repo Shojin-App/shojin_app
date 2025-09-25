@@ -1,10 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:android_package_installer/android_package_installer.dart';
+import 'package:android_package_installer/android_package_installer.dart' as installer;
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart'; // Import url_launcher
 
 class UpdateManager extends ChangeNotifier {
+  static const bool kEnableSelfUpdate = bool.fromEnvironment('ENABLE_SELF_UPDATE', defaultValue: true);
   bool _isDownloading = false;
   double _downloadProgress = 0.0;
   String _statusMessage = '';
@@ -19,6 +21,11 @@ class UpdateManager extends ChangeNotifier {
 
     print('Attempting to apply update for file: $filePath with extension: .$fileExtension');
     if (Platform.isAndroid) {
+      if (!kEnableSelfUpdate) {
+        _statusMessage = 'F-Droidビルドではアプリ内アップデートは無効です。リリースページから手動で更新してください。';
+        notifyListeners();
+        return;
+      }
       if (fileExtension == 'apk') {
         try {
           print('Starting APK installation process for: $filePath');
@@ -108,7 +115,7 @@ class UpdateManager extends ChangeNotifier {
         return;
       }
 
-      final installResult = await AndroidPackageInstaller.installApk(
+      final installResult = await installer.AndroidPackageInstaller.installApk(
         apkFilePath: filePath,
       );
 

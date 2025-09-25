@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
 import '../services/enhanced_update_service.dart';
 import '../widgets/update_dialogs.dart';
 
 // Auto Update Manager (ReVanced Manager inspired)
 class AutoUpdateManager {
+  static const bool kEnableSelfUpdate = bool.fromEnvironment('ENABLE_SELF_UPDATE', defaultValue: true);
   static const String _autoUpdateKey = 'autoUpdateCheckEnabled';
   static const String _lastUpdateCheckKey = 'lastUpdateCheck';
   static const String _skippedVersionKey = 'skippedVersion';
@@ -14,6 +16,7 @@ class AutoUpdateManager {
 
   // Check if auto update is enabled
   Future<bool> isAutoUpdateEnabled() async {
+    if (!kEnableSelfUpdate) return false;
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_autoUpdateKey) ?? true;
   }
@@ -69,6 +72,10 @@ class AutoUpdateManager {
     String owner = 'yuubinnkyoku',
     String repo = 'Shojin_App',
   }) async {
+    if (!kEnableSelfUpdate) {
+      debugPrint('[FDROID] Self-update disabled by build flag');
+      return;
+    }
     if (!await shouldCheckForUpdates()) {
       debugPrint('=== スタートアップアップデートチェック ===');
       debugPrint('チェックをスキップ（設定またはタイミング）');
