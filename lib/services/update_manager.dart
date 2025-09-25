@@ -1,12 +1,17 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
-import 'package:android_package_installer/android_package_installer.dart' as installer;
+
+import 'package:android_package_installer/android_package_installer.dart'
+    as installer;
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart'; // Import url_launcher
 
 class UpdateManager extends ChangeNotifier {
-  static const bool kEnableSelfUpdate = bool.fromEnvironment('ENABLE_SELF_UPDATE', defaultValue: true);
+  static const bool kEnableSelfUpdate = bool.fromEnvironment(
+    'ENABLE_SELF_UPDATE',
+    defaultValue: true,
+  );
   bool _isDownloading = false;
   double _downloadProgress = 0.0;
   String _statusMessage = '';
@@ -19,7 +24,9 @@ class UpdateManager extends ChangeNotifier {
     String fileName = assetName ?? filePath.split(Platform.pathSeparator).last;
     String fileExtension = fileName.split('.').last.toLowerCase();
 
-    print('Attempting to apply update for file: $filePath with extension: .$fileExtension');
+    print(
+      'Attempting to apply update for file: $filePath with extension: .$fileExtension',
+    );
     if (Platform.isAndroid) {
       if (!kEnableSelfUpdate) {
         _statusMessage = 'F-Droidビルドではアプリ内アップデートは無効です。リリースページから手動で更新してください。';
@@ -42,7 +49,9 @@ class UpdateManager extends ChangeNotifier {
         // throw Exception('Androidの更新ファイルはAPKではありません。'); // Consider if throwing is still desired
       }
     } else if (Platform.isIOS) {
-      print('Direct update application is not supported on iOS from within the app.');
+      print(
+        'Direct update application is not supported on iOS from within the app.',
+      );
       print('Please distribute updates via TestFlight or the App Store.');
       // Example: Launching a URL to the App Store or release page
       // if (releaseUrl != null) {
@@ -54,10 +63,19 @@ class UpdateManager extends ChangeNotifier {
       if (fileExtension == 'exe' || fileExtension == 'msi') {
         try {
           print('Attempting to launch Windows installer: $filePath');
-          if (!await launchUrl(Uri.file(filePath))) { // launchUrl is from url_launcher
-            print('Failed to launch Windows installer using url_launcher. Attempting Process.run...');
-            ProcessResult result = await Process.run(filePath, [], runInShell: true);
-            print('Windows installer launch result: exitCode=${result.exitCode}, stdout=${result.stdout}, stderr=${result.stderr}');
+          if (!await launchUrl(Uri.file(filePath))) {
+            // launchUrl is from url_launcher
+            print(
+              'Failed to launch Windows installer using url_launcher. Attempting Process.run...',
+            );
+            ProcessResult result = await Process.run(
+              filePath,
+              [],
+              runInShell: true,
+            );
+            print(
+              'Windows installer launch result: exitCode=${result.exitCode}, stdout=${result.stdout}, stderr=${result.stderr}',
+            );
           } else {
             print('Windows installer launched successfully via url_launcher.');
           }
@@ -65,15 +83,20 @@ class UpdateManager extends ChangeNotifier {
           print('Error launching Windows installer: $e');
         }
       } else if (fileExtension == 'zip') {
-        print('Update (ZIP) downloaded to $filePath. Please extract and apply manually.');
+        print(
+          'Update (ZIP) downloaded to $filePath. Please extract and apply manually.',
+        );
       } else {
-        print('Downloaded $filePath. Manual installation required for this file type on Windows.');
+        print(
+          'Downloaded $filePath. Manual installation required for this file type on Windows.',
+        );
       }
     } else if (Platform.isMacOS) {
       if (fileExtension == 'dmg') {
         try {
           print('Attempting to open macOS DMG: $filePath');
-          if (!await launchUrl(Uri.file(filePath))) { // launchUrl is from url_launcher
+          if (!await launchUrl(Uri.file(filePath))) {
+            // launchUrl is from url_launcher
             print('Failed to open DMG using url_launcher.');
           } else {
             print('DMG opened successfully via url_launcher.');
@@ -81,23 +104,38 @@ class UpdateManager extends ChangeNotifier {
         } catch (e) {
           print('Error opening DMG: $e');
         }
-      } else if (fileExtension == 'zip' || fileExtension == 'app') { // .app might be inside a .zip
-        print('Update ($fileName) downloaded to $filePath. Please extract (if zipped) and apply manually.');
+      } else if (fileExtension == 'zip' || fileExtension == 'app') {
+        // .app might be inside a .zip
+        print(
+          'Update ($fileName) downloaded to $filePath. Please extract (if zipped) and apply manually.',
+        );
       } else {
-        print('Downloaded $filePath. Manual installation required for this file type on macOS.');
+        print(
+          'Downloaded $filePath. Manual installation required for this file type on macOS.',
+        );
       }
     } else if (Platform.isLinux) {
       if (fileExtension == 'appimage') {
-        print('AppImage downloaded to $filePath. Please make it executable (chmod +x $filePath) and run.');
+        print(
+          'AppImage downloaded to $filePath. Please make it executable (chmod +x $filePath) and run.',
+        );
       } else if (fileExtension == 'deb') {
-        print('Debian package downloaded to $filePath. Please install using your package manager (e.g., sudo dpkg -i $filePath or via a GUI installer).');
+        print(
+          'Debian package downloaded to $filePath. Please install using your package manager (e.g., sudo dpkg -i $filePath or via a GUI installer).',
+        );
       } else if (fileExtension == 'tar.gz' || fileExtension == 'zip') {
-        print('Archive ($fileName) downloaded to $filePath. Please extract and apply manually.');
+        print(
+          'Archive ($fileName) downloaded to $filePath. Please extract and apply manually.',
+        );
       } else {
-        print('Downloaded $filePath. Manual installation required for this file type on Linux.');
+        print(
+          'Downloaded $filePath. Manual installation required for this file type on Linux.',
+        );
       }
     } else {
-      print('Update downloaded to $filePath. Platform not explicitly handled, please manage manually.');
+      print(
+        'Update downloaded to $filePath. Platform not explicitly handled, please manage manually.',
+      );
     }
   }
 
@@ -165,7 +203,6 @@ class UpdateManager extends ChangeNotifier {
 
       notifyListeners();
       debugPrint('APK installation result: $statusResultString');
-
     } catch (e) {
       _statusMessage = 'APKのインストール中にエラーが発生しました: $e';
       debugPrint('Error during APK installation: $e');
@@ -173,7 +210,10 @@ class UpdateManager extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> downloadAndInstallUpdate(String downloadUrl, String fileName) async {
+  Future<void> downloadAndInstallUpdate(
+    String downloadUrl,
+    String fileName,
+  ) async {
     if (_isDownloading) return;
 
     _isDownloading = true;
@@ -190,7 +230,8 @@ class UpdateManager extends ChangeNotifier {
     // }
 
     try {
-      final directory = await getTemporaryDirectory(); // Or getExternalStorageDirectory()
+      final directory =
+          await getTemporaryDirectory(); // Or getExternalStorageDirectory()
       final filePath = '${directory.path}/$fileName';
       final file = File(filePath);
 
@@ -212,7 +253,8 @@ class UpdateManager extends ChangeNotifier {
           receivedBytes += data.length;
           if (totalBytes != -1) {
             _downloadProgress = receivedBytes / totalBytes;
-            _statusMessage = 'ダウンロード中: ${(_downloadProgress * 100).toStringAsFixed(0)}%';
+            _statusMessage =
+                'ダウンロード中: ${(_downloadProgress * 100).toStringAsFixed(0)}%';
             notifyListeners();
           }
         }).asFuture();
