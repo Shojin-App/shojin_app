@@ -90,15 +90,12 @@ class AndroidPackageService {
       return false;
     }
 
-    try {
-      // Use the Android package manager for non-F-Droid builds
-      return await apm_manager.AndroidPackageManager.getInstalledPackages(
-        includeAppIcons: false,
-        includeSystemApps: false,
-      ).then((_) => true);
-    } catch (e) {
-      return false;
-    }
+    // NOTE:
+    // 以前は android_package_manager の `AndroidPackageManager.getInstalledPackages` を
+    // 呼び出してインストール可能かどうかを間接的に判定していたが、プラグインのAPI変更により
+    // ビルド時に解決できなくなったため、ここでは最小限のプラットフォームガードのみとする。
+    // 実際のインストール可否は installApk 実行時の例外で判断される。
+    return true;
   }
 
   /// Get app version - fallback implementation for F-Droid builds

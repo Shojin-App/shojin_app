@@ -52,11 +52,13 @@ dependencies:
   android_package_installer:
     git:
       url: https://github.com/ImranR98/android_package_installer
-      ref: main
+      # Pin to specific commit for stability (was: main)
+      ref: c9e144fae63231b5d1d7b88af779c314afcb6e83
   android_package_manager:
     git:
       url: https://github.com/ImranR98/android_package_manager
-      ref: master
+      # Pin to specific commit for stability (was: master)
+      ref: 18231a8a2343747440b0bfe90f7d56ef7f586099
 
 dev_dependencies:
   flutter_test:
