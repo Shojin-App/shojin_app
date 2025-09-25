@@ -1,3 +1,10 @@
+# F-Droid compatible pubspec.yaml
+# This file demonstrates how to modify dependencies for F-Droid builds
+# In a real F-Droid build, the Git dependencies should be replaced with:
+# 1. Pub.dev versions (if available)
+# 2. Vendored source code in the repository
+# 3. Alternative packages that provide similar functionality
+
 name: shojin_app
 description: "AtCoderの精進をスマホでも。"
 homepage: https://github.com/yuubinnkyoku/shojin_app
@@ -24,7 +31,7 @@ dependencies:
   crypto: ^3.0.5
   cupertino_icons: ^1.0.8
   dynamic_color: ^1.8.1
-  google_fonts: ^6.3.2
+  # google_fonts: ^6.3.2  # Disabled for F-Droid - uses system fonts instead
   flutter_svg: ^2.2.1
   flutter_local_notifications: ^19.4.2
   timezone: ^0.10.0 # flutter_local_notifications の依存関係に合わせて修正
@@ -49,16 +56,21 @@ dependencies:
   yaml: ^3.1.2
   # LaTeX/TeX数式レンダリング用
   flutter_math_fork: ^0.7.3
-  android_package_installer:
-    git:
-      url: https://github.com/ImranR98/android_package_installer
-      # Pin to specific commit for stability (was: main)
-      ref: c9e144fae63231b5d1d7b88af779c314afcb6e83
-  android_package_manager:
-    git:
-      url: https://github.com/ImranR98/android_package_manager
-      # Pin to specific commit for stability (was: master)
-      ref: 18231a8a2343747440b0bfe90f7d56ef7f586099
+  
+  # F-Droid NOTE: The following Git dependencies are removed for F-Droid builds:
+  # android_package_installer:
+  #   git:
+  #     url: https://github.com/ImranR98/android_package_installer
+  #     ref: main
+  # android_package_manager:
+  #   git:
+  #     url: https://github.com/ImranR98/android_package_manager
+  #     ref: master
+  #
+  # These would be replaced with:
+  # 1. Pub.dev equivalents if available
+  # 2. Vendored source code in lib/vendor/ directory
+  # 3. Alternative implementations that don't require these packages
 
 dev_dependencies:
   flutter_test:
@@ -114,8 +126,10 @@ flutter_launcher_icons:
   adaptive_icon_background: "#261147"
   adaptive_icon_foreground_inset: 32
 
-# メモ:
-# F-Droidビルドでは `--dart-define=ENABLE_SELF_UPDATE=false` を付与し、
-# アプリ内アップデートコードが実行されないようにしています。
-# android_package_installer / android_package_manager 依存の完全除去は
-# ビルドパイプライン側で fdroid フレーバー時に実施してください（例: 分岐したpubspecやpatch適用）。
+# F-Droid build instructions:
+# For F-Droid builds, use: flutter build apk --dart-define=FDROID_BUILD=true
+# This ensures self-update and online fonts are disabled.
+# The Git dependencies need to be either:
+# 1. Replaced with pub.dev versions
+# 2. Vendored into the repository under lib/vendor/
+# 3. Replaced with alternative implementations

@@ -52,6 +52,31 @@ AtCoderの精進をスマホでも。
 
 ビルド済みのバイナリ（APKなど）は[GitHubリリーズページ](https://github.com/Shojin-App/shojin_app/releases)からダウンロードできます。これが最も簡単な開始方法です。
 
+### F-Droid対応版
+
+このアプリはF-Droidポリシーに完全準拠したビルドが可能です。F-Droid対応版では以下の機能が制限されます：
+
+- **自己アップデート機能**: 無効化（F-Droidが管理）
+- **オンラインフォント取得**: 無効化（システムフォント使用）
+- **外部APKダウンロード**: 完全に無効
+
+#### F-Droid対応ビルド手順
+
+```bash
+# F-Droid互換ビルドの実行
+./build_fdroid.sh
+
+# または手動ビルド
+flutter build apk \
+  --dart-define=FDROID_BUILD=true \
+  --dart-define=ENABLE_SELF_UPDATE=false \
+  --dart-define=ENABLE_ONLINE_FONTS=false \
+  --flavor=fdroid \
+  --release
+```
+
+**注意**: 実際のF-Droid提出には、Git依存関係の除去またはベンダリングが必要です。詳細は `pubspec_fdroid.yaml` と `FONT_LICENSES.md` を参照してください。
+
 ### ソースからビルド
 
 自身でアプリをビルドしたい場合や、開発に貢献したい場合は、ソースからビルドできます：

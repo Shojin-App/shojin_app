@@ -21,7 +21,7 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: main
+      ref: c9e144fae63231b5d1d7b88af779c314afcb6e83
       resolved-ref: c9e144fae63231b5d1d7b88af779c314afcb6e83
       url: "https://github.com/ImranR98/android_package_installer"
     source: git
@@ -30,7 +30,7 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: master
+      ref: "18231a8a2343747440b0bfe90f7d56ef7f586099"
       resolved-ref: "18231a8a2343747440b0bfe90f7d56ef7f586099"
       url: "https://github.com/ImranR98/android_package_manager"
     source: git

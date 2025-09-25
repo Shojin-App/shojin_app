@@ -3,15 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../config/build_config.dart';
 import '../services/enhanced_update_service.dart';
 import '../widgets/update_dialogs.dart';
 
 // Auto Update Manager (ReVanced Manager inspired)
 class AutoUpdateManager {
-  static const bool kEnableSelfUpdate = bool.fromEnvironment(
-    'ENABLE_SELF_UPDATE',
-    defaultValue: true,
-  );
+  static const bool kEnableSelfUpdate = BuildConfig.enableSelfUpdate;
   static const String _autoUpdateKey = 'autoUpdateCheckEnabled';
   static const String _lastUpdateCheckKey = 'lastUpdateCheck';
   static const String _skippedVersionKey = 'skippedVersion';

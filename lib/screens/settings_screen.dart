@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart'; // Add Google Fonts
 import 'package:shared_preferences/shared_preferences.dart'; // For settings persistence
 import 'package:url_launcher/url_launcher.dart'; // For launching URLs
 import 'package:flutter_svg/flutter_svg.dart'; // For SVG icons
+import '../config/build_config.dart'; // Import build configuration
 import '../providers/theme_provider.dart';
 import '../providers/template_provider.dart';
 import 'template_edit_screen.dart';
@@ -12,6 +13,7 @@ import 'tex_test_screen.dart'; // TeX表示テスト画面をインポート
 import '../services/enhanced_update_service.dart'; // Use enhanced service
 import '../services/auto_update_manager.dart'; // Import auto update manager
 import '../services/about_info.dart'; // Import AboutInfo
+import '../utils/app_fonts.dart'; // Import app fonts helper
 import '../utils/text_style_helper.dart';
 import '../widgets/shared/custom_sliver_app_bar.dart'; // Import CustomSliverAppBar
 
@@ -230,7 +232,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           isMainView: true,
           title: Text(
             '設定',
-            style: GoogleFonts.notoSansJp(
+            style: AppFonts.notoSansJp(
               fontSize: 20,
               fontWeight: FontWeight.w600,
               color: Theme.of(context).textTheme.titleLarge!.color,
@@ -398,7 +400,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   Text(
                     'ナビゲーションバーの透明度',
-                    style: GoogleFonts.notoSansJp(
+                    style: AppFonts.notoSansJp(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                       color: Theme.of(context).colorScheme.onSurface,
@@ -435,7 +437,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             return ListTile(
               title: Text(
                 language,
-                style: GoogleFonts.notoSansJp(
+                style: AppFonts.notoSansJp(
                   fontSize: 16,
                   fontWeight: FontWeight.w400,
                 ),
@@ -479,39 +481,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onChanged: _setShowUpdateDialog,
           icon: Icons.notifications_outlined,
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-          child: Column(
-            children: [
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _isLoadingUpdate ? null : _checkForUpdates,
-                  icon: const Icon(Icons.update),
-                  label: const Text('アップデートを手動で確認'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12.0),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
+        // Manual update section - hidden for F-Droid builds
+        if (BuildConfig.enableSelfUpdate) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+            child: Column(
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _isLoadingUpdate ? null : _checkForUpdates,
+                    icon: const Icon(Icons.update),
+                    label: const Text('アップデートを手動で確認'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12.0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              if (_isLoadingUpdate) ...[
-                const SizedBox(height: 16),
-                const CircularProgressIndicator(),
+                if (_isLoadingUpdate) ...[
+                  const SizedBox(height: 16),
+                  const CircularProgressIndicator(),
+                ],
+                if (_updateCheckResult.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    _updateCheckResult,
+                    textAlign: TextAlign.center,
+                    style: AppFonts.notoSansJp(fontSize: 14),
+                  ),
+                ],
               ],
-              if (_updateCheckResult.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                Text(
-                  _updateCheckResult,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.notoSansJp(fontSize: 14),
-                ),
-              ],
-            ],
+            ),
           ),
-        ),
+        ],
       ],
     );
   }
@@ -524,7 +529,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ListTile(
           title: Text(
             '日本語',
-            style: GoogleFonts.notoSansJp(
+            style: AppFonts.notoSansJp(
               fontSize: 16,
               fontWeight: FontWeight.w400,
             ),
@@ -552,7 +557,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ListTile(
           title: Text(
             '設定をエクスポート',
-            style: GoogleFonts.notoSansJp(
+            style: AppFonts.notoSansJp(
               fontSize: 16,
               fontWeight: FontWeight.w400,
             ),
@@ -567,7 +572,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ListTile(
           title: Text(
             '設定をインポート',
-            style: GoogleFonts.notoSansJp(
+            style: AppFonts.notoSansJp(
               fontSize: 16,
               fontWeight: FontWeight.w400,
             ),
@@ -583,7 +588,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ListTile(
           title: Text(
             'テンプレートをエクスポート',
-            style: GoogleFonts.notoSansJp(
+            style: AppFonts.notoSansJp(
               fontSize: 16,
               fontWeight: FontWeight.w400,
             ),
@@ -598,7 +603,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ListTile(
           title: Text(
             'テンプレートをインポート',
-            style: GoogleFonts.notoSansJp(
+            style: AppFonts.notoSansJp(
               fontSize: 16,
               fontWeight: FontWeight.w400,
             ),
@@ -752,7 +757,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return ExpansionTile(
       title: Text(
         '開発者',
-        style: GoogleFonts.notoSansJp(
+        style: AppFonts.notoSansJp(
           fontSize: 16,
           fontWeight: FontWeight.w400,
         ),
@@ -985,7 +990,7 @@ class _SettingsSection extends StatelessWidget {
                 const SizedBox(width: 12),
                 Text(
                   title,
-                  style: GoogleFonts.notoSansJp(
+                  style: AppFonts.notoSansJp(
                     fontSize: 20,
                     fontWeight: FontWeight.w500,
                     color: Theme.of(context).colorScheme.onSurface,
@@ -1024,7 +1029,7 @@ class _HapticSwitchListTile extends StatelessWidget {
       contentPadding: const EdgeInsets.symmetric(horizontal: 20.0),
       title: Text(
         title,
-        style: GoogleFonts.notoSansJp(
+        style: AppFonts.notoSansJp(
           fontSize: 16,
           fontWeight: FontWeight.w400,
         ),
@@ -1032,7 +1037,7 @@ class _HapticSwitchListTile extends StatelessWidget {
       subtitle: subtitle != null
           ? Text(
               subtitle!,
-              style: GoogleFonts.notoSansJp(
+              style: AppFonts.notoSansJp(
                 fontSize: 14,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -1070,7 +1075,7 @@ class _HapticRadioListTile<T> extends StatelessWidget {
       contentPadding: const EdgeInsets.symmetric(horizontal: 20.0),
       title: Text(
         title,
-        style: GoogleFonts.notoSansJp(
+        style: AppFonts.notoSansJp(
           fontSize: 16,
           fontWeight: FontWeight.w400,
         ),
@@ -1106,14 +1111,14 @@ class _CopyableListTile extends StatelessWidget {
       contentPadding: const EdgeInsets.symmetric(horizontal: 20.0),
       title: Text(
         title,
-        style: GoogleFonts.notoSansJp(
+        style: AppFonts.notoSansJp(
           fontSize: 16,
           fontWeight: FontWeight.w400,
         ),
       ),
       subtitle: Text(
         subtitle,
-        style: GoogleFonts.notoSansJp(
+        style: AppFonts.notoSansJp(
           fontSize: 14,
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
@@ -1199,14 +1204,14 @@ class _SocialMediaItem extends StatelessWidget {
           : icon as Widget,
       title: Text(
         title,
-        style: GoogleFonts.notoSansJp(
+        style: AppFonts.notoSansJp(
           fontSize: 16,
           fontWeight: FontWeight.w500,
         ),
       ),
       subtitle: Text(
         subtitle,
-        style: GoogleFonts.notoSansJp(
+        style: AppFonts.notoSansJp(
           fontSize: 14,
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
