@@ -1,15 +1,8 @@
 # Shojin_App
 
-[![Latest release](https://img.shields.io/github/v/release/yuubinnkyoku/Shojin_App?include_prereleases)](https://github.com/yuubinnkyoku/Shojin_App/releases)
-[![License](https://img.shields.io/github/license/yuubinnkyoku/Shojin_App)](https://github.com/yuubinnkyoku/shojin_app/tree/main?tab=MIT-1-ov-fil)
-[![Downloads](https://img.shields.io/github/downloads/yuubinnkyoku/Shojin_App/total)](https://github.com/yuubinnkyoku/Shojin_App/releases)
-![Forks](https://img.shields.io/github/forks/yuubinnkyoku/Shojin_App)
-![code-size](https://img.shields.io/github/languages/code-size/yuubinnkyoku/yuubinnkyoku.github.io)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/yuubinnkyoku/shojin_app)
-[![GitHub Stars](https://img.shields.io/github/stars/yuubinnkyoku/shojin_app)](https://github.com/yuubinnkyoku/shojin_app)
-[![Android Build](https://github.com/yuubinnkyoku/shojin_app/actions/workflows/build.yaml/badge.svg)](https://github.com/yuubinnkyoku/shojin_app/actions/workflows/build.yaml)
-![Issues](https://img.shields.io/github/issues/yuubinnkyoku/Shojin_App)
-![Repo Size](https://img.shields.io/github/repo-size/yuubinnkyoku/Shojin_App)
+| リリース | コードベース | その他 |
+| --- | --- | --- |
+| [![Latest release](https://img.shields.io/github/v/release/yuubinnkyoku/Shojin_App?include_prereleases)](https://github.com/yuubinnkyoku/Shojin_App/releases) [![Downloads](https://img.shields.io/github/downloads/yuubinnkyoku/Shojin_App/total)](https://github.com/yuubinnkyoku/Shojin_App/releases) | [![License](https://img.shields.io/github/license/yuubinnkyoku/Shojin_App)](https://github.com/yuubinnkyoku/shojin_app/tree/main?tab=MIT-1-ov-fil) [![Repo Size](https://img.shields.io/github/repo-size/yuubinnkyoku/Shojin_App)](https://github.com/yuubinnkyoku/Shojin_App) [![Code Size](https://img.shields.io/github/languages/code-size/yuubinnkyoku/Shojin_App)](https://github.com/yuubinnkyoku/Shojin_App) [![Android Build](https://github.com/yuubinnkyoku/shojin_app/actions/workflows/build.yaml/badge.svg)](https://github.com/yuubinnkyoku/shojin_app/actions/workflows/build.yaml) | [![GitHub Stars](https://img.shields.io/github/stars/yuubinnkyoku/shojin_app)](https://github.com/yuubinnkyoku/shojin_app/stargazers) [![Forks](https://img.shields.io/github/forks/yuubinnkyoku/Shojin_App)](https://github.com/yuubinnkyoku/Shojin_App/network/members) [![Issues](https://img.shields.io/github/issues/yuubinnkyoku/Shojin_App)](https://github.com/yuubinnkyoku/Shojin_App/issues) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/yuubinnkyoku/shojin_app) |
 
 
 [<img src="https://github.com/machiav3lli/oandbackupx/blob/034b226cea5c1b30eb4f6a6f313e4dadcbb0ece4/badge_github.png"
