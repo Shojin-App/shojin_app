@@ -8,6 +8,7 @@ import 'package:flutter_localizations/flutter_localizations.dart'; // 追加
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
+import 'config/build_config.dart'; // Add build configuration
 import 'l10n/app_localizations.dart'; // 追加 (生成されるファイル)
 import 'providers/contest_provider.dart';
 import 'providers/template_provider.dart';
@@ -19,6 +20,7 @@ import 'screens/problem_detail_screen.dart';
 import 'screens/settings_screen.dart';
 import 'services/auto_update_manager.dart'; // Add auto update manager
 import 'services/notification_service.dart'; // Import NotificationService
+import 'utils/app_fonts.dart'; // Import app fonts helper
 
 void main() async {
   // Flutter Engineの初期化を保証
@@ -150,56 +152,56 @@ class MyApp extends StatelessWidget {
               : darkAdjusted;
         }
 
-        // Noto Sans JPフォントをテキストテーマに適用
+        // Noto Sans JPフォントをテキストテーマに適用（F-Droid対応）
         final textTheme = TextTheme(
-          displayLarge: GoogleFonts.notoSansJp(
+          displayLarge: AppFonts.notoSansJp(
             fontSize: 32,
             fontWeight: FontWeight.bold,
           ),
-          displayMedium: GoogleFonts.notoSansJp(
+          displayMedium: AppFonts.notoSansJp(
             fontSize: 28,
             fontWeight: FontWeight.bold,
           ),
-          displaySmall: GoogleFonts.notoSansJp(
+          displaySmall: AppFonts.notoSansJp(
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
-          headlineLarge: GoogleFonts.notoSansJp(
+          headlineLarge: AppFonts.notoSansJp(
             fontSize: 22,
             fontWeight: FontWeight.w600,
           ),
-          headlineMedium: GoogleFonts.notoSansJp(
+          headlineMedium: AppFonts.notoSansJp(
             fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
-          headlineSmall: GoogleFonts.notoSansJp(
+          headlineSmall: AppFonts.notoSansJp(
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
-          titleLarge: GoogleFonts.notoSansJp(
+          titleLarge: AppFonts.notoSansJp(
             fontSize: 18,
             fontWeight: FontWeight.w500,
           ),
-          titleMedium: GoogleFonts.notoSansJp(
+          titleMedium: AppFonts.notoSansJp(
             fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
-          titleSmall: GoogleFonts.notoSansJp(
+          titleSmall: AppFonts.notoSansJp(
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
-          bodyLarge: GoogleFonts.notoSansJp(fontSize: 16),
-          bodyMedium: GoogleFonts.notoSansJp(fontSize: 14),
-          bodySmall: GoogleFonts.notoSansJp(fontSize: 12),
-          labelLarge: GoogleFonts.notoSansJp(
+          bodyLarge: AppFonts.notoSansJp(fontSize: 16),
+          bodyMedium: AppFonts.notoSansJp(fontSize: 14),
+          bodySmall: AppFonts.notoSansJp(fontSize: 12),
+          labelLarge: AppFonts.notoSansJp(
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
-          labelMedium: GoogleFonts.notoSansJp(
+          labelMedium: AppFonts.notoSansJp(
             fontSize: 12,
             fontWeight: FontWeight.w500,
           ),
-          labelSmall: GoogleFonts.notoSansJp(
+          labelSmall: AppFonts.notoSansJp(
             fontSize: 11,
             fontWeight: FontWeight.w500,
           ),
@@ -251,7 +253,7 @@ class MyApp extends StatelessWidget {
                   : null,
             ),
             textTheme: textTheme,
-            fontFamily: GoogleFonts.notoSansJp().fontFamily,
+            fontFamily: AppFonts.notoSansJpFontFamily,
           ),
           darkTheme: ThemeData(
             colorScheme: darkColorScheme,
@@ -292,7 +294,7 @@ class MyApp extends StatelessWidget {
                 ? Colors.black
                 : null,
             textTheme: textTheme,
-            fontFamily: GoogleFonts.notoSansJp().fontFamily,
+            fontFamily: AppFonts.notoSansJpFontFamily,
           ),
           themeMode: themeProvider.themeModeForFlutter,
           home: const MainScreen(),
