@@ -10,7 +10,6 @@
 [![Android Build](https://github.com/yuubinnkyoku/shojin_app/actions/workflows/build.yaml/badge.svg)](https://github.com/yuubinnkyoku/shojin_app/actions/workflows/build.yaml)
 ![Issues](https://img.shields.io/github/issues/yuubinnkyoku/Shojin_App)
 ![Repo Size](https://img.shields.io/github/repo-size/yuubinnkyoku/Shojin_App)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/yuubinnkyoku/shojin_app)
 
 
 [<img src="https://github.com/machiav3lli/oandbackupx/blob/034b226cea5c1b30eb4f6a6f313e4dadcbb0ece4/badge_github.png"
