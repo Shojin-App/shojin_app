@@ -158,6 +158,7 @@ flutter build apk \
 このプロジェクトはGNU General Public License v3.0（GPLv3）のもとで公開されています。詳細はリポジトリ内の[LICENSE](LICENSE)をご覧ください。
 
 ## 参考にしたリポジトリ
+
 https://github.com/inotia00/revanced-manager
 
 ## 免責事項
