@@ -155,6 +155,39 @@ flutter build apk \
 
 ご協力ありがとうございます！
 
+## リリース運用 (release-please)
+
+このリポジトリは [release-please](https://github.com/googleapis/release-please) を使ってバージョン管理と CHANGELOG 生成を自動化しています。
+
+### 仕組み概要
+1. `main` ブランチにマージされた Conventional Commits 形式のコミットを解析
+2. 差分に基づき自動でリリース PR (例: `chore: release 1.1.0`) を作成
+3. その PR をマージすると:
+    - `pubspec.yaml` の version が更新
+    - `CHANGELOG.md` に該当エントリが追加
+    - Git タグ & GitHub Release (Release Notes) が作成
+
+### コミットメッセージ例 (推奨)
+```
+feat(editor): コード補完ショートカット追加
+fix(parser): サンプル入出力の末尾改行処理
+perf(syntax): ハイライト初期化高速化
+refactor(ui): テーマ切替ロジック整理
+docs(readme): 使い方セクション更新
+```
+
+### 手動でのリリースを避けるための注意
+- `pubspec.yaml` の `version:` は release-please の PR にのみ変更を任せる
+- 直接 `CHANGELOG.md` の既存セクションを書き換えない (追加は OK)
+- 大きな破壊的変更はコミット種別では `feat!:` としてメジャーアップグレードを誘発
+
+### 次回リリース手順 (開発者はやることほぼ無し)
+1. 通常通り PR を `main` へマージ (コミットメッセージ規約遵守)
+2. Bot が作るリリース PR をレビュー
+3. マージ = リリース確定
+
+`CHANGELOG.md` と GitHub Release Notes は同期されるため、F-Droid メタデータ更新時にも参照しやすくなります。
+
 ## ライセンス
 
 このプロジェクトはGNU General Public License v3.0（GPLv3）のもとで公開されています。詳細はリポジトリ内の[LICENSE](LICENSE)をご覧ください。
