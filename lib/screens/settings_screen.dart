@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter/services.dart'; // For haptic feedback
+import 'package:flutter_svg/flutter_svg.dart'; // For SVG icons
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // For settings persistence
 import 'package:url_launcher/url_launcher.dart'; // For launching URLs
-import 'package:flutter_svg/flutter_svg.dart'; // For SVG icons
+
 import '../config/build_config.dart'; // Import build configuration
-import '../providers/theme_provider.dart';
 import '../providers/template_provider.dart';
-import 'template_edit_screen.dart';
-import 'tex_test_screen.dart'; // TeX表示テスト画面をインポート
-import '../services/enhanced_update_service.dart'; // Use enhanced service
-import '../services/auto_update_manager.dart'; // Import auto update manager
+import '../providers/theme_provider.dart';
 import '../services/about_info.dart'; // Import AboutInfo
+import '../services/auto_update_manager.dart'; // Import auto update manager
+import '../services/enhanced_update_service.dart'; // Use enhanced service
 import '../utils/app_fonts.dart'; // Import app fonts helper
 import '../utils/text_style_helper.dart';
 import '../widgets/shared/custom_sliver_app_bar.dart'; // Import CustomSliverAppBar
 import 'licenses_screen.dart'; // Third-party licenses screen
+import 'template_edit_screen.dart';
+import 'tex_test_screen.dart'; // TeX表示テスト画面をインポート
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -34,7 +35,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _showUpdateDialog = true; // アップデート通知の表示設定
   Map<String, dynamic>? _aboutInfo;
   // AtCoder ユーザー名設定
-  final TextEditingController _atcoderUsernameController = TextEditingController();
+  final TextEditingController _atcoderUsernameController =
+      TextEditingController();
   @override
   void initState() {
     super.initState();
@@ -87,7 +89,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
       // If theme uses AtCoder accent, refresh it
       try {
-        final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+        final themeProvider = Provider.of<ThemeProvider>(
+          context,
+          listen: false,
+        );
         if (themeProvider.useAtcoderRatingColor) {
           await themeProvider.refreshAtcoderAccentColor();
         }
@@ -95,14 +100,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         // ignore UI refresh errors
       }
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('AtCoderユーザー名を保存しました')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('AtCoderユーザー名を保存しました')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('保存に失敗しました: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('保存に失敗しました: $e')));
     }
   }
 
@@ -308,9 +313,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         const Padding(
           padding: EdgeInsets.fromLTRB(20.0, 8.0, 20.0, 12.0),
-          child: Text(
-            'このユーザー名はレーティング取得やおすすめ問題などで使用されます。',
-          ),
+          child: Text('このユーザー名はレーティング取得やおすすめ問題などで使用されます。'),
         ),
       ],
     );
@@ -484,7 +487,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         // Manual update section - hidden for F-Droid builds
         if (BuildConfig.enableSelfUpdate) ...[
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20.0,
+              vertical: 16.0,
+            ),
             child: Column(
               children: [
                 SizedBox(
@@ -649,11 +655,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           title: const Text('サードパーティライセンス一覧'),
           subtitle: const Text('依存ライブラリ/フォント等のライセンス表示'),
           onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => const LicensesScreen(),
-              ),
-            );
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const LicensesScreen()));
           },
         ),
         ListTile(
@@ -769,10 +773,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return ExpansionTile(
       title: Text(
         '開発者',
-        style: AppFonts.notoSansJp(
-          fontSize: 16,
-          fontWeight: FontWeight.w400,
-        ),
+        style: AppFonts.notoSansJp(fontSize: 16, fontWeight: FontWeight.w400),
       ),
       subtitle: const Text('〒«ゆうびんきょく»'),
       leading: const Icon(Icons.code),
@@ -842,10 +843,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _getThemeIcon(ThemeModeOption mode) {
     switch (mode) {
       case ThemeModeOption.system:
-  return const Icon(Icons.settings_suggest);
+        return const Icon(Icons.settings_suggest);
       case ThemeModeOption.light:
         return const Icon(Icons.light_mode);
-  case ThemeModeOption.dark:
+      case ThemeModeOption.dark:
         return const Icon(Icons.dark_mode);
       case ThemeModeOption.pureBlack:
         return const Icon(Icons.nights_stay);
@@ -870,7 +871,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _importSettings() async {
     try {
-  // 将来的にファイルから設定を読み込む実装を追加
+      // 将来的にファイルから設定を読み込む実装を追加
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('設定のインポート機能は開発中です')));
@@ -1028,10 +1029,7 @@ class _HapticSwitchListTile extends StatelessWidget {
       contentPadding: const EdgeInsets.symmetric(horizontal: 20.0),
       title: Text(
         title,
-        style: AppFonts.notoSansJp(
-          fontSize: 16,
-          fontWeight: FontWeight.w400,
-        ),
+        style: AppFonts.notoSansJp(fontSize: 16, fontWeight: FontWeight.w400),
       ),
       subtitle: subtitle != null
           ? Text(
@@ -1074,10 +1072,7 @@ class _HapticRadioListTile<T> extends StatelessWidget {
       contentPadding: const EdgeInsets.symmetric(horizontal: 20.0),
       title: Text(
         title,
-        style: AppFonts.notoSansJp(
-          fontSize: 16,
-          fontWeight: FontWeight.w400,
-        ),
+        style: AppFonts.notoSansJp(fontSize: 16, fontWeight: FontWeight.w400),
       ),
       value: value,
       groupValue: groupValue,
@@ -1110,10 +1105,7 @@ class _CopyableListTile extends StatelessWidget {
       contentPadding: const EdgeInsets.symmetric(horizontal: 20.0),
       title: Text(
         title,
-        style: AppFonts.notoSansJp(
-          fontSize: 16,
-          fontWeight: FontWeight.w400,
-        ),
+        style: AppFonts.notoSansJp(fontSize: 16, fontWeight: FontWeight.w400),
       ),
       subtitle: Text(
         subtitle,
@@ -1203,10 +1195,7 @@ class _SocialMediaItem extends StatelessWidget {
           : icon as Widget,
       title: Text(
         title,
-        style: AppFonts.notoSansJp(
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-        ),
+        style: AppFonts.notoSansJp(fontSize: 16, fontWeight: FontWeight.w500),
       ),
       subtitle: Text(
         subtitle,
