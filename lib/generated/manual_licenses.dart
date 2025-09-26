@@ -1,20 +1,28 @@
-# Font Licenses
+// Manually maintained extra (non-pub) third-party licenses, e.g. bundled fonts.
+// Keep this file small and focused; do NOT edit the auto-generated oss_licenses.dart.
 
-This application includes the following bundled fonts:
+import 'oss_licenses.dart';
 
-## HackGen Font Family
+/// Additional packages that are not discoverable via pubspec dependency tree
+/// (e.g. bundled font files) but whose licenses must be disclosed.
+const extraPackages = <Package>[
+  _hackgenFontFamily,
+];
 
-The HackGen font family (HackGen, HackGen35, HackGenConsole, HackGen35Console) is used under the following license:
-
-**Font Name**: HackGen
-**Author**: Yuko Otawara
-**Source**: https://github.com/yuru7/HackGen
-**License**: SIL Open Font License Version 1.1
-
-### License Text
-
-```
-Copyright (c) 2019, Yuko OTAWARA. with Reserved Font Name "白源", "HackGen"
+/// HackGen font family (HackGen, HackGen35, HackGenConsole, HackGen35Console)
+/// License: SIL Open Font License 1.1
+/// Source: https://github.com/yuru7/HackGen
+const _hackgenFontFamily = Package(
+  name: 'HackGen Font Family',
+  description: 'Bundled programming fonts: HackGen / HackGen35 / HackGenConsole / HackGen35Console',
+  authors: ['Yuko Otawara'],
+  isMarkdown: false,
+  isSdk: false,
+  dependencies: const [],
+  devDependencies: const [],
+  homepage: 'https://github.com/yuru7/HackGen',
+  version: null, // Font version not strictly required; omit to avoid stale info.
+  license: '''Copyright (c) 2019, Yuko OTAWARA. with Reserved Font Name "白源", "HackGen"
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:
@@ -129,3 +137,5 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+''',
+);

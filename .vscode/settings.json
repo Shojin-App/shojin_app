@@ -12,7 +12,7 @@
   // "files.exclude": { "lib/generated": true },
   "github.copilot.chat.commitMessageGeneration.instructions": [
     {
-      "text": "fix:などの修正タイプの後の本文は日本語で書くこと。"
+      "text": "修正タイプ(例: fix:)の後の本文は必ず日本語で書くこと。"
     }
   ]
 }
