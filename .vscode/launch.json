@@ -1,0 +1,64 @@
+{
+    // VS Code launch configurations for Flutter flavors
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Flutter OSS (debug)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "debug",
+            "toolArgs": [
+                "--flavor",
+                "oss",
+                "--target",
+                "lib/main.dart"
+            ],
+            "program": "lib/main.dart"
+        },
+        {
+            "name": "Flutter OSS (release)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release",
+            "toolArgs": [
+                "--flavor",
+                "oss",
+                "--target",
+                "lib/main.dart"
+            ],
+            "program": "lib/main.dart"
+        },
+        {
+            "name": "Flutter F-Droid (debug)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "debug",
+            "toolArgs": [
+                "--flavor",
+                "fdroid",
+                "--dart-define=FDROID_BUILD=true",
+                "--dart-define=ENABLE_SELF_UPDATE=false",
+                "--dart-define=ENABLE_ONLINE_FONTS=false",
+                "--target",
+                "lib/main.dart"
+            ],
+            "program": "lib/main.dart"
+        },
+        {
+            "name": "Flutter F-Droid (release)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release",
+            "toolArgs": [
+                "--flavor",
+                "fdroid",
+                "--dart-define=FDROID_BUILD=true",
+                "--dart-define=ENABLE_SELF_UPDATE=false",
+                "--dart-define=ENABLE_ONLINE_FONTS=false",
+                "--target",
+                "lib/main.dart"
+            ],
+            "program": "lib/main.dart"
+        }
+    ]
+}
