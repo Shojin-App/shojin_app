@@ -89,6 +89,8 @@ flutter build apk \
 - [ ] `flutter analyze` と `flutter test` が成功
 - [ ] `FONT_LICENSES.md` / LICENSE 表示画面から辿れる
 
+> 注記: F-Droid ビルドではオンラインから Google Fonts を取得せず、同梱フォント / システムフォントのみを使用します (ネットワークフォントアクセス無効化)。
+
 ### ソースからビルド
 
 自身でアプリをビルドしたい場合や、開発に貢献したい場合は、ソースからビルドできます：
