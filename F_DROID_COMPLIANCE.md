@@ -153,3 +153,25 @@ flutter pub run flutter_oss_licenses:generate
 The `LicensesScreen` (`lib/screens/licenses_screen.dart`) embeds `OssLicensesPage` to display items offline.
 
 Fonts (HackGen family) are manually documented in `FONT_LICENSES.md` and also surfaced via the default Flutter license page.
+
+## 🌐 External Network Access Matrix
+
+F-Droid 審査向けに、アプリが行い得る外部通信を整理します。いずれも標準的な HTTPS GET / POST を用いる公開エンドポイントであり、追跡 SDK・計測用識別子・広告ネットワークは利用していません。F-Droid ビルドでは自己更新関連の GitHub Release 照会を完全に無効化しています。
+
+| 区分 | ドメイン / 例示 URL | 用途 | 必須 (コア機能) | 送信される主なデータ | F-Droid ビルドでの挙動 | 備考 |
+|------|---------------------|------|------------------|------------------------|-------------------------|------|
+| 問題取得 | `https://atcoder.jp/` | AtCoder 問題ページ HTML 取得 (スクレイピング) | 利用者が問題閲覧機能を使う場合 | HTTP GET のみ (Cookie: ユーザがログインした場合ブラウザ(WebView)管理) | 変更なし | ログインはユーザ任意。追跡スクリプト注入なし |
+| 更新確認 (通常版) | `https://api.github.com/repos/<owner>/<repo>/releases/latest` | 新バージョン確認 (自己アップデート UI 用) | いいえ | User-Agent, 公開 API GET リクエスト | 無効 (リクエスト発生しない) | `FDROID_BUILD=true` かつ `ENABLE_SELF_UPDATE=false` でガード |
+| APK/アセット (通常版) | `https://github.com/.../releases/download/...` | (通常版) 手動/自動更新用 APK ダウンロード | いいえ | リリースアセット直接ダウンロード | 無効 | F-Droid 版では UI ボタン・処理ともに非表示/不実行 |
+| Favicon 取得 | サイト個別ドメイン (例: `https://example.com/favicon.ico`) | 問題/サイト表示用アイコン補助 | いいえ | 個別サイトへの単発 GET | 変更なし | 利用者操作で対象 URL 指定発生 |
+| 外部リンク起動 | `https://twitter.com/`, `https://github.com/`, `https://youtube.com/` など | 開発者ページ / SNS / リポジトリ参照 | いいえ | システムブラウザ起動のみ (アプリ側送信無し) | 変更なし | `url_launcher` 利用。アプリ内追跡なし |
+| WebView 表示 | `https://atcoder.jp/` | ログイン / 問題閲覧 | 利用者が開く場合 | ブラウザ標準ヘッダ + 必要に応じユーザ入力フォーム | 変更なし | Cookie は端末ローカル。外部送信はユーザ操作由来 |
+
+### ネットワーク利用に関する補足
+
+- 解析/広告/クラッシュレポート SDK（Firebase, GA, Sentry 等）は非採用。
+- 端末識別子・広告 ID を送信するコードは存在しません。
+- 自己アップデート機能は F-Droid ビルドでは完全に初期化スキップされ、関連 UI も非表示になります。
+- 取得した外部データは端末内キャッシュ (一時ファイル / メモリ) のみで保持し、第三者へ再送信しません。
+
+この表は F-Droid メタデータ作成時に "NonFreeNet" Anti-Feature 指摘を避ける説明素材として利用できます。
