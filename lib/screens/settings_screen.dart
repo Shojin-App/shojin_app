@@ -640,24 +640,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _DeveloperSection(),
         const Divider(),
         ListTile(
-          leading: const Icon(Icons.description_outlined),
-          title: const Text('オープンソースライセンス'),
-          onTap: () {
-            showLicensePage(
-              context: context,
-              applicationName: 'Shojin App',
-              applicationVersion: _currentVersion,
-            );
-          },
-        ),
-        ListTile(
           leading: const Icon(Icons.rule_folder_outlined),
-          title: const Text('サードパーティライセンス一覧'),
-          subtitle: const Text('依存ライブラリ/フォント等のライセンス表示'),
+          title: const Text('ライセンス'),
+          subtitle: const Text('直接 / 全依存 / 標準 Flutter'),
           onTap: () {
-            Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const LicensesScreen()));
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const LicensesScreen()),
+            );
           },
         ),
         ListTile(
