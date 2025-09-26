@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
 // import 'package:flutter_oss_licenses/flutter_oss_licenses.dart';
 // 上記パッケージの Widget 名がバージョン差異で認識できないため、
 // 生成済みファイル (lib/generated/oss_licenses.dart) を直接読み込む簡易ビューに切り替える。
 // 後でパッケージ提供の専用Widgetへ戻すことも可能。
 import 'dart:async';
+
+import 'package:flutter/material.dart';
 
 /// A dedicated screen to display aggregated OSS licenses.
 /// This uses flutter_oss_licenses generated data.
@@ -75,9 +76,9 @@ Future<List<_LicenseEntry>> _loadLicenses() async {
     // 現状: lib/generated/oss_licenses.dart が直接 Dart コードの場合、
     // ここでは簡易フォールバックとして空リストを返す。
     // 将来的に build_runner 等で JSON 生成に切替するなら rootBundle.loadString で読む。
-  // TODO: 実際には生成されたデータを取り込む。暫定で空リストを返し、
-  // パッケージの公式Widget名確認後に差し替える。
-  return [];
+    // TODO: 実際には生成されたデータを取り込む。暫定で空リストを返し、
+    // パッケージの公式Widget名確認後に差し替える。
+    return [];
   } catch (e) {
     return Future.error(e);
   }
