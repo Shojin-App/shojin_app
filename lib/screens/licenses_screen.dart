@@ -2,8 +2,8 @@ import 'package:flutter/foundation.dart'
     show LicenseRegistry; // for potential custom additions
 import 'package:flutter/material.dart';
 
-import '../generated/oss_licenses.dart';
 import '../generated/manual_licenses.dart';
+import '../generated/oss_licenses.dart';
 
 /// ライセンス一覧（生成データ利用）
 class LicensesScreen extends StatelessWidget {
@@ -12,7 +12,7 @@ class LicensesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-  length: 3,
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('ライセンス'),

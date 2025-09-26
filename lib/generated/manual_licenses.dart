@@ -5,24 +5,25 @@ import 'oss_licenses.dart';
 
 /// Additional packages that are not discoverable via pubspec dependency tree
 /// (e.g. bundled font files) but whose licenses must be disclosed.
-const extraPackages = <Package>[
-  _hackgenFontFamily,
-];
+const extraPackages = <Package>[_hackgenFontFamily];
 
 /// HackGen font family (HackGen, HackGen35, HackGenConsole, HackGen35Console)
 /// License: SIL Open Font License 1.1
 /// Source: https://github.com/yuru7/HackGen
 const _hackgenFontFamily = Package(
   name: 'HackGen Font Family',
-  description: 'Bundled programming fonts: HackGen / HackGen35 / HackGenConsole / HackGen35Console',
+  description:
+      'Bundled programming fonts: HackGen / HackGen35 / HackGenConsole / HackGen35Console',
   authors: ['Yuko Otawara'],
   isMarkdown: false,
   isSdk: false,
   dependencies: const [],
   devDependencies: const [],
   homepage: 'https://github.com/yuru7/HackGen',
-  version: null, // Font version not strictly required; omit to avoid stale info.
-  license: '''Copyright (c) 2019, Yuko OTAWARA. with Reserved Font Name "白源", "HackGen"
+  version:
+      null, // Font version not strictly required; omit to avoid stale info.
+  license:
+      '''Copyright (c) 2019, Yuko OTAWARA. with Reserved Font Name "白源", "HackGen"
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:
