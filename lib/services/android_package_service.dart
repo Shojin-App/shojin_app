@@ -2,12 +2,17 @@
 import 'dart:io';
 
 // Conditional import for Android package installer - only for non-F-Droid builds
-import 'package:android_package_installer/android_package_installer.dart'
-    as apm_installer
-    if (dart.library.js) 'package:android_package_installer/android_package_installer.dart';
-import 'package:android_package_manager/android_package_manager.dart'
-    as apm_manager
-    if (dart.library.js) 'package:android_package_manager/android_package_manager.dart';
+// Removed external Git dependencies (android_package_installer / android_package_manager)
+// for F-Droid compliance (vendor/stub approach). All functionality is now
+// either disabled when self-update is off or implemented via platform channels
+// in future if needed. The previous imports are intentionally commented out.
+//
+// If upstream functionality is reintroduced, prefer:
+// 1. Adding a vendored minimal implementation under lib/vendor/
+// 2. Or using a published pub.dev package (not raw git) with a fixed version.
+//
+// import 'package:android_package_installer/android_package_installer.dart' as apm_installer;
+// import 'package:android_package_manager/android_package_manager.dart' as apm_manager;
 import 'package:flutter/services.dart';
 
 import '../config/build_config.dart';
@@ -40,9 +45,11 @@ class AndroidPackageService {
 
     try {
       // Use the Android package installer for non-F-Droid builds
-      return await apm_installer.AndroidPackageInstaller.installApk(
-        apkFilePath: path,
-      );
+      // Previously used AndroidPackageInstaller (external Git dependency).
+      // Now this path is intentionally unreachable in F-Droid builds because
+      // enableSelfUpdate will be false there. For non-F-Droid builds you may
+      // plug in a platform channel or a vendored implementation.
+      throw UnimplementedError('APK install implementation removed (vendor stub)');
     } catch (e) {
       throw Exception('Failed to install APK: $e');
     }

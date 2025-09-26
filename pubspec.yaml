@@ -49,16 +49,13 @@ dependencies:
   yaml: ^3.1.2
   # LaTeX/TeX数式レンダリング用
   flutter_math_fork: ^0.7.3
-  android_package_installer:
-    git:
-      url: https://github.com/ImranR98/android_package_installer
-      # Pin to specific commit for stability (was: main)
-      ref: c9e144fae63231b5d1d7b88af779c314afcb6e83
-  android_package_manager:
-    git:
-      url: https://github.com/ImranR98/android_package_manager
-      # Pin to specific commit for stability (was: master)
-      ref: 18231a8a2343747440b0bfe90f7d56ef7f586099
+  # NOTE: The following Git-based dependencies were removed for F-Droid compliance.
+  # They previously enabled in-app APK install & package queries:
+  #   - android_package_installer (git, pinned commit)
+  #   - android_package_manager (git, pinned commit)
+  # These are now replaced by a stub in `android_package_service.dart`.
+  # If reintroducing, prefer a vendored minimal implementation under lib/vendor/
+  # or a pub.dev hosted package with a fixed version to retain reproducible builds.
 
 dev_dependencies:
   flutter_test:

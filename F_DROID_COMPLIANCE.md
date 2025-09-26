@@ -37,10 +37,12 @@ The application now fully complies with F-Droid Inclusion Policy requirements wi
 
 ### 3. Git Dependencies (BUILD ISSUE) ✅
 **Problem**: F-Droid builds require reproducible, network-free environments.
-**Solution**:
-- Abstracted Git dependencies through wrapper service
-- Conditional imports to avoid build failures
-- Created F-Droid compatible pubspec example
+**Initial Approach**:
+- Abstracted Git dependencies through wrapper service + conditional imports.
+**Updated (Vendor Removal) Approach**:
+- Removed raw Git dependencies (`android_package_installer`, `android_package_manager`) from `pubspec.yaml`.
+- Replaced with an internal stub (`lib/services/android_package_service.dart`).
+- Documented reintroduction path (vendoring or pub.dev hosted alternative) to keep builds reproducible.
 
 **Key Files Created**:
 - `lib/services/android_package_service.dart` - Dependency wrapper
@@ -102,10 +104,10 @@ flutter build apk \
 
 ## ⚠️ Remaining Considerations for F-Droid Submission
 
-1. **Git Dependencies**: The `android_package_installer` and `android_package_manager` packages are still in pubspec.yaml but abstracted through conditional imports. For actual F-Droid submission:
-   - Replace with pub.dev versions if available
-   - Vendor the source code in `lib/vendor/`
-   - Remove entirely and use alternative implementations
+1. **Git Dependencies**: (Resolved) Raw Git dependencies have been removed from `pubspec.yaml`. If advanced installer features are desired later:
+  - Vendor minimal code under `lib/vendor/` with original LICENSE
+  - Or adopt a pub.dev published package with a fixed version
+  - Maintain F-Droid flavor guard so self-update stays disabled
 
 2. **Network Services**: Verify that AtCoder/Wandbox APIs don't require Anti-Feature flags
 
