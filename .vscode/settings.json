@@ -1,9 +1,18 @@
 {
   "cmake.ignoreCMakeListsMissing": true,
   "dart.flutterSdkPath": ".fvm/versions/stable",
+  // デフォルトの F5 実行を oss フレーバーに統一
+  "dart.flutterRunAdditionalArgs": [
+    "--flavor",
+    "oss",
+    "--target",
+    "lib/main.dart"
+  ],
+  // 生成ファイルを VSCode の検索などでノイズにしたくない場合の例（必要なら有効化）
+  // "files.exclude": { "lib/generated": true },
   "github.copilot.chat.commitMessageGeneration.instructions": [
     {
-      "text": "fix:などの修正タイプの後の本文は日本語で書くこと。",
+      "text": "fix:などの修正タイプの後の本文は日本語で書くこと。"
     }
   ]
 }
