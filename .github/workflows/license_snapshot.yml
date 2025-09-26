@@ -1,0 +1,57 @@
+name: License Snapshot Check
+
+on:
+  pull_request:
+    branches: [ main, fix/** ]
+    paths:
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - 'lib/generated/oss_licenses.dart'
+      - '.github/workflows/license_snapshot.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - 'lib/generated/oss_licenses.dart'
+      - '.github/workflows/license_snapshot.yml'
+  workflow_dispatch: {}
+
+jobs:
+  license-diff:
+    name: Verify generated OSS licenses snapshot is up-to-date
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Flutter (stable)
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Pub get
+        run: flutter pub get
+
+      - name: Generate license snapshot
+        run: >-
+          dart run flutter_oss_licenses:generate
+          --output lib/generated/oss_licenses.dart
+
+      - name: Check diff
+        run: |
+          if git diff --name-only --exit-code lib/generated/oss_licenses.dart; then
+            echo "License snapshot is up-to-date.";
+          else
+            echo '::error file=lib/generated/oss_licenses.dart::License snapshot is outdated. Run:';
+            echo 'dart run flutter_oss_licenses:generate --output lib/generated/oss_licenses.dart';
+            echo 'and commit the result.';
+            exit 1;
+          fi
+
+      - name: Show diff (only when failed previously)
+        if: failure()
+        run: git --no-pager diff lib/generated/oss_licenses.dart

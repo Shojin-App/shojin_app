@@ -1,0 +1,16 @@
+# Enforce LF endings for text files to avoid CRLF noise, especially in generated license snapshot
+* text=auto eol=lf
+
+# Explicitly enforce LF for the generated OSS licenses snapshot
+lib/generated/oss_licenses.dart text eol=lf
+
+# Keep binary files untouched
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ttf binary
+*.otf binary
+*.ico binary
+
+# Scripts (shell) also LF
+*.sh text eol=lf
