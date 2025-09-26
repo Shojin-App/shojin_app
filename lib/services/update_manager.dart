@@ -27,9 +27,10 @@ class UpdateManager extends ChangeNotifier {
     );
     if (Platform.isAndroid) {
       if (!kEnableSelfUpdate) {
-        _statusMessage = 'F-Droidビルドではアプリ内アップデートは無効です。リリースページから手動で更新してください。';
+        // Hard block for FDroid builds
+        _statusMessage = 'F-Droidビルドではアプリ内アップデートは無効です (コードパス停止)。';
         notifyListeners();
-        return;
+        return; // Never attempt install
       }
       if (fileExtension == 'apk') {
         try {
@@ -138,6 +139,10 @@ class UpdateManager extends ChangeNotifier {
   }
 
   Future<void> _installApk(String filePath) async {
+    if (!kEnableSelfUpdate) {
+      debugPrint('[FDROID] _installApk() suppressed');
+      return;
+    }
     _statusMessage = 'APKのインストールプロセスを開始しています: $filePath';
     notifyListeners();
     debugPrint(_statusMessage);

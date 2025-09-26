@@ -5,7 +5,6 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart'; // 追加
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import 'config/build_config.dart'; // Add build configuration
@@ -25,6 +24,16 @@ import 'utils/app_fonts.dart'; // Import app fonts helper
 void main() async {
   // Flutter Engineの初期化を保証
   WidgetsFlutterBinding.ensureInitialized();
+
+  // F-Droid ビルド安全性アサート: 自己アップデートが無効であること
+  assert(() {
+    if (BuildConfig.isF_DroidBuild && BuildConfig.enableSelfUpdate) {
+      throw StateError(
+        'FDROID_BUILD=true なのに enableSelfUpdate が true です。ビルドフラグ/defines を再確認してください。',
+      );
+    }
+    return true;
+  }());
 
   // NotificationServiceの初期化と権限リクエスト
   final notificationService = NotificationService();

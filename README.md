@@ -52,30 +52,81 @@ AtCoderの精進をスマホでも。
 
 ビルド済みのバイナリ（APKなど）は[GitHubリリーズページ](https://github.com/Shojin-App/shojin_app/releases)からダウンロードできます。これが最も簡単な開始方法です。
 
-### F-Droid対応版
+### F-Droid 対応版 / Reproducible Build
 
-このアプリはF-Droidポリシーに完全準拠したビルドが可能です。F-Droid対応版では以下の機能が制限されます：
+このアプリは F-Droid Inclusion Policy に準拠したビルドが可能です。F-Droid フレーバー (`fdroid`) では以下が強制されます:
 
-- **自己アップデート機能**: 無効化（F-Droidが管理）
-- **オンラインフォント取得**: 無効化（システムフォント使用）
-- **外部APKダウンロード**: 完全に無効
+| 機能 | 通常ビルド | F-Droid ビルド |
+|------|------------|----------------|
+| 自己アップデート (アプリ内ダウンロード & APKインストール) | 有効 (ユーザー設定可) | 完全無効 (コードパス停止) |
+| 起動時自動チェック UI | 表示 | 非表示 |
+| オンラインフォント (Google Fonts) | 利用可 | 無効 (同梱/システムフォント) |
+| 外部APKダウンロード | 有効 | 無効 |
+| Git 依存 (動的取得) | なし (除去済) | なし |
 
-#### F-Droid対応ビルド手順
+自己アップデート関連クラス (`AutoUpdateManager`, `UpdateManager`) は F-Droid ビルドでは早期 return するノーオペ実装になり、不用意に APK を取得・実行しません。
+
+#### ビルド手順 (F-Droid フレーバー)
 
 ```bash
-# F-Droid互換ビルドの実行
+# 推奨: スクリプトで再現性確保
 ./build_fdroid.sh
 
-# または手動ビルド
+# 手動:
 flutter build apk \
-  --dart-define=FDROID_BUILD=true \
-  --dart-define=ENABLE_SELF_UPDATE=false \
-  --dart-define=ENABLE_ONLINE_FONTS=false \
-  --flavor=fdroid \
-  --release
+    --dart-define=FDROID_BUILD=true \
+    --dart-define=ENABLE_SELF_UPDATE=false \
+    --dart-define=ENABLE_ONLINE_FONTS=false \
+    --flavor=fdroid \
+    --release
 ```
 
-**注意**: 実際のF-Droid提出には、Git依存関係の除去またはベンダリングが必要です。詳細は `pubspec_fdroid.yaml` と `FONT_LICENSES.md` を参照してください。
+#### 確認ポイント (F-Droid 申請前チェックリスト)
+- [ ] `git tag vX.Y.Z` が `pubspec.yaml` の `version` と一致
+- [ ] 起動後「設定 > 更新設定」セクションに自己更新 UI が表示されない
+- [ ] ネットワークトラフィックが AtCoder / コード実行 API / 静的リソース以外へ行かない
+- [ ] `flutter analyze` と `flutter test` が成功
+- [ ] `FONT_LICENSES.md` / LICENSE 表示画面から辿れる
+
+#### メタデータ作成例 (参考)
+F-Droid リポジトリ (fdroiddata) 用 `metadata/io.github.shojinapp.kyopro.yml` の骨子:
+```yaml
+Categories: Development
+License: GPL-3.0-only
+SourceCode: https://github.com/Shojin-App/shojin_app
+IssueTracker: https://github.com/Shojin-App/shojin_app/issues
+Changelog: https://github.com/Shojin-App/shojin_app/releases
+AutoName: Shojin App
+RepoType: git
+Repo: https://github.com/Shojin-App/shojin_app.git
+Builds:
+    - versionName: 1.0.0
+        versionCode: 100
+        commit: v1.0.0
+        gradle:
+            - fdroid
+        output: app-fdroid-release.apk
+        srclibs:
+            - flutter@stable
+        prebuild: |
+            sed -i 's/publish_to: .*/publish_to: none/' pubspec.yaml
+        build: |
+            flutter pub get
+            flutter build apk --dart-define=FDROID_BUILD=true --dart-define=ENABLE_SELF_UPDATE=false --dart-define=ENABLE_ONLINE_FONTS=false --flavor=fdroid --release
+```
+
+#### ライセンス/資産
+- ハックジェンフォント (HackGen) : OFL 1.1 (`FONT_LICENSES.md`)
+- その他依存関係: アプリ内「ライセンス」画面でオフライン参照可
+
+#### セキュリティ指針
+- 外部実行バイナリをダウンロード・実行しない
+- 自己更新コードはビルドフラグ下で死コード化 (早期 no-op)
+- 追跡/広告/分析用ライブラリを含まない
+
+> F-Droid 寄稿時の最終チェックに役立つ簡易スクリプトは `build_fdroid.sh` を参照してください。
+
+**注意**: メタデータ例は参考であり、実際に提出する際は最新ポリシー・バージョンに合わせて調整してください。
 
 ### ソースからビルド
 
@@ -154,3 +205,5 @@ https://github.com/inotia00/revanced-manager
 
 本プロジェクトおよびその内容は、AtCoder株式会社及びその関連会社とは一切関係がなく、資金提供、承認、支持、またはその他いかなる形での関連もありません。
 本プロジェクトで使用されている商標、サービスマーク、商号、またはその他の知的財産権は、それぞれの所有者に帰属します。
+
+GitHub ロゴ, YouTube ロゴ, X(Twitter) ロゴ は各社の登録商標/商標です。これらのロゴはリンク誘導/識別目的のみで使用されており、本アプリによる公式な提携・後援・保証を意味しません。

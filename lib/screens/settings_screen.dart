@@ -471,21 +471,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: '更新設定',
       icon: Icons.system_update_alt,
       children: [
-        _HapticSwitchListTile(
-          title: 'アプリ起動時に自動で更新を確認',
-          value: _autoUpdateCheckEnabled,
-          onChanged: _setAutoUpdatePreference,
-          icon: Icons.sync_outlined,
-        ),
-        _HapticSwitchListTile(
-          title: 'アップデート通知を表示',
-          subtitle: '新しいバージョンが利用可能な時に通知を表示',
-          value: _showUpdateDialog,
-          onChanged: _setShowUpdateDialog,
-          icon: Icons.notifications_outlined,
-        ),
-        // Manual update section - hidden for F-Droid builds
         if (BuildConfig.enableSelfUpdate) ...[
+          _HapticSwitchListTile(
+            title: 'アプリ起動時に自動で更新を確認',
+            value: _autoUpdateCheckEnabled,
+            onChanged: _setAutoUpdatePreference,
+            icon: Icons.sync_outlined,
+          ),
+          _HapticSwitchListTile(
+            title: 'アップデート通知を表示',
+            subtitle: '新しいバージョンが利用可能な時に通知を表示',
+            value: _showUpdateDialog,
+            onChanged: _setShowUpdateDialog,
+            icon: Icons.notifications_outlined,
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: 20.0,
@@ -519,6 +518,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: AppFonts.notoSansJp(fontSize: 14),
                   ),
                 ],
+              ],
+            ),
+          ),
+        ] else ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.info_outline, color: Colors.grey),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'このビルドではアプリ内自己アップデート機能は無効化されています。最新バージョンは公式GitHubリリースまたはF-Droidリポジトリ経由で入手してください。',
+                    style: AppFonts.notoSansJp(fontSize: 14),
+                  ),
+                ),
               ],
             ),
           ),

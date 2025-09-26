@@ -18,19 +18,21 @@ class AutoUpdateManager {
 
   // Check if auto update is enabled
   Future<bool> isAutoUpdateEnabled() async {
-    if (!kEnableSelfUpdate) return false;
+    if (!kEnableSelfUpdate) return false; // Hard off for FDroid builds
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_autoUpdateKey) ?? true;
   }
 
   // Set auto update preference
   Future<void> setAutoUpdateEnabled(bool enabled) async {
+    if (!kEnableSelfUpdate) return; // no-op in FDroid
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_autoUpdateKey, enabled);
   }
 
   // Get last update check timestamp
   Future<DateTime?> getLastUpdateCheck() async {
+    if (!kEnableSelfUpdate) return null; // no tracking when disabled
     final prefs = await SharedPreferences.getInstance();
     final timestamp = prefs.getInt(_lastUpdateCheckKey);
     return timestamp != null
@@ -40,24 +42,28 @@ class AutoUpdateManager {
 
   // Set last update check timestamp
   Future<void> setLastUpdateCheck(DateTime dateTime) async {
+    if (!kEnableSelfUpdate) return; // no-op
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_lastUpdateCheckKey, dateTime.millisecondsSinceEpoch);
   }
 
   // Get skipped version
   Future<String?> getSkippedVersion() async {
+    if (!kEnableSelfUpdate) return null;
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_skippedVersionKey);
   }
 
   // Set skipped version
   Future<void> setSkippedVersion(String version) async {
+    if (!kEnableSelfUpdate) return; // no-op
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_skippedVersionKey, version);
   }
 
   // Check if should check for updates (based on time interval)
   Future<bool> shouldCheckForUpdates() async {
+    if (!kEnableSelfUpdate) return false;
     if (!await isAutoUpdateEnabled()) return false;
 
     final lastCheck = await getLastUpdateCheck();
@@ -75,7 +81,9 @@ class AutoUpdateManager {
     String repo = 'Shojin_App',
   }) async {
     if (!kEnableSelfUpdate) {
-      debugPrint('[FDROID] Self-update disabled by build flag');
+      debugPrint(
+        '[FDROID] Self-update disabled by build flag (startup check skipped)',
+      );
       return;
     }
     if (!await shouldCheckForUpdates()) {
@@ -127,6 +135,7 @@ class AutoUpdateManager {
     BuildContext context,
     EnhancedAppUpdateInfo updateInfo,
   ) {
+    if (!kEnableSelfUpdate) return; // safety
     if (!context.mounted) return;
 
     // Show as a SnackBar first, then dialog on tap
@@ -154,6 +163,7 @@ class AutoUpdateManager {
     BuildContext context,
     EnhancedAppUpdateInfo updateInfo,
   ) {
+    if (!kEnableSelfUpdate) return; // safety
     if (!context.mounted) return;
 
     showDialog(
@@ -177,6 +187,7 @@ class AutoUpdateManager {
     BuildContext context,
     EnhancedAppUpdateInfo updateInfo,
   ) {
+    if (!kEnableSelfUpdate) return; // safety
     if (!context.mounted) return;
 
     showDialog(
@@ -214,6 +225,10 @@ class AutoUpdateManager {
     String owner = 'yuubinnkyoku',
     String repo = 'Shojin_App',
   }) async {
+    if (!kEnableSelfUpdate) {
+      debugPrint('[FDROID] Manual update check suppressed');
+      return null;
+    }
     try {
       debugPrint('=== 手動アップデートチェック開始 ===');
       debugPrint('Repository: $owner/$repo');
@@ -249,6 +264,7 @@ class AutoUpdateManager {
     BuildContext context,
     EnhancedAppUpdateInfo updateInfo,
   ) {
+    if (!kEnableSelfUpdate) return; // safety
     _showUpdateDialog(context, updateInfo);
   }
 }
