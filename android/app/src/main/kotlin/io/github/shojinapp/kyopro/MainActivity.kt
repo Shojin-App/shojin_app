@@ -1,4 +1,4 @@
-package io.github.tsukuba_denden.shojin_app
+package io.github.shojinapp.kyopro
 
 import io.flutter.embedding.android.FlutterActivity
 

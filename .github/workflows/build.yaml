@@ -27,6 +27,15 @@ on:
         type: boolean
         required: true
         default: true
+      flavor:
+        description: 'Which flavor to build'
+        type: choice
+        required: true
+        options:
+          - oss
+          - fdroid
+          - both
+        default: 'both'
       build_type:
         description: 'APK Build Type (split per ABI or single universal)'
         type: choice
@@ -78,6 +87,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       BUILD_TYPE: ${{ github.event.inputs.build_type || 'split' }}
+      FLAVOR: ${{ github.event.inputs.flavor || 'both' }}
     outputs:
       version: ${{ steps.get_version.outputs.version }}
       build_type: ${{ github.event.inputs.build_type || 'split' }}
@@ -102,36 +112,62 @@ jobs:
       - name: Get Flutter dependencies
         run: flutter pub get || flutter pub get || flutter pub get
 
-      # 分割APKをビルド (デフォルトまたは手動で'split'を選択した場合)
-      - name: Build APK (Split per ABI)
-        if: ${{ contains(env.BUILD_TYPE, 'split') }}
-        run: flutter build apk --release --split-per-abi --build-number=${{ github.run_number }}
+      # 分割APK: OSSフレーバー
+      - name: Build APK (Split per ABI, OSS)
+        if: ${{ contains(env.BUILD_TYPE, 'split') && (github.event.inputs.flavor == 'oss' || github.event.inputs.flavor == 'both' || env.FLAVOR == 'oss') }}
+        run: flutter build apk --flavor oss --release --split-per-abi --build-number=${{ github.run_number }}
 
-      # 単一APKをビルド (手動で'single'を選択した場合)
-      - name: Build APK (Single Universal)
-        if: ${{ contains(env.BUILD_TYPE, 'single') }}
-        run: flutter build apk --release --build-number=${{ github.run_number }}
+      # 分割APK: FDroidフレーバー（自己更新無効の定数を注入）
+      - name: Build APK (Split per ABI, FDroid)
+        if: ${{ contains(env.BUILD_TYPE, 'split') && (github.event.inputs.flavor == 'fdroid' || github.event.inputs.flavor == 'both' || env.FLAVOR == 'fdroid') }}
+        run: flutter build apk --flavor fdroid --release --split-per-abi --build-number=${{ github.run_number }} --dart-define=ENABLE_SELF_UPDATE=false
+
+      # 単一APK: OSSフレーバー
+      - name: Build APK (Single Universal, OSS)
+        if: ${{ contains(env.BUILD_TYPE, 'single') && (github.event.inputs.flavor == 'oss' || github.event.inputs.flavor == 'both' || env.FLAVOR == 'oss') }}
+        run: flutter build apk --flavor oss --release --build-number=${{ github.run_number }}
+
+      # 単一APK: FDroidフレーバー
+      - name: Build APK (Single Universal, FDroid)
+        if: ${{ contains(env.BUILD_TYPE, 'single') && (github.event.inputs.flavor == 'fdroid' || github.event.inputs.flavor == 'both' || env.FLAVOR == 'fdroid') }}
+        run: flutter build apk --flavor fdroid --release --build-number=${{ github.run_number }} --dart-define=ENABLE_SELF_UPDATE=false
         
       - name: Read version from pubspec.yaml
         id: get_version
         run: |
           echo "version=$(grep '^version: ' pubspec.yaml | sed 's/version: //')" >> $GITHUB_OUTPUT
 
-      # 分割APKをアップロード
-      - name: Upload Split APKs Artifact
-        if: ${{ contains(env.BUILD_TYPE, 'split') }}
+      # 分割APKアップロード（OSS）
+      - name: Upload Split APKs (OSS)
+        if: ${{ contains(env.BUILD_TYPE, 'split') && (github.event.inputs.flavor == 'oss' || github.event.inputs.flavor == 'both' || env.FLAVOR == 'oss') }}
         uses: actions/upload-artifact@v4
         with:
-          name: release-apk
-          path: build/app/outputs/flutter-apk/app-*-release.apk
+          name: apk-oss
+          path: build/app/outputs/flutter-apk/app-oss-*-release.apk
 
-      # 単一APKをアップロード
-      - name: Upload Single APK Artifact
-        if: ${{ contains(env.BUILD_TYPE, 'single') }}
+      # 分割APKアップロード（FDroid）
+      - name: Upload Split APKs (FDroid)
+        if: ${{ contains(env.BUILD_TYPE, 'split') && (github.event.inputs.flavor == 'fdroid' || github.event.inputs.flavor == 'both' || env.FLAVOR == 'fdroid') }}
         uses: actions/upload-artifact@v4
         with:
-          name: release-apk
-          path: build/app/outputs/apk/release/app-release.apk
+          name: apk-fdroid
+          path: build/app/outputs/flutter-apk/app-fdroid-*-release.apk
+
+      # 単一APKアップロード（OSS）
+      - name: Upload Single APK (OSS)
+        if: ${{ contains(env.BUILD_TYPE, 'single') && (github.event.inputs.flavor == 'oss' || github.event.inputs.flavor == 'both' || env.FLAVOR == 'oss') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-oss
+          path: build/app/outputs/flutter-apk/app-oss-release.apk
+
+      # 単一APKアップロード（FDroid）
+      - name: Upload Single APK (FDroid)
+        if: ${{ contains(env.BUILD_TYPE, 'single') && (github.event.inputs.flavor == 'fdroid' || github.event.inputs.flavor == 'both' || env.FLAVOR == 'fdroid') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-fdroid
+          path: build/app/outputs/flutter-apk/app-fdroid-release.apk
 
   deploy:
     name: Deploy to GitHub Release
@@ -147,14 +183,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Download APK Artifact
+      - name: Download APK Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: release-apk
-          path: artifacts/apk/
+          path: artifacts/
 
       # 分割APKをリリース
-      - name: Release with Split APKs
+      - name: Release with Split APKs (OSS/FDroid)
         if: ${{ contains(needs.build_android.outputs.build_type, 'split') }}
         uses: softprops/action-gh-release@v2
         with:
@@ -162,10 +197,11 @@ jobs:
           draft: false
           prerelease: false
           generate_release_notes: ${{ github.event.inputs.generate_release_notes }}
-          files: artifacts/apk/app-*-release.apk
+          files: |
+            artifacts/**/app-*-release.apk
 
       # 単一APKをリリース
-      - name: Release with Single APK
+      - name: Release with Single APKs (OSS/FDroid)
         if: ${{ contains(needs.build_android.outputs.build_type, 'single') }}
         uses: softprops/action-gh-release@v2
         with:
@@ -173,4 +209,5 @@ jobs:
           draft: false
           prerelease: false
           generate_release_notes: ${{ github.event.inputs.generate_release_notes }}
-          files: artifacts/apk/app-release.apk
+          files: |
+            artifacts/**/app-*-release.apk

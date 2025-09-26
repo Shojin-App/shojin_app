@@ -1,6 +1,8 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+
 import '../services/enhanced_update_service.dart';
 import '../services/update_manager.dart';
 
@@ -59,6 +61,19 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
   }
 
   void _startDownload() async {
+    if (!UpdateManager.kEnableSelfUpdate) {
+      if (mounted) {
+        setState(() {
+          _hasError = true;
+          _currentProgress = UpdateProgress(
+            progress: 0.0,
+            status: 'F-Droidビルドではアプリ内アップデートは無効です',
+            errorMessage: 'GitHubのリリースページから手動でダウンロードしてください。',
+          );
+        });
+      }
+      return;
+    }
     setState(() {
       _isDownloading = true;
       _hasError = false;
@@ -366,8 +381,9 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
 
                 // ファイルマネージャーを開く
                 try {
+                  // 端末のファイルマネージャを開く。直接アプリ固有パスに依存しない形に変更。
                   final Uri directoryUri = Uri.parse(
-                    'content://com.android.externalstorage.documents/document/primary:Android%2Fdata%2Fcom.example.shojin_app%2Ffiles%2Ftemp_install',
+                    'content://com.android.externalstorage.documents/document/primary:',
                   );
                   final launched = await launchUrl(
                     directoryUri,

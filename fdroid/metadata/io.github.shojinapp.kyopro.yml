@@ -1,0 +1,56 @@
+RepoType: git
+Repo: https://github.com/Shojin-App/shojin_app.git
+
+Categories:
+  - Development
+  - Science & Education
+License: GPL-3.0-only
+AuthorName: Shojin App Contributors
+WebSite: https://github.com/Shojin-App/shojin_app
+SourceCode: https://github.com/Shojin-App/shojin_app
+IssueTracker: https://github.com/Shojin-App/shojin_app/issues
+Changelog: https://github.com/Shojin-App/shojin_app/releases
+
+Name: Shojin App
+Summary: AtCoder問題精進支援と進捗閲覧ツール
+Description: |
+  Shojin App は AtCoder の問題精進をスマートフォンで補助するオープンソースアプリです。
+  主な機能:
+    • 問題一覧・詳細閲覧
+    • WebView でのログイン
+    • コード表示 / 数式 (Markdown & LaTeX 対応)
+    • テーマ切替 / ライセンス一覧表示
+
+  F-Droid 版の相違点:
+    • 自己アップデート無効 (FDROID_BUILD / ENABLE_SELF_UPDATE=false)
+    • APK ダウンロード/インストール UI 非表示
+    • オンライン Google Fonts を使用せず同梱フォント / システムフォントのみ利用 (ネットワーク経由のフォント取得なし)
+
+  解析/広告 SDK 不使用。外部通信は AtCoder 公開ページ取得と (通常版のみで有効な) GitHub Release バージョン確認のみ。
+
+AntiFeatures:
+  - NonFreeNet
+
+Builds:
+  - versionName: 1.0.0
+    versionCode: 1
+    commit: v1.0.0
+    subdir: .
+    gradle:
+      - yes
+    output: build/app/outputs/flutter-apk/app-fdroid-release.apk
+    build: |
+      flutter pub get
+      flutter build apk --flavor fdroid --release --dart-define=FDROID_BUILD=true --dart-define=ENABLE_SELF_UPDATE=false --dart-define=ENABLE_ONLINE_FONTS=false
+    ndk: 28.0.13004108
+    scanignore:
+      - ios
+      - macos
+      - windows
+
+UpdateCheckMode: Tags
+VercodeOperation:
+  - add
+
+CurrentVersion: 1.0.0
+CurrentVersionCode: 1

@@ -1,6 +1,6 @@
 name: shojin_app
 description: "AtCoderの精進をスマホでも。"
-homepage: https://github.com/yuubinnkyoku/shojin_app
+homepage: https://github.com/Shojin-App/shojin_app
 
 publish_to: 'none'
 
@@ -24,15 +24,15 @@ dependencies:
   crypto: ^3.0.5
   cupertino_icons: ^1.0.8
   dynamic_color: ^1.8.1
-  google_fonts: ^6.3.0
-  flutter_svg: ^2.2.0
-  flutter_local_notifications: ^19.4.0
+  google_fonts: ^6.3.2
+  flutter_svg: ^2.2.1
+  flutter_local_notifications: ^19.4.2
   timezone: ^0.10.0 # flutter_local_notifications の依存関係に合わせて修正
 
   # AtCoder問題のスクレイピングに必要なパッケージ
   http: ^1.5.0
   html: ^0.15.6
-  flutter_markdown_plus: ^1.0.3
+  flutter_markdown_plus: ^1.0.5
   flutter_code_editor: ^0.3.4
   code_text_field: ^1.1.0
   highlight: ^0.7.0
@@ -49,22 +49,22 @@ dependencies:
   yaml: ^3.1.2
   # LaTeX/TeX数式レンダリング用
   flutter_math_fork: ^0.7.3
-  android_package_installer:
-    git:
-      url: https://github.com/ImranR98/android_package_installer
-      ref: main
-  android_package_manager:
-    git:
-      url: https://github.com/ImranR98/android_package_manager
-      ref: master
+  # NOTE: The following Git-based dependencies were removed for F-Droid compliance.
+  # They previously enabled in-app APK install & package queries:
+  #   - android_package_installer (git, pinned commit)
+  #   - android_package_manager (git, pinned commit)
+  # These are now replaced by a stub in `android_package_service.dart`.
+  # If reintroducing, prefer a vendored minimal implementation under lib/vendor/
+  # or a pub.dev hosted package with a fixed version to retain reproducible builds.
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_launcher_icons: ^0.14.4
-  analyzer: ^8.1.1
   flutter_lints: ^6.0.0
   change_app_package_name: ^1.5.0
+  # Automatically aggregate and generate third-party license list
+  flutter_oss_licenses: ^3.0.10
 
 flutter:
   generate: true
@@ -111,3 +111,9 @@ flutter_launcher_icons:
   adaptive_icon_foreground: "assets/icon/adaptive_foreground.png"
   adaptive_icon_background: "#261147"
   adaptive_icon_foreground_inset: 32
+
+# メモ:
+# F-Droidビルドでは `--dart-define=ENABLE_SELF_UPDATE=false` を付与し、
+# アプリ内アップデートコードが実行されないようにしています。
+# android_package_installer / android_package_manager 依存の完全除去は
+# ビルドパイプライン側で fdroid フレーバー時に実施してください（例: 分岐したpubspecやpatch適用）。

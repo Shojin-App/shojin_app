@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.tsukuba.atcoder.shojin"
+    namespace = "io.github.shojinapp.kyopro"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "28.0.13004108"
 
@@ -21,15 +21,38 @@ android {
         jvmTarget = JavaVersion.VERSION_11.toString()
     }
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "io.github.tsukuba_denden.shojin_app"
+    applicationId = "io.github.shojinapp.kyopro"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // When building without specifying a flavor, pick 'oss' by default
+        // so Flutter can locate the output APK without ambiguity.
+        missingDimensionStrategy("dist", "oss")
+    }
+
+    flavorDimensions += listOf("dist")
+    productFlavors {
+        create("fdroid") {
+            dimension = "dist"
+            applicationIdSuffix = ".fdroid"
+            resValue("bool", "enable_self_update", "false")
+            buildConfigField("boolean", "FDROID_BUILD", "true")
+        }
+        create("oss") {
+            dimension = "dist"
+            resValue("bool", "enable_self_update", "true")
+            buildConfigField("boolean", "FDROID_BUILD", "false")
+        }
     }
 
     buildTypes {
