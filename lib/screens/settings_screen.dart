@@ -531,7 +531,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'このビルドではアプリ内自己アップデート機能は無効化されています。最新バージョンは公式GitHubリリースまたはF-Droidリポジトリ経由で入手してください。',
+                    'このビルドでは自己アップデート機能は無効化されています。最新バージョンは公式GitHubリリースまたはF-Droidリポジトリ経由で入手してください。',
                     style: AppFonts.notoSansJp(fontSize: 14),
                   ),
                 ),
