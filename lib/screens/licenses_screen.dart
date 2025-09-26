@@ -1,5 +1,6 @@
+import 'package:flutter/foundation.dart'
+    show LicenseRegistry; // for potential custom additions
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show LicenseRegistry; // for potential custom additions
 
 import '../generated/oss_licenses.dart';
 
@@ -14,11 +15,13 @@ class LicensesScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('ライセンス'),
-          bottom: const TabBar(tabs: [
-            Tab(text: '直接'),
-            Tab(text: '全体'),
-            Tab(text: '標準'),
-          ]),
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: '直接'),
+              Tab(text: '全体'),
+              Tab(text: '標準'),
+            ],
+          ),
         ),
         body: TabBarView(
           children: [
@@ -104,10 +107,12 @@ class _StandardLicensePaneState extends State<_StandardLicensePane> {
       for (final p in l.paragraphs) {
         paragraphs.add(p.text);
       }
-      entries.add(_CollectedLicense(
-        packages: l.packages.toList(),
-        text: paragraphs.join('\n\n'),
-      ));
+      entries.add(
+        _CollectedLicense(
+          packages: l.packages.toList(),
+          text: paragraphs.join('\n\n'),
+        ),
+      );
     }
     entries.sort((a, b) => a.packages.first.compareTo(b.packages.first));
     return entries;

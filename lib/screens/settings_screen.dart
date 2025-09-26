@@ -644,9 +644,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           title: const Text('ライセンス'),
           subtitle: const Text('直接 / 全依存 / 標準 Flutter'),
           onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const LicensesScreen()),
-            );
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const LicensesScreen()));
           },
         ),
         ListTile(
