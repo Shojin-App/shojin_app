@@ -1,17 +1,15 @@
 import 'dart:io';
 
-import 'package:android_package_installer/android_package_installer.dart'
-    as installer;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart'; // Import url_launcher
 
+import '../config/build_config.dart';
+import 'android_package_service.dart'; // Use our wrapper service
+
 class UpdateManager extends ChangeNotifier {
-  static const bool kEnableSelfUpdate = bool.fromEnvironment(
-    'ENABLE_SELF_UPDATE',
-    defaultValue: true,
-  );
+  static const bool kEnableSelfUpdate = BuildConfig.enableSelfUpdate;
   bool _isDownloading = false;
   double _downloadProgress = 0.0;
   String _statusMessage = '';
@@ -29,9 +27,10 @@ class UpdateManager extends ChangeNotifier {
     );
     if (Platform.isAndroid) {
       if (!kEnableSelfUpdate) {
-        _statusMessage = 'F-Droidビルドではアプリ内アップデートは無効です。リリースページから手動で更新してください。';
+        // Hard block for FDroid builds
+        _statusMessage = 'F-Droidビルドではアプリ内アップデートは無効です (コードパス停止)。';
         notifyListeners();
-        return;
+        return; // Never attempt install
       }
       if (fileExtension == 'apk') {
         try {
@@ -140,6 +139,10 @@ class UpdateManager extends ChangeNotifier {
   }
 
   Future<void> _installApk(String filePath) async {
+    if (!kEnableSelfUpdate) {
+      debugPrint('[FDROID] _installApk() suppressed');
+      return;
+    }
     _statusMessage = 'APKのインストールプロセスを開始しています: $filePath';
     notifyListeners();
     debugPrint(_statusMessage);
@@ -153,9 +156,7 @@ class UpdateManager extends ChangeNotifier {
         return;
       }
 
-      final installResult = await installer.AndroidPackageInstaller.installApk(
-        apkFilePath: filePath,
-      );
+      final installResult = await AndroidPackageService.installApk(filePath);
 
       String statusResultString;
       switch (installResult) {
