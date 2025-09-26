@@ -48,21 +48,20 @@ AtCoderの精進をスマホでも。
 
 ## インストール
 
-### GitHubリリーズから
+### GitHubリリースから
 
-ビルド済みのバイナリ（APKなど）は[GitHubリリーズページ](https://github.com/Shojin-App/shojin_app/releases)からダウンロードできます。これが最も簡単な開始方法です。
+ビルド済みのバイナリ（APKなど）は[GitHubリリーズページ](https://github.com/Shojin-App/shojin_app/releases)からダウンロードできます。これが手っ取り早いです。
 
-### F-Droid 対応版 / Reproducible Build
+### F-Droid 対応版
 
 このアプリは F-Droid Inclusion Policy に準拠したビルドが可能です。F-Droid フレーバー (`fdroid`) では以下が強制されます:
 
 | 機能 | 通常ビルド | F-Droid ビルド |
 |------|------------|----------------|
 | 自己アップデート (アプリ内ダウンロード & APKインストール) | 有効 (ユーザー設定可) | 完全無効 (コードパス停止) |
-| 起動時自動チェック UI | 表示 | 非表示 |
+| 起動時自動アプデチェック | 表示 | 非表示 |
 | オンラインフォント (Google Fonts) | 利用可 | 無効 (同梱/システムフォント) |
 | 外部APKダウンロード | 有効 | 無効 |
-| Git 依存 (動的取得) | なし (除去済) | なし |
 
 自己アップデート関連クラス (`AutoUpdateManager`, `UpdateManager`) は F-Droid ビルドでは早期 return するノーオペ実装になり、不用意に APK を取得・実行しません。
 
@@ -87,46 +86,6 @@ flutter build apk \
 - [ ] ネットワークトラフィックが AtCoder / コード実行 API / 静的リソース以外へ行かない
 - [ ] `flutter analyze` と `flutter test` が成功
 - [ ] `FONT_LICENSES.md` / LICENSE 表示画面から辿れる
-
-#### メタデータ作成例 (参考)
-F-Droid リポジトリ (fdroiddata) 用 `metadata/io.github.shojinapp.kyopro.yml` の骨子:
-```yaml
-Categories: Development
-License: GPL-3.0-only
-SourceCode: https://github.com/Shojin-App/shojin_app
-IssueTracker: https://github.com/Shojin-App/shojin_app/issues
-Changelog: https://github.com/Shojin-App/shojin_app/releases
-AutoName: Shojin App
-RepoType: git
-Repo: https://github.com/Shojin-App/shojin_app.git
-Builds:
-    - versionName: 1.0.0
-        versionCode: 100
-        commit: v1.0.0
-        gradle:
-            - fdroid
-        output: app-fdroid-release.apk
-        srclibs:
-            - flutter@stable
-        prebuild: |
-            sed -i 's/publish_to: .*/publish_to: none/' pubspec.yaml
-        build: |
-            flutter pub get
-            flutter build apk --dart-define=FDROID_BUILD=true --dart-define=ENABLE_SELF_UPDATE=false --dart-define=ENABLE_ONLINE_FONTS=false --flavor=fdroid --release
-```
-
-#### ライセンス/資産
-- ハックジェンフォント (HackGen) : OFL 1.1 (`FONT_LICENSES.md`)
-- その他依存関係: アプリ内「ライセンス」画面でオフライン参照可
-
-#### セキュリティ指針
-- 外部実行バイナリをダウンロード・実行しない
-- 自己更新コードはビルドフラグ下で死コード化 (早期 no-op)
-- 追跡/広告/分析用ライブラリを含まない
-
-> F-Droid 寄稿時の最終チェックに役立つ簡易スクリプトは `build_fdroid.sh` を参照してください。
-
-**注意**: メタデータ例は参考であり、実際に提出する際は最新ポリシー・バージョンに合わせて調整してください。
 
 ### ソースからビルド
 
