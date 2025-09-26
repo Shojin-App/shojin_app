@@ -48,6 +48,9 @@ AtCoderの精進をスマホでも。
 ### 🚀 提出機能
 - **WebView提出**: AtCoderの提出ページをアプリ内で開いて提出
 
+## ロードマップ
+https://github.com/orgs/Shojin-App/projects/1
+
 ## インストール
 
 ### GitHubリリースから
