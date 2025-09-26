@@ -49,7 +49,9 @@ class AndroidPackageService {
       // Now this path is intentionally unreachable in F-Droid builds because
       // enableSelfUpdate will be false there. For non-F-Droid builds you may
       // plug in a platform channel or a vendored implementation.
-      throw UnimplementedError('APK install implementation removed (vendor stub)');
+      throw UnimplementedError(
+        'APK install implementation removed (vendor stub)',
+      );
     } catch (e) {
       throw Exception('Failed to install APK: $e');
     }

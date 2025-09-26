@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart'; // For haptic feedback
-import 'package:google_fonts/google_fonts.dart'; // Add Google Fonts
 import 'package:shared_preferences/shared_preferences.dart'; // For settings persistence
 import 'package:url_launcher/url_launcher.dart'; // For launching URLs
 import 'package:flutter_svg/flutter_svg.dart'; // For SVG icons
@@ -16,6 +15,7 @@ import '../services/about_info.dart'; // Import AboutInfo
 import '../utils/app_fonts.dart'; // Import app fonts helper
 import '../utils/text_style_helper.dart';
 import '../widgets/shared/custom_sliver_app_bar.dart'; // Import CustomSliverAppBar
+import 'licenses_screen.dart'; // Third-party licenses screen
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -645,6 +645,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
           },
         ),
         ListTile(
+          leading: const Icon(Icons.rule_folder_outlined),
+          title: const Text('サードパーティライセンス一覧'),
+          subtitle: const Text('依存ライブラリ/フォント等のライセンス表示'),
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const LicensesScreen(),
+              ),
+            );
+          },
+        ),
+        ListTile(
           leading: const Icon(Icons.privacy_tip_outlined),
           title: const Text('プライバシーポリシー'),
           onTap: () {
@@ -830,10 +842,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _getThemeIcon(ThemeModeOption mode) {
     switch (mode) {
       case ThemeModeOption.system:
-        return const Icon(Icons.settings_suggest);
+  return const Icon(Icons.settings_suggest);
       case ThemeModeOption.light:
         return const Icon(Icons.light_mode);
-      case ThemeModeOption.dark:
+  case ThemeModeOption.dark:
         return const Icon(Icons.dark_mode);
       case ThemeModeOption.pureBlack:
         return const Icon(Icons.nights_stay);
@@ -843,17 +855,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // エクスポート/インポートメソッド群
   Future<void> _exportSettings() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-
-      final settings = {
-        'theme_mode': themeProvider.themeMode.index,
-        'use_material_you': themeProvider.useMaterialYou,
-        'nav_bar_opacity': themeProvider.navBarOpacity,
-        'auto_update_enabled': _autoUpdateCheckEnabled,
-        'show_update_dialog': _showUpdateDialog,
-      };
-
+      // ここで SharedPreferences や ThemeProvider を用いて設定を収集し、
+      // 今後ファイルへ書き出す処理を実装予定。
       // 将来的にファイルとして保存する実装を追加
       ScaffoldMessenger.of(
         context,
@@ -867,7 +870,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _importSettings() async {
     try {
-      // 将来的にファイルから設定を読み込む実装を追加
+  // 将来的にファイルから設定を読み込む実装を追加
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('設定のインポート機能は開発中です')));
@@ -880,11 +883,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _exportTemplates() async {
     try {
-      final templateProvider = Provider.of<TemplateProvider>(
-        context,
-        listen: false,
-      );
-
+      // TemplateProvider からテンプレート取得しファイル保存する処理を今後実装予定。
       // 将来的にテンプレートをファイルとして保存する実装を追加
       ScaffoldMessenger.of(
         context,

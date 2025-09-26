@@ -139,3 +139,17 @@ The Shojin App is now fully F-Droid compliant with:
 - ✅ Comprehensive testing and validation
 
 The implementation uses conditional compilation to maintain full functionality for regular builds while ensuring F-Droid compliance when built with appropriate flags.
+
+## 📄 Third-Party Licenses Handling
+
+An in-app screen (Settings > アプリについて > サードパーティライセンス一覧) now lists all aggregated third‑party licenses using `flutter_oss_licenses`.
+
+### Generation Steps
+```
+flutter pub run flutter_oss_licenses:generate
+# Generates lib/generated/oss_licenses.dart (git-ignored or committed as desired)
+```
+
+The `LicensesScreen` (`lib/screens/licenses_screen.dart`) embeds `OssLicensesPage` to display items offline.
+
+Fonts (HackGen family) are manually documented in `FONT_LICENSES.md` and also surfaced via the default Flutter license page.
