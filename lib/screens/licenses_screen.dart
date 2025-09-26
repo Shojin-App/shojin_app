@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../generated/oss_licenses.dart';
 
 /// ライセンス一覧（生成データ利用）
@@ -12,10 +13,12 @@ class LicensesScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('サードパーティライセンス'),
-          bottom: const TabBar(tabs: [
-            Tab(text: '依存 (直接)'),
-            Tab(text: '全て'),
-          ]),
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: '依存 (直接)'),
+              Tab(text: '全て'),
+            ],
+          ),
         ),
         body: TabBarView(
           children: [
@@ -41,8 +44,11 @@ class _LicenseList extends StatelessWidget {
         final p = packages[index];
         return ExpansionTile(
           title: Text(p.name),
-            subtitle: Text(p.version ?? ''),
-          childrenPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          subtitle: Text(p.version ?? ''),
+          childrenPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 4,
+          ),
           children: [
             if ((p.homepage ?? p.repository) != null)
               Align(
