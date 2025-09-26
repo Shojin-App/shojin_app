@@ -7,8 +7,6 @@ AtCoderの精進をスマホでも。
     height="80">](https://github.com/Shojin-App/shojin_app/releases)
 
 
-
-
 | リリース | コードベース | その他 |
 | --- | --- | --- |
 | [![Latest release](https://img.shields.io/github/v/release/Shojin-App/shojin_app?include_prereleases)](https://github.com/Shojin-App/shojin_app/releases) [![Downloads](https://img.shields.io/github/downloads/Shojin-App/shojin_app/total)](https://github.com/Shojin-App/shojin_app/releases) | [![License](https://img.shields.io/github/license/Shojin-App/shojin_app)](https://github.com/Shojin-App/shojin_app/blob/main/LICENSE) [![Repo Size](https://img.shields.io/github/repo-size/Shojin-App/shojin_app)](https://github.com/Shojin-App/shojin_app) [![Code Size](https://img.shields.io/github/languages/code-size/Shojin-App/shojin_app)](https://github.com/Shojin-App/shojin_app) [![Android Build](https://github.com/Shojin-App/shojin_app/actions/workflows/build.yaml/badge.svg)](https://github.com/Shojin-App/shojin_app/actions/workflows/build.yaml) | [![GitHub Stars](https://img.shields.io/github/stars/Shojin-App/shojin_app)](https://github.com/Shojin-App/shojin_app/stargazers) [![Forks](https://img.shields.io/github/forks/Shojin-App/shojin_app)](https://github.com/Shojin-App/shojin_app/network/members) [![Issues](https://img.shields.io/github/issues/Shojin-App/shojin_app)](https://github.com/Shojin-App/shojin_app/issues) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Shojin-App/shojin_app) |
