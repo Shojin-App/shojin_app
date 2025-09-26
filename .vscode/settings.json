@@ -1,4 +1,9 @@
 {
   "cmake.ignoreCMakeListsMissing": true,
-  "dart.flutterSdkPath": ".fvm/versions/stable"
+  "dart.flutterSdkPath": ".fvm/versions/stable",
+  "github.copilot.chat.commitMessageGeneration.instructions": [
+    {
+      "text": "fix:などの修正タイプの後の本文は日本語で書くこと。",
+    }
+  ]
 }
