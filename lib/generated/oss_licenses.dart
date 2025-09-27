@@ -4914,14 +4914,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
     devDependencies: [],
   );
 
-/// package_info_plus 8.3.1
+/// package_info_plus 9.0.0
 const _package_info_plus = Package(
     name: 'package_info_plus',
     description: 'Flutter plugin for querying information about the application package, such as CFBundleVersion on iOS or versionCode on Android.',
     homepage: 'https://github.com/fluttercommunity/plus_plugins',
     repository: 'https://github.com/fluttercommunity/plus_plugins/tree/main/packages/package_info_plus/package_info_plus',
     authors: [],
-    version: '8.3.1',
+    version: '9.0.0',
     license: '''Copyright 2017 The Chromium Authors. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
