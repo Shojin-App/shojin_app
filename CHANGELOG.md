@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 This file is maintained automatically by release-please (Conventional Commits).
 
+## [1.1.2](https://github.com/Shojin-App/shojin_app/compare/v1.1.1...v1.1.2) (2025-09-27)
+
+
+### Features
+
+* リリースAPK用のワークフローを追加 ([2f13f4a](https://github.com/Shojin-App/shojin_app/commit/2f13f4a9f9f405a98bc6794630d50ef2c4d4295f))
+
+
+### Bug Fixes
+
+* ワークフローの説明文を日本語から英語に変更し、コードの整形を行いました ([fd04485](https://github.com/Shojin-App/shojin_app/commit/fd04485f55234d83ba6d5bb5588aaaab03f060a7))
+
 ## [1.1.1](https://github.com/Shojin-App/shojin_app/compare/v1.1.0...v1.1.1) (2025-09-27)
 
 
