@@ -10,9 +10,21 @@
   ],
   // 生成ファイルを VSCode の検索などでノイズにしたくない場合の例（必要なら有効化）
   // "files.exclude": { "lib/generated": true },
-  "github.copilot.chat.commitMessageGeneration.instructions": [
-    {
-      "text": "修正タイプ(例: fix:)の後の本文は必ず日本語で書くこと。"
-    }
-  ]
+"github.copilot.chat.commitMessageGeneration.instructions": [
+  {
+    "text": "コミットメッセージは以下の形式で構成する必要があります。\n<type>[optional scope]: <description>\n[optional body]\n[optional footer(s)]"
+  },
+  {
+    "text": "fix: タイプがfixのコミットは、コードベースのバグを修正したものです（これはSemantic VersioningにおけるPATCHリリースに相当します）。"
+  },
+  {
+    "text": "feat: タイプがfeatのコミットは、コードベースに新しい機能を追加します（これはSemantic VersioningにおけるMINORバージョン変更に相当します）。"
+  },
+  {
+    "text": "BREAKING CHANGE: コミットメッセージのフッターにBREAKING CHANGE:が含まれている場合、またはタイプ/スコープの後に!が付加されている場合、これはAPIの非互換変更を示します。"
+  },
+  {
+    "text": "build:、chore:、ci:、docs:、style:、refactor:、perf:、test:なども使用できます。"
+  }
+]
 }
