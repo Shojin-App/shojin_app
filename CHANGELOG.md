@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 This file is maintained automatically by release-please (Conventional Commits).
 
+## [1.1.1](https://github.com/Shojin-App/shojin_app/compare/v1.1.0...v1.1.1) (2025-09-27)
+
+
+### Bug Fixes
+
+* device_info_plusのバージョンを11.5.0から12.1.0に更新 ([8b83e4c](https://github.com/Shojin-App/shojin_app/commit/8b83e4ce4ba4162e3600716d52e41098b9b26017))
+* release-please-actionの使用をgoogle-github-actionsからgoogleapisに変更 ([7f64768](https://github.com/Shojin-App/shojin_app/commit/7f6476836a821ccc7d18dbad57f3d87c5552c6b9))
+
 ## [1.1.0](https://github.com/Shojin-App/shojin_app/compare/v1.0.0...v1.1.0) (2025-09-26)
 
 
