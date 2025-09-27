@@ -1876,14 +1876,14 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
     devDependencies: [PackageRef('lints')],
   );
 
-/// device_info_plus 11.5.0
+/// device_info_plus 12.1.0
 const _device_info_plus = Package(
     name: 'device_info_plus',
     description: 'Flutter plugin providing detailed information about the device (make, model, etc.), and Android or iOS version the app is running on.',
     homepage: 'https://github.com/fluttercommunity/plus_plugins',
     repository: 'https://github.com/fluttercommunity/plus_plugins/tree/main/packages/device_info_plus/device_info_plus',
     authors: [],
-    version: '11.5.0',
+    version: '12.1.0',
     license: '''Copyright 2017 The Chromium Authors. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
