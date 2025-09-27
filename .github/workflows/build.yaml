@@ -17,16 +17,6 @@ on:
 
   workflow_dispatch:
     inputs:
-      release:
-        description: 'Release'
-        type: boolean
-        required: true
-        default: false
-      generate_release_notes:
-        description: 'Generate Release Notes'
-        type: boolean
-        required: true
-        default: true
       flavor:
         description: 'Which flavor to build'
         type: choice
@@ -88,9 +78,6 @@ jobs:
     env:
       BUILD_TYPE: ${{ github.event.inputs.build_type || 'split' }}
       FLAVOR: ${{ github.event.inputs.flavor || 'both' }}
-    outputs:
-      version: ${{ steps.get_version.outputs.version }}
-      build_type: ${{ github.event.inputs.build_type || 'split' }}
 
     steps:
       - name: Checkout code
@@ -132,11 +119,6 @@ jobs:
         if: ${{ contains(env.BUILD_TYPE, 'single') && (github.event.inputs.flavor == 'fdroid' || github.event.inputs.flavor == 'both' || env.FLAVOR == 'fdroid') }}
         run: flutter build apk --flavor fdroid --release --build-number=${{ github.run_number }} --dart-define=ENABLE_SELF_UPDATE=false
         
-      - name: Read version from pubspec.yaml
-        id: get_version
-        run: |
-          echo "version=$(grep '^version: ' pubspec.yaml | sed 's/version: //')" >> $GITHUB_OUTPUT
-
       # 分割APKアップロード（OSS）
       - name: Upload Split APKs (OSS)
         if: ${{ contains(env.BUILD_TYPE, 'split') && (github.event.inputs.flavor == 'oss' || github.event.inputs.flavor == 'both' || env.FLAVOR == 'oss') }}
@@ -168,46 +150,3 @@ jobs:
         with:
           name: apk-fdroid
           path: build/app/outputs/flutter-apk/app-fdroid-release.apk
-
-  deploy:
-    name: Deploy to GitHub Release
-    runs-on: ubuntu-latest
-    # 'build_android' ジョブの完了を待つ
-    needs: build_android
-    if: ${{ github.event_name == 'workflow_dispatch' && fromJSON(github.event.inputs.release) }}
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Download APK Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts/
-
-      # 分割APKをリリース
-      - name: Release with Split APKs (OSS/FDroid)
-        if: ${{ contains(needs.build_android.outputs.build_type, 'split') }}
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ needs.build_android.outputs.version }}
-          draft: false
-          prerelease: false
-          generate_release_notes: ${{ github.event.inputs.generate_release_notes }}
-          files: |
-            artifacts/**/app-*-release.apk
-
-      # 単一APKをリリース
-      - name: Release with Single APKs (OSS/FDroid)
-        if: ${{ contains(needs.build_android.outputs.build_type, 'single') }}
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ needs.build_android.outputs.version }}
-          draft: false
-          prerelease: false
-          generate_release_notes: ${{ github.event.inputs.generate_release_notes }}
-          files: |
-            artifacts/**/app-*-release.apk
