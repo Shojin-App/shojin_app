@@ -4,38 +4,38 @@ name: Flutter CI
 on:
   push:
     branches:
-      - '**'
+      - "**"
     paths:
       # このファイル名に合わせてパスを更新
-      - '.github/workflows/build.yaml'
-      - 'android/**'
-      - 'test/**'
-      - 'ios/**'
-      - '*.yaml'
-      - '*.lock'
-      - 'lib/**'
+      - ".github/workflows/build.yaml"
+      - "android/**"
+      - "test/**"
+      - "ios/**"
+      - "*.yaml"
+      - "*.lock"
+      - "lib/**"
 
   workflow_dispatch:
     inputs:
       flavor:
-        description: 'Which flavor to build'
+        description: "Which flavor to build"
         type: choice
         required: true
         options:
           - oss
           - fdroid
           - both
-        default: 'both'
+        default: "both"
       build_type:
-        description: 'APK Build Type (split per ABI or single universal)'
+        description: "APK Build Type (split per ABI or single universal)"
         type: choice
         required: true
         options:
           - split
           - single
-        default: 'split'
+        default: "split"
       run_tests:
-        description: 'Run Flutter Tests'
+        description: "Run Flutter Tests"
         type: boolean
         required: true
         default: false
@@ -56,7 +56,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          channel: "stable"
           cache: true
 
       - name: Get Flutter dependencies
@@ -86,14 +86,14 @@ jobs:
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '21'
+          distribution: "temurin"
+          java-version: "21"
 
       # --- 変更点: こちらのジョブでもキャッシュを有効化 ---
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          channel: "stable"
           cache: true
 
       - name: Get Flutter dependencies
@@ -118,7 +118,7 @@ jobs:
       - name: Build APK (Single Universal, FDroid)
         if: ${{ contains(env.BUILD_TYPE, 'single') && (github.event.inputs.flavor == 'fdroid' || github.event.inputs.flavor == 'both' || env.FLAVOR == 'fdroid') }}
         run: flutter build apk --flavor fdroid --release --build-number=${{ github.run_number }} --dart-define=ENABLE_SELF_UPDATE=false
-        
+
       # 分割APKアップロード（OSS）
       - name: Upload Split APKs (OSS)
         if: ${{ contains(env.BUILD_TYPE, 'split') && (github.event.inputs.flavor == 'oss' || github.event.inputs.flavor == 'both' || env.FLAVOR == 'oss') }}
