@@ -7624,7 +7624,7 @@ SOFTWARE.''',
 const _shojin_app = Package(
     name: 'shojin_app',
     description: 'AtCoderの精進をスマホでも。',
-    homepage: 'https://github.com/yuubinnkyoku/shojin_app',
+    homepage: 'https://github.com/Shojin-App/shojin_app',
     authors: [],
     version: '1.1.0',
     license: '''GNU GENERAL PUBLIC LICENSE
