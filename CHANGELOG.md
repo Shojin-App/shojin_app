@@ -1,3 +1,10 @@
+## [Unreleased]
+
+## [1.1.3] - 2025-09-28
+
+- (placeholder) Describe changes here
+
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
