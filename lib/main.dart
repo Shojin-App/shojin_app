@@ -27,7 +27,7 @@ void main() async {
 
   // F-Droid ビルド安全性アサート: 自己アップデートが無効であること
   assert(() {
-  if (BuildConfig.isFdroidBuild && BuildConfig.enableSelfUpdate) {
+    if (BuildConfig.isFdroidBuild && BuildConfig.enableSelfUpdate) {
       throw StateError(
         'FDROID_BUILD=true なのに enableSelfUpdate が true です。ビルドフラグ/defines を再確認してください。',
       );
@@ -239,8 +239,7 @@ class MyApp extends StatelessWidget {
               backgroundColor: Colors.transparent,
               surfaceTintColor: Colors.transparent,
               elevation: 0,
-        indicatorColor:
-          lightColorScheme.primary.withValues(alpha: 0.20),
+              indicatorColor: lightColorScheme.primary.withValues(alpha: 0.20),
               iconTheme: WidgetStateProperty.resolveWith((states) {
                 final color = states.contains(WidgetState.selected)
                     ? lightColorScheme.primary
@@ -258,8 +257,8 @@ class MyApp extends StatelessWidget {
               elevation: 2,
               margin: const EdgeInsets.all(8),
               // MaterialYou使用時のコントラスト改善
-        surfaceTintColor: themeProvider.useMaterialYou
-          ? lightColorScheme.primary.withValues(alpha: 0.08)
+              surfaceTintColor: themeProvider.useMaterialYou
+                  ? lightColorScheme.primary.withValues(alpha: 0.08)
                   : null,
             ),
             textTheme: textTheme,
@@ -277,8 +276,7 @@ class MyApp extends StatelessWidget {
               backgroundColor: Colors.transparent,
               surfaceTintColor: Colors.transparent,
               elevation: 0,
-        indicatorColor:
-          darkColorScheme.primary.withValues(alpha: 0.20),
+              indicatorColor: darkColorScheme.primary.withValues(alpha: 0.20),
               iconTheme: WidgetStateProperty.resolveWith((states) {
                 final color = states.contains(WidgetState.selected)
                     ? darkColorScheme.primary
@@ -297,8 +295,8 @@ class MyApp extends StatelessWidget {
               margin: const EdgeInsets.all(8),
               color: themeProvider.isPureBlack ? const Color(0xFF121212) : null,
               // MaterialYou使用時のコントラスト改善
-        surfaceTintColor: themeProvider.useMaterialYou
-          ? darkColorScheme.primary.withValues(alpha: 0.08)
+              surfaceTintColor: themeProvider.useMaterialYou
+                  ? darkColorScheme.primary.withValues(alpha: 0.08)
                   : null,
             ),
             scaffoldBackgroundColor: themeProvider.isPureBlack

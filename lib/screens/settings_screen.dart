@@ -61,7 +61,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _currentVersion = "取得エラー";
         });
       }
-        debugPrint('Failed to load current version: $e');
+      debugPrint('Failed to load current version: $e');
     }
   }
 
@@ -142,7 +142,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         });
       }
     } catch (e) {
-        debugPrint('Failed to load show update dialog preference: $e');
+      debugPrint('Failed to load show update dialog preference: $e');
     }
   }
 
@@ -158,7 +158,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         });
       }
     } catch (e) {
-        debugPrint('Failed to save show update dialog preference: $e');
+      debugPrint('Failed to save show update dialog preference: $e');
     }
   }
 
@@ -207,7 +207,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _updateCheckResult = "更新チェック中にエラーが発生しました: $e";
         });
       }
-          debugPrint('Error checking for updates: $e');
+      debugPrint('Error checking for updates: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -653,7 +653,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onCopy: _copyAllAppInfo,
         ),
         // 開発者セクション（ソーシャルメディアリンク付き）
-            _buildDeveloperSection(),
+        _buildDeveloperSection(),
         const Divider(),
         ListTile(
           leading: const Icon(Icons.rule_folder_outlined),
@@ -1083,9 +1083,7 @@ class _HapticRadioListTile<T> extends StatelessWidget {
         style: AppFonts.notoSansJp(fontSize: 16, fontWeight: FontWeight.w400),
       ),
       trailing: Icon(
-        isSelected
-            ? Icons.radio_button_checked
-            : Icons.radio_button_unchecked,
+        isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
         color: isSelected
             ? Theme.of(context).colorScheme.primary
             : Theme.of(context).colorScheme.onSurfaceVariant,

@@ -1,16 +1,19 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:developer' as developer;
 import 'package:provider/provider.dart';
+
 import '../models/problem.dart';
-import '../services/atcoder_service.dart';
 import '../providers/theme_provider.dart';
+import '../services/atcoder_service.dart';
 import '../utils/text_style_helper.dart';
 import '../widgets/tex_widget.dart';
 
 class ProblemDetailScreen extends StatefulWidget {
   final String? initialUrl; // Keep for potential direct URL loading
-  final String? problemIdToLoad; // New: ID passed from MainScreen via ProblemsScreen
+  final String?
+  problemIdToLoad; // New: ID passed from MainScreen via ProblemsScreen
   final Function(String) onProblemChanged;
 
   const ProblemDetailScreen({
@@ -37,9 +40,13 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
   @override
   void initState() {
     super.initState();
-    developer.log('ProblemDetailScreen initState: initialUrl=${widget.initialUrl}, problemIdToLoad=${widget.problemIdToLoad}', name: 'ProblemDetailScreen');
-    if (widget.problemIdToLoad != null && widget.problemIdToLoad != 'default_problem') {
-       _loadProblemFromId(widget.problemIdToLoad!);
+    developer.log(
+      'ProblemDetailScreen initState: initialUrl=${widget.initialUrl}, problemIdToLoad=${widget.problemIdToLoad}',
+      name: 'ProblemDetailScreen',
+    );
+    if (widget.problemIdToLoad != null &&
+        widget.problemIdToLoad != 'default_problem') {
+      _loadProblemFromId(widget.problemIdToLoad!);
     } else if (widget.initialUrl != null) {
       _urlController.text = widget.initialUrl!;
       _fetchProblem(); // Fetch based on initial URL
@@ -49,12 +56,18 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
   @override
   void didUpdateWidget(ProblemDetailScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    developer.log('ProblemDetailScreen didUpdateWidget: new problemIdToLoad=${widget.problemIdToLoad}, old problemIdToLoad=${oldWidget.problemIdToLoad}, lastLoaded=$_lastLoadedProblemId', name: 'ProblemDetailScreen');
+    developer.log(
+      'ProblemDetailScreen didUpdateWidget: new problemIdToLoad=${widget.problemIdToLoad}, old problemIdToLoad=${oldWidget.problemIdToLoad}, lastLoaded=$_lastLoadedProblemId',
+      name: 'ProblemDetailScreen',
+    );
     // Check if problemIdToLoad changed, is not null, not default, and different from the last one loaded this way
     if (widget.problemIdToLoad != null &&
         widget.problemIdToLoad != 'default_problem' &&
         widget.problemIdToLoad != _lastLoadedProblemId) {
-       developer.log('Triggering load from problemIdToLoad: ${widget.problemIdToLoad}', name: 'ProblemDetailScreen');
+      developer.log(
+        'Triggering load from problemIdToLoad: ${widget.problemIdToLoad}',
+        name: 'ProblemDetailScreen',
+      );
       _loadProblemFromId(widget.problemIdToLoad!);
     }
   }
@@ -64,27 +77,33 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
     // Construct the URL (e.g., abc388_a -> https://atcoder.jp/contests/abc388/tasks/abc388_a)
     final parts = problemId.split('_');
     if (parts.length < 2) {
-       developer.log('Invalid problemId format: $problemId', name: 'ProblemDetailScreen');
-       setState(() {
-         _errorMessage = '無効な問題ID形式です: $problemId';
-       });
-       return;
+      developer.log(
+        'Invalid problemId format: $problemId',
+        name: 'ProblemDetailScreen',
+      );
+      setState(() {
+        _errorMessage = '無効な問題ID形式です: $problemId';
+      });
+      return;
     }
     // Heuristic: Assume the part before the last underscore is the contest ID
     // This might fail for IDs like 'arc100_a_example'. Needs robust parsing if IDs vary.
     // Let's assume standard format like 'abcXXX_Y' or 'arcXXX_Y'
-    final contestId = parts.first; // Simpler assumption: first part is contest ID
+    final contestId =
+        parts.first; // Simpler assumption: first part is contest ID
     final taskId = problemId; // The full ID is the task ID in the URL
     final url = 'https://atcoder.jp/contests/$contestId/tasks/$taskId';
 
-    developer.log('Constructed URL from ID $problemId: $url', name: 'ProblemDetailScreen');
+    developer.log(
+      'Constructed URL from ID $problemId: $url',
+      name: 'ProblemDetailScreen',
+    );
 
     // Update the text field and trigger fetch
     _urlController.text = url;
     _lastLoadedProblemId = problemId; // Mark this ID as being loaded
     _fetchProblem(); // Fetch using the updated URL in the controller
   }
-
 
   @override
   void dispose() {
@@ -101,14 +120,16 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
 
     final urlToFetch = _urlController.text;
     if (!_atCoderService.isValidAtCoderUrl(urlToFetch)) {
-       developer.log('Invalid URL constructed or entered: $urlToFetch', name: 'ProblemDetailScreen');
-       setState(() {
-         _errorMessage = '無効なAtCoder URLです: $urlToFetch';
-         _isLoading = false; // Ensure loading indicator stops
-       });
-       return;
+      developer.log(
+        'Invalid URL constructed or entered: $urlToFetch',
+        name: 'ProblemDetailScreen',
+      );
+      setState(() {
+        _errorMessage = '無効なAtCoder URLです: $urlToFetch';
+        _isLoading = false; // Ensure loading indicator stops
+      });
+      return;
     }
-
 
     setState(() {
       _isLoading = true;
@@ -117,7 +138,10 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
       // _problem = null;
     });
 
-    developer.log('Fetching problem from URL: $urlToFetch', name: 'ProblemDetailScreen');
+    developer.log(
+      'Fetching problem from URL: $urlToFetch',
+      name: 'ProblemDetailScreen',
+    );
 
     try {
       final problem = await _atCoderService.fetchProblem(urlToFetch);
@@ -128,14 +152,22 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
       });
       // Problem fetched successfully, call the callback to update EditorScreen
       if (_problem != null) {
-         developer.log('Problem fetched successfully: ${_problem!.url}', name: 'ProblemDetailScreen');
-         // Pass the *original URL* that was successfully fetched back up
-         widget.onProblemChanged(_problem!.url);
+        developer.log(
+          'Problem fetched successfully: ${_problem!.url}',
+          name: 'ProblemDetailScreen',
+        );
+        // Pass the *original URL* that was successfully fetched back up
+        widget.onProblemChanged(_problem!.url);
       }
     } catch (e) {
-      developer.log('Failed to fetch problem: $e', name: 'ProblemDetailScreen', error: e);
+      developer.log(
+        'Failed to fetch problem: $e',
+        name: 'ProblemDetailScreen',
+        error: e,
+      );
       setState(() {
-        _errorMessage = '問題の取得に失敗しました: $e\nURL: $urlToFetch'; // Include URL in error
+        _errorMessage =
+            '問題の取得に失敗しました: $e\nURL: $urlToFetch'; // Include URL in error
         _isLoading = false;
         // Reset last loaded ID on failure so retry is possible?
         // _lastLoadedProblemId = null;
@@ -146,9 +178,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('問題詳細'),
-      ),
+      appBar: AppBar(title: const Text('問題詳細')),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -161,13 +191,16 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
                   children: [
                     Expanded(
                       child: TextFormField(
-                        controller: _urlController, // Controller is updated automatically now
+                        controller:
+                            _urlController, // Controller is updated automatically now
                         decoration: const InputDecoration(
                           labelText: 'AtCoder 問題URL',
-                          hintText: 'https://atcoder.jp/contests/コンテスト名/tasks/問題名',
+                          hintText:
+                              'https://atcoder.jp/contests/コンテスト名/tasks/問題名',
                           border: OutlineInputBorder(),
                         ),
-                        validator: (value) { // Validator for manual input
+                        validator: (value) {
+                          // Validator for manual input
                           if (value == null || value.isEmpty) {
                             return 'URLを入力してください';
                           }
@@ -181,13 +214,16 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
                     const SizedBox(width: 8),
                     ElevatedButton(
                       // Trigger manual fetch using the current text in the controller
-                      onPressed: _isLoading ? null : () {
-                          // Manually trigger fetch only if form is valid
-                          if (_formKey.currentState!.validate()) {
-                              _lastLoadedProblemId = null; // Reset auto-load tracking for manual fetch
-                             _fetchProblem();
-                          }
-                      },
+                      onPressed: _isLoading
+                          ? null
+                          : () {
+                              // Manually trigger fetch only if form is valid
+                              if (_formKey.currentState!.validate()) {
+                                _lastLoadedProblemId =
+                                    null; // Reset auto-load tracking for manual fetch
+                                _fetchProblem();
+                              }
+                            },
                       child: _isLoading
                           ? const SizedBox(
                               width: 20,
@@ -226,7 +262,9 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
                                 icon: Icon(Icons.copy, color: Colors.red[700]),
                                 tooltip: 'エラーメッセージをコピー',
                                 onPressed: () {
-                                  Clipboard.setData(ClipboardData(text: _errorMessage!));
+                                  Clipboard.setData(
+                                    ClipboardData(text: _errorMessage!),
+                                  );
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
                                       content: Text('エラーメッセージをコピーしました'),
@@ -248,7 +286,10 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
                             child: SelectableText(
                               _errorMessage!,
                               style: getMonospaceTextStyle(
-                                Provider.of<ThemeProvider>(context, listen: false).codeFontFamily,
+                                Provider.of<ThemeProvider>(
+                                  context,
+                                  listen: false,
+                                ).codeFontFamily,
                                 color: Colors.red[900],
                               ),
                             ),
@@ -271,8 +312,10 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : (_problem != null
-                        ? _buildProblemView(_problem!)
-                        : const Center(child: Text('問題URLを入力またはWebViewから選択してください。'))),
+                          ? _buildProblemView(_problem!)
+                          : const Center(
+                              child: Text('問題URLを入力またはWebViewから選択してください。'),
+                            )),
               ),
             ],
           ),
@@ -296,7 +339,8 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (problem.contestName.isNotEmpty && problem.contestName != 'コンテスト名が見つかりません')
+                if (problem.contestName.isNotEmpty &&
+                    problem.contestName != 'コンテスト名が見つかりません')
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8.0),
                     child: Text(
@@ -319,7 +363,9 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
                 _buildSection('制約', problem.constraints, codeFontFamily),
                 _buildSection('入力', problem.inputFormat, codeFontFamily),
                 _buildSection('出力', problem.outputFormat, codeFontFamily),
-                ...problem.samples.map((sample) => _buildSampleIO(sample, codeFontFamily)),
+                ...problem.samples.map(
+                  (sample) => _buildSampleIO(sample, codeFontFamily),
+                ),
               ],
             ),
           ),
@@ -347,10 +393,9 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(4),
             border: Border.all(
-              color: Theme.of(context)
-                  .colorScheme
-                  .outline
-                  .withValues(alpha: 0.3),
+              color: Theme.of(
+                context,
+              ).colorScheme.outline.withValues(alpha: 0.3),
             ),
           ),
           // TexWidgetを使い、フォントスタイルを維持
@@ -358,18 +403,20 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
             content: content,
             textStyle: Theme.of(context).textTheme.bodyMedium,
           ),
-        )
+        ),
       );
     } else if (parts.length > 1) {
       // コードブロックが含まれている場合の通常の処理
       for (int i = 0; i < parts.length; i++) {
         if (parts[i].trim().isEmpty) continue;
-        
+
         if (i % 2 == 0) {
-          contentWidgets.add(TexWidget(
-            content: parts[i].trim(),
-            textStyle: Theme.of(context).textTheme.bodyMedium,
-          ));
+          contentWidgets.add(
+            TexWidget(
+              content: parts[i].trim(),
+              textStyle: Theme.of(context).textTheme.bodyMedium,
+            ),
+          );
         } else {
           contentWidgets.add(
             Container(
@@ -380,38 +427,36 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
                 color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(4),
                 border: Border.all(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .outline
-                      .withValues(alpha: 0.3),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.outline.withValues(alpha: 0.3),
                 ),
               ),
               child: Text(
                 parts[i].trim(),
                 style: getMonospaceTextStyle(codeFontFamily),
               ),
-            )
+            ),
           );
         }
       }
     } else {
       // 「入力」セクション以外でコードブロックがない場合の通常の処理
-      contentWidgets.add(TexWidget(
-        content: content,
-        textStyle: Theme.of(context).textTheme.bodyMedium,
-      ));
+      contentWidgets.add(
+        TexWidget(
+          content: content,
+          textStyle: Theme.of(context).textTheme.bodyMedium,
+        ),
+      );
     }
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         ...contentWidgets,
@@ -428,10 +473,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
           children: [
             Text(
               '入力例 ${sample.index}',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const Spacer(),
             IconButton(
@@ -439,9 +481,9 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
               tooltip: '入力例をコピー',
               onPressed: () {
                 Clipboard.setData(ClipboardData(text: sample.input));
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('入力例をコピーしました')),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('入力例をコピーしました')));
               },
             ),
           ],
@@ -453,23 +495,22 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(4),
             border: Border.all(
-              color: Theme.of(context)
-                  .colorScheme
-                  .outline
-                  .withValues(alpha: 0.3),
+              color: Theme.of(
+                context,
+              ).colorScheme.outline.withValues(alpha: 0.3),
             ),
           ),
-          child: Text(sample.input, style: getMonospaceTextStyle(codeFontFamily)),
+          child: Text(
+            sample.input,
+            style: getMonospaceTextStyle(codeFontFamily),
+          ),
         ),
         const SizedBox(height: 8),
         Row(
           children: [
             Text(
               '出力例 ${sample.index}',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const Spacer(),
             IconButton(
@@ -477,9 +518,9 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
               tooltip: '出力例をコピー',
               onPressed: () {
                 Clipboard.setData(ClipboardData(text: sample.output));
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('出力例をコピーしました')),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('出力例をコピーしました')));
               },
             ),
           ],
@@ -491,13 +532,15 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(4),
             border: Border.all(
-              color: Theme.of(context)
-                  .colorScheme
-                  .outline
-                  .withValues(alpha: 0.3),
+              color: Theme.of(
+                context,
+              ).colorScheme.outline.withValues(alpha: 0.3),
             ),
           ),
-          child: Text(sample.output, style: getMonospaceTextStyle(codeFontFamily)),
+          child: Text(
+            sample.output,
+            style: getMonospaceTextStyle(codeFontFamily),
+          ),
         ),
       ],
     );

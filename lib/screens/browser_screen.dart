@@ -1,5 +1,6 @@
 // filepath: d:\GitHub_yuubinnkyoku\shojin_app\lib\screens\browser_screen.dart
 import 'dart:developer' as developer;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -308,10 +309,7 @@ class _BrowserScreenState extends State<BrowserScreen>
                       );
                       if (mounted) {
                         scaffoldMessenger.showSnackBar(
-                          SnackBar(
-                            content:
-                                Text('サイトメタデータの取得に失敗しました: $e'),
-                          ),
+                          SnackBar(content: Text('サイトメタデータの取得に失敗しました: $e')),
                         );
                       }
                     }
@@ -493,7 +491,7 @@ class _BrowserScreenState extends State<BrowserScreen>
       // MaterialYou使用時はプライマリカラーで軽いティントを追加してコントラストを向上
       final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
       if (themeProvider.useMaterialYou) {
-  backgroundColor = backgroundColor.withValues(alpha: 0.9);
+        backgroundColor = backgroundColor.withValues(alpha: 0.9);
       }
     }
 
@@ -573,7 +571,11 @@ class _BrowserScreenState extends State<BrowserScreen>
                 ),
               )
             else
-              Icon(Icons.public, size: 18, color: textColor.withValues(alpha: 0.8)),
+              Icon(
+                Icons.public,
+                size: 18,
+                color: textColor.withValues(alpha: 0.8),
+              ),
             const SizedBox(width: 8),
             Text(
               title,
@@ -687,7 +689,9 @@ class _BrowserScreenState extends State<BrowserScreen>
 
               if (_isControllerReady && _isLoadingWebView && !_loadFailed)
                 Container(
-                  color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.3),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.surface.withValues(alpha: 0.3),
                   child: const Center(child: CircularProgressIndicator()),
                 ),
             ],

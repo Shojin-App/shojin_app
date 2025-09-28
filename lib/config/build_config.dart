@@ -6,21 +6,19 @@ class BuildConfig {
     'FDROID_BUILD',
     defaultValue: false,
   );
-  
+
   /// Flag to control self-update functionality
   /// Disabled automatically for F-Droid builds
-  static const bool enableSelfUpdate = bool.fromEnvironment(
-    'ENABLE_SELF_UPDATE',
-    defaultValue: true,
-  ) && !isFdroidBuild;
-  
+  static const bool enableSelfUpdate =
+      bool.fromEnvironment('ENABLE_SELF_UPDATE', defaultValue: true) &&
+      !isFdroidBuild;
+
   /// Flag to control online font fetching
   /// Disabled for F-Droid builds to ensure offline-only operation
-  static const bool enableOnlineFonts = bool.fromEnvironment(
-    'ENABLE_ONLINE_FONTS', 
-    defaultValue: true,
-  ) && !isFdroidBuild;
-  
+  static const bool enableOnlineFonts =
+      bool.fromEnvironment('ENABLE_ONLINE_FONTS', defaultValue: true) &&
+      !isFdroidBuild;
+
   /// Repository info for self-updates (only used when enableSelfUpdate is true)
   static const String defaultOwner = 'yuubinnkyoku';
   static const String defaultRepo = 'Shojin_App';

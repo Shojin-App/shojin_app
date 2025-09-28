@@ -1,31 +1,33 @@
 import 'dart:async'; // TimeoutExceptionのために追加
 import 'dart:convert';
+import 'dart:developer' as developer; // developerログのために追加
 import 'dart:io';
-import 'package:path_provider/path_provider.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Clipboardのために追加
-import 'package:share_plus/share_plus.dart'; // コード共有用
 import 'package:flutter_code_editor/flutter_code_editor.dart';
+import 'package:flutter_highlight/themes/github.dart';
+import 'package:flutter_highlight/themes/monokai-sublime.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:highlight/languages/cpp.dart'; // clike.dart から cpp.dart に修正
+import 'package:highlight/languages/dart.dart'; // デフォルト用
+import 'package:highlight/languages/java.dart';
 // ハイライト言語のインポートを修正
 import 'package:highlight/languages/python.dart';
-import 'package:highlight/languages/cpp.dart'; // clike.dart から cpp.dart に修正
 import 'package:highlight/languages/rust.dart';
-import 'package:highlight/languages/java.dart';
-import 'package:highlight/languages/dart.dart'; // デフォルト用
-import 'package:flutter_highlight/themes/monokai-sublime.dart';
-import 'package:flutter_highlight/themes/github.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http; // HTTPリクエスト用
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart'; // コード共有用
+
 import '../models/problem.dart';
 import '../models/test_result.dart';
-import '../services/atcoder_service.dart';
 import '../providers/theme_provider.dart';
-import '../utils/text_style_helper.dart';
-import 'dart:developer' as developer; // developerログのために追加
-import 'submit_screen.dart'; // 提出画面を表示するWebViewスクリーン
+import '../services/atcoder_service.dart';
 import '../services/code_history_service.dart';
+import '../utils/text_style_helper.dart';
 import 'code_history_screen.dart';
+import 'submit_screen.dart'; // 提出画面を表示するWebViewスクリーン
 
 // 3点メニュー用のアクション列挙体（トップレベルに定義）
 enum _ToolbarAction { save, history, restore, reset, share }
@@ -462,10 +464,10 @@ public class Main {
     Function(VoidCallback) setDialogState,
   ) async {
     // 詳細なデバッグログを追加
-  _log('★★★ Running test case ${testCase.index} ★★★');
-  _log('Language: $wandboxLanguage');
-  _log('Input length: ${testCase.input.length} chars');
-  _log('Code length: ${code.length} chars');
+    _log('★★★ Running test case ${testCase.index} ★★★');
+    _log('Language: $wandboxLanguage');
+    _log('Input length: ${testCase.input.length} chars');
+    _log('Code length: ${code.length} chars');
 
     // ダイアログの状態を更新
     setDialogState(() {
@@ -474,7 +476,7 @@ public class Main {
 
     final url = Uri.parse('https://wandbox.org/api/compile.json');
     try {
-  _log('Sending request to Wandbox API...');
+      _log('Sending request to Wandbox API...');
       final requestBody = {
         'code': code,
         'compiler': wandboxLanguage,
@@ -881,9 +883,11 @@ public class Main {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final codeFontFamily = themeProvider.codeFontFamily;
-    final bool isLoadingProblem = _isLoadingCode ||
+    final bool isLoadingProblem =
+        _isLoadingCode ||
         (widget.problemId != 'default_problem' && _currentProblem == null);
-    final bool isButtonDisabled = isLoadingProblem ||
+    final bool isButtonDisabled =
+        isLoadingProblem ||
         _isTesting ||
         _currentProblem == null ||
         (_currentProblem?.samples.isEmpty ?? true);
@@ -902,18 +906,15 @@ public class Main {
               if (widget.problemId.isEmpty ||
                   widget.problemId == 'default_problem') {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('No problem selected.'),
-                  ),
+                  const SnackBar(content: Text('No problem selected.')),
                 );
                 break;
               }
               final restoredCode = await Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => CodeHistoryScreen(
-                    problemId: widget.problemId,
-                  ),
+                  builder: (_) =>
+                      CodeHistoryScreen(problemId: widget.problemId),
                 ),
               );
               if (restoredCode != null && restoredCode is String) {
@@ -921,9 +922,7 @@ public class Main {
                   _codeController.text = restoredCode;
                 });
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Code restored from history.'),
-                  ),
+                  const SnackBar(content: Text('Code restored from history.')),
                 );
               }
               break;
@@ -931,9 +930,7 @@ public class Main {
               _restoreCode();
               break;
             case _ToolbarAction.reset:
-              _codeController.text = _getTemplateForLanguage(
-                _selectedLanguage,
-              );
+              _codeController.text = _getTemplateForLanguage(_selectedLanguage);
               _stdinController.clear();
               setState(() {
                 _output = '';
@@ -943,9 +940,9 @@ public class Main {
             case _ToolbarAction.share:
               final code = _codeController.text;
               if (code.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('共有するコードがありません')),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('共有するコードがありません')));
                 break;
               }
               String textToShare = code;
@@ -953,9 +950,7 @@ public class Main {
                 textToShare =
                     '${_currentProblem!.title} ($_selectedLanguage)\n\n$code';
               }
-              SharePlus.instance.share(
-                ShareParams(text: textToShare),
-              );
+              SharePlus.instance.share(ShareParams(text: textToShare));
               break;
           }
         },
@@ -966,7 +961,9 @@ public class Main {
             children: [
               // ローディング表示 or コードエディタ
               if (isLoadingProblem)
-                const Expanded(child: Center(child: CircularProgressIndicator()))
+                const Expanded(
+                  child: Center(child: CircularProgressIndicator()),
+                )
               else
                 Expanded(
                   flex: 3,
@@ -1055,8 +1052,9 @@ public class Main {
                           label: const Text('提出'),
                           onPressed: () {
                             final parts = widget.problemId.split('_');
-                            final contestId =
-                                parts.isNotEmpty ? parts[0] : widget.problemId;
+                            final contestId = parts.isNotEmpty
+                                ? parts[0]
+                                : widget.problemId;
                             final url =
                                 'https://atcoder.jp/contests/$contestId/submit?taskScreenName=${widget.problemId}';
                             Navigator.push(
@@ -1111,10 +1109,10 @@ public class Main {
                                   child: Container(
                                     width: double.infinity,
                                     decoration: BoxDecoration(
-                    color: Theme.of(context)
-                      .colorScheme
-                      .surfaceContainerHighest
-                      .withValues(alpha: 0.3),
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .surfaceContainerHighest
+                                          .withValues(alpha: 0.3),
                                       borderRadius: BorderRadius.circular(4),
                                       border: Border.all(
                                         color: Theme.of(
@@ -1163,10 +1161,10 @@ public class Main {
                                   child: Container(
                                     width: double.infinity,
                                     decoration: BoxDecoration(
-                    color: Theme.of(context)
-                      .colorScheme
-                      .surfaceContainerHighest
-                      .withValues(alpha: 0.15),
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .surfaceContainerHighest
+                                          .withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(4),
                                       border: Border.all(
                                         color: Theme.of(
@@ -1270,15 +1268,10 @@ class _EditorAppBar extends StatelessWidget implements PreferredSizeWidget {
                 isDense: true,
                 underline: Container(height: 1, color: Colors.grey),
                 onChanged: onLanguageChanged,
-                items: languages.map<DropdownMenuItem<String>>((
-                  String value,
-                ) {
+                items: languages.map<DropdownMenuItem<String>>((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
-                    child: Text(
-                      value,
-                      style: const TextStyle(fontSize: 14),
-                    ),
+                    child: Text(value, style: const TextStyle(fontSize: 14)),
                   );
                 }).toList(),
               ),
@@ -1369,10 +1362,7 @@ class _CodeEditor extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 2,
-      margin: const EdgeInsets.symmetric(
-        vertical: 4.0,
-        horizontal: 2.0,
-      ),
+      margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(4.0),
         child: CodeTheme(
