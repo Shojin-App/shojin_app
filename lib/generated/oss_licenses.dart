@@ -5762,14 +5762,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
     devDependencies: [],
   );
 
-/// share_plus 11.1.0
+/// share_plus 12.0.0
 const _share_plus = Package(
     name: 'share_plus',
     description: 'Flutter plugin for sharing content via the platform share UI, using the ACTION_SEND intent on Android and UIActivityViewController on iOS.',
     homepage: 'https://github.com/fluttercommunity/plus_plugins',
     repository: 'https://github.com/fluttercommunity/plus_plugins/tree/main/packages/share_plus/share_plus',
     authors: [],
-    version: '11.1.0',
+    version: '12.0.0',
     license: '''Copyright 2017, the Flutter project authors. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
