@@ -143,6 +143,12 @@ jobs:
       - name: Build APK (Single Universal, FDroid)
         if: ${{ steps.maybe_skip.outputs.skip != 'true' && contains(env.BUILD_TYPE, 'single') && (env.FLAVOR == 'fdroid' || env.FLAVOR == 'both') }}
         run: flutter build apk --flavor fdroid --release --build-number=${{ github.run_number }} --dart-define=ENABLE_SELF_UPDATE=false
+      - name: List built APK artifacts
+        if: ${{ steps.maybe_skip.outputs.skip != 'true' }}
+        run: |
+          echo "Listing built APKs:";
+          find build/app/outputs/flutter-apk -maxdepth 1 -type f -name '*.apk' -printf '%f\n' 2>/dev/null || true
+          ls -l build/app/outputs/flutter-apk || true
 
       - name: Upload Split APKs (OSS)
         if: ${{ steps.maybe_skip.outputs.skip != 'true' && contains(env.BUILD_TYPE, 'split') && (env.FLAVOR == 'oss' || env.FLAVOR == 'both') }}
@@ -151,7 +157,8 @@ jobs:
           tag_name: ${{ steps.release_meta.outputs.tag }}
           draft: false
           prerelease: false
-          files: build/app/outputs/flutter-apk/app-oss-*-release.apk
+          fail_on_unmatched_files: true
+          files: build/app/outputs/flutter-apk/app-*-oss-release.apk
 
       - name: Upload Split APKs (FDroid)
         if: ${{ steps.maybe_skip.outputs.skip != 'true' && contains(env.BUILD_TYPE, 'split') && (env.FLAVOR == 'fdroid' || env.FLAVOR == 'both') }}
@@ -160,7 +167,8 @@ jobs:
           tag_name: ${{ steps.release_meta.outputs.tag }}
           draft: false
           prerelease: false
-          files: build/app/outputs/flutter-apk/app-fdroid-*-release.apk
+          fail_on_unmatched_files: true
+          files: build/app/outputs/flutter-apk/app-*-fdroid-release.apk
 
       - name: Upload Single APK (OSS)
         if: ${{ steps.maybe_skip.outputs.skip != 'true' && contains(env.BUILD_TYPE, 'single') && (env.FLAVOR == 'oss' || env.FLAVOR == 'both') }}
@@ -169,6 +177,7 @@ jobs:
           tag_name: ${{ steps.release_meta.outputs.tag }}
           draft: false
           prerelease: false
+          fail_on_unmatched_files: true
           files: build/app/outputs/flutter-apk/app-oss-release.apk
 
       - name: Upload Single APK (FDroid)
@@ -178,4 +187,5 @@ jobs:
           tag_name: ${{ steps.release_meta.outputs.tag }}
           draft: false
           prerelease: false
+          fail_on_unmatched_files: true
           files: build/app/outputs/flutter-apk/app-fdroid-release.apk
