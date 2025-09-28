@@ -129,6 +129,12 @@ jobs:
             git commit -m "chore(release): v$next\n\nPrepare release from dev"
           fi
 
+      - name: Push dev (ensure version bump recorded)
+        if: ${{ github.event.inputs.dry_run == 'false' }}
+        run: |
+          # Push dev so that origin/dev always reflects latest version bump
+          git push origin dev
+
       - name: Push release branch (safe)
         if: ${{ github.event.inputs.dry_run == 'false' }}
         id: push
