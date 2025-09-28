@@ -186,27 +186,39 @@ jobs:
           BASE='${{ steps.target.outputs.base }}'
           HEAD_BR='${{ steps.push.outputs.branch }}'
           set -e
-          echo "Fetching full history for reliable diff..."
-          git fetch origin "$BASE" --depth=0 || true
-          git fetch origin "$HEAD_BR" --depth=0 || true
-          # Ensure we have refs
-          git rev-parse "origin/$BASE" >/dev/null
-          git rev-parse "$HEAD_BR" >/dev/null
+          echo "Fetching refs for base=$BASE head=$HEAD_BR ..."
+          # Fetch only the required branches (full history already available if checkout used fetch-depth:0)
+          git fetch origin "$BASE" "$HEAD_BR" --no-tags --prune || true
 
-          # Primary commit ahead count (commits reachable from HEAD_BR not in base)
-          AHEAD=$(git rev-list --right-only --count "origin/$BASE...$HEAD_BR" || echo 0)
+          # Verify remote release branch exists
+          if ! git ls-remote --exit-code origin "$HEAD_BR" >/dev/null 2>&1; then
+            echo "Release branch '$HEAD_BR' not found on remote yet (skipping PR creation check)." >&2
+            echo "ahead_commits=0" >> $GITHUB_OUTPUT
+            echo "file_diff=0" >> $GITHUB_OUTPUT
+            echo "release_files_changed=0" >> $GITHUB_OUTPUT
+            echo "different=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          BASE_REF="origin/$BASE"
+            HEAD_REF="origin/$HEAD_BR"
+          git rev-parse "$BASE_REF" >/dev/null
+          git rev-parse "$HEAD_REF" >/dev/null || true
+
+          # Primary commit ahead count (commits reachable from HEAD_REF not in base)
+          AHEAD=$(git rev-list --right-only --count "$BASE_REF...$HEAD_REF" 2>/dev/null || echo 0)
           echo "ahead_commits=$AHEAD" >> $GITHUB_OUTPUT
 
-          # Secondary: file diff check (handles rewritten history / same commit count but content changes)
-          if git diff --quiet "origin/$BASE...$HEAD_BR"; then
+          # Secondary: file diff check
+          if git diff --quiet "$BASE_REF...$HEAD_REF"; then
             FILE_DIFF=0
           else
             FILE_DIFF=1
           fi
           echo "file_diff=$FILE_DIFF" >> $GITHUB_OUTPUT
 
-            # Tertiary: changed pubspec / changelog specifically (release related)
-          if git diff --name-only "origin/$BASE...$HEAD_BR" | grep -E '^(pubspec.yaml|CHANGELOG.md)$' >/dev/null; then
+          # Tertiary: specific release related files changed
+          if git diff --name-only "$BASE_REF...$HEAD_REF" | grep -E '^(pubspec.yaml|CHANGELOG.md)$' >/dev/null; then
             REL_FILES_CHANGED=1
           else
             REL_FILES_CHANGED=0
@@ -218,8 +230,7 @@ jobs:
             echo "Diff detected (ahead=$AHEAD file_diff=$FILE_DIFF release_files=$REL_FILES_CHANGED)"
           else
             echo "different=false" >> $GITHUB_OUTPUT
-            echo "No diff between $HEAD_BR and $BASE. PR will be skipped."
-            echo "(ahead=$AHEAD file_diff=$FILE_DIFF release_files=$REL_FILES_CHANGED)"
+            echo "No diff between $HEAD_BR and $BASE (ahead=$AHEAD file_diff=$FILE_DIFF release_files=$REL_FILES_CHANGED). PR will be skipped."
           fi
 
       - name: Create / Reuse PR (github-script)
