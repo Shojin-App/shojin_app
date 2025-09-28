@@ -44,6 +44,15 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter pub get
+        run: flutter pub get
+
       - name: Read current version
         id: current
         run: |
@@ -82,11 +91,55 @@ jobs:
           echo "value=$next" >> $GITHUB_OUTPUT
           echo "Next version: $next"
 
+      - name: Collect merged commit / PR titles since last release
+        id: changes
+        run: |
+          set -e
+          LAST_TAG=$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || echo '')
+          echo "Last tag: $LAST_TAG"
+          RANGE=""
+          if [ -n "$LAST_TAG" ]; then RANGE="$LAST_TAG..HEAD"; fi
+          RAW=$(git log --pretty=format:%s $RANGE)
+          echo "Raw subjects:\n$RAW" | head -40
+          # 除外: release bump, merge 系, 自動生成的な release 行
+          FILTERED=$(echo "$RAW" | grep -v -E '^(chore\(release\):|Merge |Merge pull request|Merge branch|Merge remote-tracking branch|chore: release )' || true)
+          # 正規化: 先頭が 'Refactor ' で始まるものを refactor: に統一
+          NORMALIZED=$(echo "$FILTERED" | awk '/^Refactor /{sub(/^Refactor /,"refactor: ");} {print}')
+          if [ -z "$FILTERED" ]; then
+            CHANGES='- (変更点なし / No notable changes)'
+          else
+            CHANGES=$(echo "$NORMALIZED" | awk 'function map(line){
+               if(line ~ /^feat/){return "- ✨ " line}
+               if(line ~ /^fix/){return "- 🐛 " line}
+               if(line ~ /^perf/){return "- 🚀 " line}
+               if(line ~ /^docs/){return "- 📝 " line}
+               if(line ~ /^refactor/){return "- ♻️  " line}
+               if(line ~ /^test/){return "- ✅ " line}
+               if(line ~ /^build/){return "- 🧱 " line}
+               if(line ~ /^chore/){return "- 🔧 " line}
+               return "- " line }
+               { print map($0) }')
+          fi
+          echo "--- Generated list ---"
+          echo "$CHANGES" | head -40
+          # GitHub Actions multiline output (改行をそのまま保持)
+          {
+            echo 'list<<__EOT__'
+            printf '%s\n' "$CHANGES"
+            echo '__EOT__'
+          } >> $GITHUB_OUTPUT
+
       - name: Update pubspec.yaml version
         run: |
           next='${{ steps.next.outputs.value }}'
           sed -i "s/^version: .*/version: $next/" pubspec.yaml
           echo "Updated pubspec.yaml to $next"
+
+      - name: Generate OSS license file
+        run: |
+          # generate lib/generated/oss_licenses.dart (flutter_oss_licenses)
+          dart run flutter_oss_licenses:generate --output lib/generated/oss_licenses.dart
+          echo "Generated OSS licenses"
 
       - name: Update CHANGELOG.md (prepend Unreleased section)
         run: |
@@ -108,12 +161,19 @@ jobs:
           if ! grep -q "^## \[$next\]" CHANGELOG.md; then
             awk -v ver="$next" -v d="$date" 'BEGIN{added=0} {
               if(!added && /^## \[Unreleased\]/){
-                print $0; print ""; print "## [" ver "] - " d; print ""; print "- (placeholder) Describe changes here"; print ""; added=1; next
+                print $0; print ""; print "## [" ver "] - " d; print ""; print "__AUTO_CHANGELOG_PLACEHOLDER__"; print ""; added=1; next
               }
               print
             } END{ if(!added){ print "## [" ver "] - " d; print ""; print "- (placeholder) Describe changes here"; print "" } }' CHANGELOG.md > /tmp/_new && mv /tmp/_new CHANGELOG.md
           fi
           echo "Updated CHANGELOG.md"
+
+      - name: Inject generated changes into CHANGELOG
+        run: |
+          list='${{ steps.changes.outputs.list }}'
+          if [ -z "$list" ]; then echo "No list to inject"; exit 0; fi
+          perl -0777 -pe 's/__AUTO_CHANGELOG_PLACEHOLDER__/'"$list"'/g' CHANGELOG.md > /tmp/_chg && mv /tmp/_chg CHANGELOG.md
+          echo "Injected generated changes into CHANGELOG.md"
 
       - name: Show diff
         run: git --no-pager diff --name-only && git --no-pager diff | head -200
@@ -122,7 +182,7 @@ jobs:
         if: ${{ github.event.inputs.dry_run == 'false' }}
         run: |
           next='${{ steps.next.outputs.value }}'
-          git add pubspec.yaml CHANGELOG.md
+          git add pubspec.yaml CHANGELOG.md lib/generated/oss_licenses.dart
           if git diff --cached --quiet; then
             echo "No changes to commit (version already set?)"
           else
