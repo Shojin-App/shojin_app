@@ -1,3 +1,6 @@
+# NOTE: This workflow currently co-exists with the new dev-driven release process
+# (prepare-release.yml + publish-release.yml). Once migration completes, consider
+# disabling or removing release-please to avoid double version bumps.
 name: release-please
 
 on:
