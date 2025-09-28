@@ -1,79 +1,79 @@
 name: Publish Release
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'pubspec.yaml'
-      - 'CHANGELOG.md'
+    push:
+        branches:
+            - main
+        paths:
+            - "pubspec.yaml"
+            - "CHANGELOG.md"
 
 permissions:
-  contents: write
+    contents: write
 
 jobs:
-  publish:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout main
-        uses: actions/checkout@v4
-        with:
-            fetch-depth: 0
+    publish:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout main
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
 
-      - name: Extract version from commit or pubspec
-        id: version
-        run: |
-          set -e
-          # Try commit message pattern first
-          MSG="${{ github.event.head_commit.message }}"
-          VER=$(echo "$MSG" | sed -n 's/^chore(release): v\([0-9A-Za-z\.-]*\).*/\1/p' | head -1)
-          if [ -z "$VER" ]; then
-            VER=$(grep '^version:' pubspec.yaml | head -1 | awk '{print $2}')
-          fi
-          if [ -z "$VER" ]; then
-            echo "Version not found" >&2
-            exit 1
-          fi
-          echo "value=$VER" >> $GITHUB_OUTPUT
-          echo "Detected version: $VER"
+            - name: Extract version from commit or pubspec
+              id: version
+              run: |
+                  set -e
+                  # Try commit message pattern first
+                  MSG="${{ github.event.head_commit.message }}"
+                  VER=$(echo "$MSG" | sed -n 's/^chore(release): v\([0-9A-Za-z\.-]*\).*/\1/p' | head -1)
+                  if [ -z "$VER" ]; then
+                    VER=$(grep '^version:' pubspec.yaml | head -1 | awk '{print $2}')
+                  fi
+                  if [ -z "$VER" ]; then
+                    echo "Version not found" >&2
+                    exit 1
+                  fi
+                  echo "value=$VER" >> $GITHUB_OUTPUT
+                  echo "Detected version: $VER"
 
-      - name: Check existing tag
-        id: tag
-        run: |
-          VER='${{ steps.version.outputs.value }}'
-          if git rev-parse -q --verify "refs/tags/v$VER"; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-          fi
+            - name: Check existing tag
+              id: tag
+              run: |
+                  VER='${{ steps.version.outputs.value }}'
+                  if git rev-parse -q --verify "refs/tags/v$VER"; then
+                    echo "exists=true" >> $GITHUB_OUTPUT
+                  else
+                    echo "exists=false" >> $GITHUB_OUTPUT
+                  fi
 
-      - name: Create tag
-        if: steps.tag.outputs.exists == 'false'
-        run: |
-          VER='${{ steps.version.outputs.value }}'
-          git tag -a "v$VER" -m "Release v$VER"
-          git push origin "v$VER"
+            - name: Create tag
+              if: steps.tag.outputs.exists == 'false'
+              run: |
+                  VER='${{ steps.version.outputs.value }}'
+                  git tag -a "v$VER" -m "Release v$VER"
+                  git push origin "v$VER"
 
-      - name: Generate release notes section
-        id: notes
-        run: |
-          VER='${{ steps.version.outputs.value }}'
-          # Extract section between headings
-          awk -v ver="$VER" 'BEGIN{capture=0} /^## \[/ { if(capture){exit} } /^## \['ver'\]/ {capture=1; next} { if(capture) print }' CHANGELOG.md > /tmp/section.txt || true
-          if [ ! -s /tmp/section.txt ]; then
-            echo "No changelog section found, using placeholder" > /tmp/section.txt
-          fi
-          echo 'content<<EOF' >> $GITHUB_OUTPUT
-          sed 's/\r$//' /tmp/section.txt >> $GITHUB_OUTPUT
-          echo 'EOF' >> $GITHUB_OUTPUT
+            - name: Generate release notes section
+              id: notes
+              run: |
+                  VER='${{ steps.version.outputs.value }}'
+                  # Extract section between headings
+                  awk -v ver="$VER" 'BEGIN{capture=0} /^## \[/ { if(capture){exit} } /^## \['ver'\]/ {capture=1; next} { if(capture) print }' CHANGELOG.md > /tmp/section.txt || true
+                  if [ ! -s /tmp/section.txt ]; then
+                    echo "No changelog section found, using placeholder" > /tmp/section.txt
+                  fi
+                  echo 'content<<EOF' >> $GITHUB_OUTPUT
+                  sed 's/\r$//' /tmp/section.txt >> $GITHUB_OUTPUT
+                  echo 'EOF' >> $GITHUB_OUTPUT
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ steps.version.outputs.value }}
-          name: v${{ steps.version.outputs.value }}
-          body: ${{ steps.notes.outputs.content }}
-          draft: false
-          prerelease: ${{ contains(steps.version.outputs.value, '-') }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            - name: Create GitHub Release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: v${{ steps.version.outputs.value }}
+                  name: v${{ steps.version.outputs.value }}
+                  body: ${{ steps.notes.outputs.content }}
+                  draft: false
+                  prerelease: ${{ contains(steps.version.outputs.value, '-') }}
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
