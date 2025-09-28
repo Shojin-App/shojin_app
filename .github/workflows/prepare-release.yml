@@ -44,6 +44,15 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter pub get
+        run: flutter pub get
+
       - name: Read current version
         id: current
         run: |
@@ -88,6 +97,12 @@ jobs:
           sed -i "s/^version: .*/version: $next/" pubspec.yaml
           echo "Updated pubspec.yaml to $next"
 
+      - name: Generate OSS license file
+        run: |
+          # generate lib/generated/oss_licenses.dart (flutter_oss_licenses)
+          dart run flutter_oss_licenses:generate --output lib/generated/oss_licenses.dart
+          echo "Generated OSS licenses"
+
       - name: Update CHANGELOG.md (prepend Unreleased section)
         run: |
           next='${{ steps.next.outputs.value }}'
@@ -122,7 +137,7 @@ jobs:
         if: ${{ github.event.inputs.dry_run == 'false' }}
         run: |
           next='${{ steps.next.outputs.value }}'
-          git add pubspec.yaml CHANGELOG.md
+          git add pubspec.yaml CHANGELOG.md lib/generated/oss_licenses.dart
           if git diff --cached --quiet; then
             echo "No changes to commit (version already set?)"
           else
