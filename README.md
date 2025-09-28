@@ -160,38 +160,53 @@ flutter build apk \
 
 ご協力ありがとうございます！
 
-## リリース運用 (release-please)
+## リリース運用 (dev 主導フロー)
 
-このリポジトリは [release-please](https://github.com/googleapis/release-please) を使ってバージョン管理と CHANGELOG 生成を自動化しています。
+`dev` ブランチでバージョンを上げ、GitHub Actions が main 向けリリース PR とタグ/Release を自動化します。release-please は廃止済みです。
 
-### 仕組み概要
-1. `main` ブランチにマージされた Conventional Commits 形式のコミットを解析
-2. 差分に基づき自動でリリース PR (例: `chore: release 1.1.0`) を作成
-3. その PR をマージすると:
-    - `pubspec.yaml` の version が更新
-    - `CHANGELOG.md` に該当エントリが追加
-    - Git タグ & GitHub Release (Release Notes) が作成
+### フロー概要
+1. 通常開発は `dev` ブランチ。
+2. リリースしたくなったら Actions > `Prepare Release` を手動実行:
+   - bump: `patch` / `minor` / `major`
+   - preid: （未使用の場合は空）
+   - dry_run: テストしたい場合 true
+3. ワークフローが以下を実施:
+   - `pubspec.yaml` の `version:` を更新
+   - `CHANGELOG.md` に対象バージョン節を挿入（プレースホルダ付き）
+   - ブランチ `release/vX.Y.Z` を作成し push
+   - `main` 向け PR (`chore(release): vX.Y.Z`) を作成
+4. PR で CHANGELOG のプレースホルダを実際の変更内容に編集
+5. マージすると `Publish Release` ワークフローが起動し:
+   - タグ `vX.Y.Z` を作成
+   - 該当 CHANGELOG 節を Release Notes にして GitHub Release 作成
+6. Release から配布用アーティファクトを取得（今後自動添付 CI を追加する余地あり）
 
-### コミットメッセージ例 (推奨)
+### コミット規約（推奨）
+Conventional Commits 互換のメッセージを使うと CHANGELOG 編集が容易になります。
+例:
 ```
-feat(editor): コード補完ショートカット追加
-fix(parser): サンプル入出力の末尾改行処理
-perf(syntax): ハイライト初期化高速化
+feat(editor): テンプレ生成を高速化
+fix(browser): 末尾スラッシュURLの解析不具合
+chore(deps): ライブラリアップデート
 refactor(ui): テーマ切替ロジック整理
-docs(readme): 使い方セクション更新
 ```
 
-### 手動でのリリースを避けるための注意
-- `pubspec.yaml` の `version:` は release-please の PR にのみ変更を任せる
-- 直接 `CHANGELOG.md` の既存セクションを書き換えない (追加は OK)
-- 大きな破壊的変更はコミット種別では `feat!:` としてメジャーアップグレードを誘発
+### 運用ルール
+- `dev` では手動で `pubspec.yaml` の version を書き換えない（必ず `Prepare Release` 経由）
+- リリース PR のタイトルは自動生成形式を維持
+- CHANGELOG の過去バージョン節は書き換えない（修正が必要なら別 PR で明示）
 
-### 次回リリース手順 (開発者はやることほぼ無し)
-1. 通常通り PR を `main` へマージ (コミットメッセージ規約遵守)
-2. Bot が作るリリース PR をレビュー
-3. マージ = リリース確定
+### よくある質問 (FAQ)
+Q. プレリリース (beta 等) は？
+A. 現状未運用。必要になったら `preid` を指定すれば `1.2.3-beta.1` のような形式で作成可能。
 
-`CHANGELOG.md` と GitHub Release Notes は同期されるため、F-Droid メタデータ更新時にも参照しやすくなります。
+Q. CHANGELOG の箇条書きを自動生成したい。
+A. 将来的にコミットログパースのステップ追加で対応可能です（要望歓迎）。
+
+### 今後の拡張アイデア
+- コミットログ自動要約による CHANGELOG 生成
+- リリース時に Android / 他プラットフォーム成果物を自動ビルド & アップロード
+- 依存パッケージ差分検出の自動挿入
 
 ## ライセンス
 
