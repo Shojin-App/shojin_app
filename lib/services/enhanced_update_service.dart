@@ -8,7 +8,8 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:android_package_installer/android_package_installer.dart';
+import '../config/build_config.dart';
+import 'android_package_service.dart';
 
 /// アップデート情報クラス
 class EnhancedAppUpdateInfo {
@@ -552,7 +553,7 @@ class EnhancedUpdateService {
     try {
       developer.log('Installing APK: $apkPath', name: 'EnhancedUpdateService');
       
-      final statusCode = await AndroidPackageInstaller.installApk(apkFilePath: apkPath);
+      final statusCode = await AndroidPackageService.installApk(apkPath);
       
       if (statusCode == null) {
         developer.log('Installation failed: status code was null', name: 'EnhancedUpdateService');
@@ -564,10 +565,10 @@ class EnhancedUpdateService {
         return;
       }
 
-      final installationStatus = PackageInstallerStatus.byCode(statusCode);
+      final installationStatus = AndroidPackageService.getInstallStatusByCode(statusCode);
       developer.log('Installation status: ${installationStatus.name}', name: 'EnhancedUpdateService');
 
-      if (installationStatus == PackageInstallerStatus.success) {
+      if (installationStatus == InstallStatus.success) {
         developer.log('Installation process started successfully', name: 'EnhancedUpdateService');
       } else {
         developer.log('Installation failed: ${installationStatus.name}', name: 'EnhancedUpdateService');
@@ -619,7 +620,7 @@ class EnhancedUpdateService {
       ));
 
       developer.log('Attempting to install APK: $apkPath', name: 'EnhancedUpdateService');
-      final statusCode = await AndroidPackageInstaller.installApk(apkFilePath: apkPath);
+      final statusCode = await AndroidPackageService.installApk(apkPath);
 
       if (statusCode == null) {
         _updateProgress(UpdateProgress(
@@ -640,9 +641,9 @@ class EnhancedUpdateService {
         return;
       }
       
-      final installationStatus = PackageInstallerStatus.byCode(statusCode);
+      final installationStatus = AndroidPackageService.getInstallStatusByCode(statusCode);
 
-      if (installationStatus == PackageInstallerStatus.success) {
+      if (installationStatus == InstallStatus.success) {
         _updateProgress(UpdateProgress(
           progress: 1.0,
           status: 'インストール処理をシステムに委譲しました',
@@ -652,28 +653,28 @@ class EnhancedUpdateService {
         String errorMessage = 'インストール開始失敗';
         
         switch (installationStatus) {
-          case PackageInstallerStatus.failure:
+          case InstallStatus.failure:
             errorMessage = 'インストール失敗';
             break;
-          case PackageInstallerStatus.failureAborted:
+          case InstallStatus.failureAborted:
             errorMessage = 'インストールが中止されました';
             break;
-          case PackageInstallerStatus.failureBlocked:
+          case InstallStatus.failureBlocked:
             errorMessage = 'インストールがブロックされました';
             break;
-          case PackageInstallerStatus.failureConflict:
+          case InstallStatus.failureConflict:
             errorMessage = '競合が発生したためインストールできませんでした';
             break;
-          case PackageInstallerStatus.failureIncompatible:
+          case InstallStatus.failureIncompatible:
             errorMessage = '互換性がないためインストールできませんでした';
             break;
-          case PackageInstallerStatus.failureInvalid:
+          case InstallStatus.failureInvalid:
             errorMessage = '無効なAPKファイルです';
             break;
-          case PackageInstallerStatus.failureStorage:
+          case InstallStatus.failureStorage:
             errorMessage = 'ストレージ容量不足のためインストールできませんでした';
             break;
-          case PackageInstallerStatus.unknown:
+          case InstallStatus.unknown:
             errorMessage = '不明なインストールエラーが発生しました (コード: $statusCode)';
             break;
           default:

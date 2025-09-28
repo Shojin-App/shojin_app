@@ -1,0 +1,153 @@
+name: Prepare Release
+
+on:
+    workflow_dispatch:
+        inputs:
+            bump:
+                type: choice
+                description: "Version bump type"
+                required: true
+                options:
+                    - patch
+                    - minor
+                    - major
+            preid:
+                description: "(Optional) prerelease identifier (e.g. alpha, beta, rc)"
+                required: false
+            dry_run:
+                type: boolean
+                description: "Dry run (do not push/PR)"
+                default: false
+                required: true
+
+permissions:
+    contents: write
+    pull-requests: write
+
+jobs:
+    prepare:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout dev
+              uses: actions/checkout@v4
+              with:
+                  ref: dev
+                  fetch-depth: 0
+
+            - name: Set up Git user
+              run: |
+                  git config user.name "github-actions[bot]"
+                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+            - name: Read current version
+              id: current
+              run: |
+                  CURR=$(grep '^version:' pubspec.yaml | head -1 | awk '{print $2}')
+                  echo "current=$CURR" >> $GITHUB_OUTPUT
+
+            - name: Compute next version
+              id: next
+              run: |
+                  set -e
+                  bump='${{ github.event.inputs.bump }}'
+                  curr='${{ steps.current.outputs.current }}'
+                  pre='${{ github.event.inputs.preid }}'
+                  base=${curr%%-*} # strip prerelease if any
+                  IFS='.' read -r MA MI PA <<< "$base"
+                  case "$bump" in
+                    patch) PA=$((PA+1));; 
+                    minor) MI=$((MI+1)); PA=0;;
+                    major) MA=$((MA+1)); MI=0; PA=0;;
+                  esac
+                  next="$MA.$MI.$PA"
+                  if [ -n "$pre" ]; then
+                    # If current already has same pre id, increment numeric suffix
+                    if [[ $curr == *"$pre"* ]]; then
+                      # Extract trailing digits
+                      suffix=$(echo "$curr" | sed -n "s/.*$pre\.\([0-9]\+\)$/\1/p")
+                      if [ -n "$suffix" ]; then
+                        next="$MA.$MI.$PA-$pre.$((suffix+1))"
+                      else
+                        next="$MA.$MI.$PA-$pre.1"
+                      fi
+                    else
+                      next="$MA.$MI.$PA-$pre.1"
+                    fi
+                  fi
+                  echo "value=$next" >> $GITHUB_OUTPUT
+                  echo "Next version: $next"
+
+            - name: Update pubspec.yaml version
+              run: |
+                  next='${{ steps.next.outputs.value }}'
+                  sed -i "s/^version: .*/version: $next/" pubspec.yaml
+                  echo "Updated pubspec.yaml to $next"
+
+            - name: Update CHANGELOG.md (prepend Unreleased section)
+              run: |
+                  next='${{ steps.next.outputs.value }}'
+                  date=$(date +%Y-%m-%d)
+                  if [ ! -f CHANGELOG.md ]; then
+                    echo "# Changelog" > CHANGELOG.md
+                    echo >> CHANGELOG.md
+                  fi
+                  # Ensure Changelog header exists
+                  if ! grep -q '^# Changelog' CHANGELOG.md; then
+                    { echo '# Changelog'; echo; cat CHANGELOG.md; } > /tmp/_ch && mv /tmp/_ch CHANGELOG.md
+                  fi
+                  # Ensure Unreleased section exists
+                  if ! grep -q '^## \[Unreleased\]' CHANGELOG.md; then
+                    { echo '## [Unreleased]'; echo; cat CHANGELOG.md; } > /tmp/_unrel && mv /tmp/_unrel CHANGELOG.md
+                  fi
+                  # Update or add the release section
+                  if ! grep -q "^## \[$next\]" CHANGELOG.md; then
+                    awk -v ver="$next" -v d="$date" 'BEGIN{added=0} {
+                      if(!added && /^## \[Unreleased\]/){
+                        print $0; print ""; print "## [" ver "] - " d; print ""; print "- (placeholder) Describe changes here"; print ""; added=1; next
+                      }
+                      print
+                    } END{ if(!added){ print "## [" ver "] - " d; print ""; print "- (placeholder) Describe changes here"; print "" } }' CHANGELOG.md > /tmp/_new && mv /tmp/_new CHANGELOG.md
+                  fi
+                  echo "Updated CHANGELOG.md"
+
+            - name: Show diff
+              run: git --no-pager diff --name-only && git --no-pager diff | head -200
+
+            - name: Commit changes
+              if: ${{ github.event.inputs.dry_run == 'false' }}
+              run: |
+                  next='${{ steps.next.outputs.value }}'
+                  git add pubspec.yaml CHANGELOG.md
+                  git commit -m "chore(release): v$next\n\nPrepare release from dev"
+
+            - name: Push branch
+              if: ${{ github.event.inputs.dry_run == 'false' }}
+              id: push
+              run: |
+                  next='${{ steps.next.outputs.value }}'
+                  BRANCH="release/v$next"
+                  git push origin HEAD:$BRANCH
+                  echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+
+            - name: Create PR to main
+              if: ${{ github.event.inputs.dry_run == 'false' }}
+              uses: peter-evans/create-pull-request@v6
+              with:
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  branch: ${{ steps.push.outputs.branch }}
+                  base: main
+                  title: "chore(release): v${{ steps.next.outputs.value }}"
+                  body: |
+                      自動生成されたリリース準備 PR です。
+
+                      - 元ブランチ: dev
+                      - 次バージョン: v${{ steps.next.outputs.value }}
+                      - CHANGELOG は placeholder を含む場合があります。必要に応じて編集してください。
+
+                      マージ後、publish-release ワークフローがタグと GitHub Release を作成します。
+                  labels: release
+                  draft: false
+
+            - name: Dry run note
+              if: ${{ github.event.inputs.dry_run == 'true' }}
+              run: echo "Dry run finished. No push/PR performed."

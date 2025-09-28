@@ -1,0 +1,70 @@
+name: License Snapshot Auto-Update
+
+on:
+  schedule:
+    # 毎日 03:15 UTC (日本時間 12:15 JST頃) 実行。GitHub Actions は分散なので多少の誤差あり。
+    - cron: '15 3 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-license-snapshot:
+    name: Generate & Auto PR (oss licenses)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Flutter (stable)
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Pub get
+        run: flutter pub get
+
+      - name: Re-generate license snapshot
+        run: >-
+          dart run flutter_oss_licenses:generate
+          --output lib/generated/oss_licenses.dart
+
+      - name: Detect changes
+        id: diff
+        run: |
+          if git diff --quiet --exit-code lib/generated/oss_licenses.dart; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Pull Request
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: 'chore(licenses): update oss licenses snapshot'
+          title: 'chore(licenses): update oss licenses snapshot'
+          body: |
+            自動生成ワークフローにより `lib/generated/oss_licenses.dart` を更新しました。
+
+            - 依存追加/更新/削除を検出
+            - コミット時刻: ${{ github.run_id }}
+
+            マージ後、手動のライセンス差分チェック (#license_snapshot.yml) も最新となります。
+          branch: ci/update-oss-licenses
+          delete-branch: true
+          add-paths: |
+            lib/generated/oss_licenses.dart
+          labels: |
+            chore
+            automation
+
+      - name: No changes summary
+        if: steps.diff.outputs.changed != 'true'
+        run: echo "No license snapshot changes detected."

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../config/build_config.dart';
+import '../utils/app_fonts.dart';
 
 /// Returns a TextStyle for a monospace font.
 ///
 /// Handles the generic 'monospace' family by returning a standard [TextStyle],
-/// and uses [GoogleFonts.getFont] for any other font family from the Google Fonts library.
+/// and uses [AppFonts.getFont] for any other font family with F-Droid compatibility.
 TextStyle getMonospaceTextStyle(
   String fontFamily, {
   double? fontSize,
@@ -19,9 +20,9 @@ TextStyle getMonospaceTextStyle(
       fontWeight: fontWeight,
     );
   }
-  // Try Google Fonts first; if unavailable, fall back to asset/system font family
+  // Try Google Fonts first (respects F-Droid settings); if unavailable, fall back to asset/system font family
   try {
-    return GoogleFonts.getFont(
+    return AppFonts.getFont(
       fontFamily,
       fontSize: fontSize,
       color: color,
