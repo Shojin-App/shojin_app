@@ -2,14 +2,12 @@ name: License Snapshot Check
 
 on:
   pull_request:
-    branches: [ main, fix/** ]
     paths:
       - 'pubspec.yaml'
       - 'pubspec.lock'
       - 'lib/generated/oss_licenses.dart'
       - '.github/workflows/license_snapshot.yml'
   push:
-    branches: [ main ]
     paths:
       - 'pubspec.yaml'
       - 'pubspec.lock'
