@@ -91,6 +91,37 @@ jobs:
           echo "value=$next" >> $GITHUB_OUTPUT
           echo "Next version: $next"
 
+      - name: Collect merged commit / PR titles since last release
+        id: changes
+        run: |
+          set -e
+          LAST_TAG=$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || echo '')
+          echo "Last tag: $LAST_TAG"
+          RANGE=""
+          if [ -n "$LAST_TAG" ]; then RANGE="$LAST_TAG..HEAD"; fi
+          RAW=$(git log --pretty=format:%s $RANGE)
+          echo "Raw subjects:\n$RAW" | head -40
+          FILTERED=$(echo "$RAW" | grep -v -E '^chore\(release\):' | grep -v -E '^Merge pull request' || true)
+          if [ -z "$FILTERED" ]; then
+            CHANGES='- (変更点なし / No notable changes)'
+          else
+            CHANGES=$(echo "$FILTERED" | awk 'function map(line){
+               if(line ~ /^feat/){return "- ✨ " line}
+               if(line ~ /^fix/){return "- 🐛 " line}
+               if(line ~ /^perf/){return "- 🚀 " line}
+               if(line ~ /^docs/){return "- 📝 " line}
+               if(line ~ /^refactor/){return "- ♻️  " line}
+               if(line ~ /^test/){return "- ✅ " line}
+               if(line ~ /^build/){return "- 🧱 " line}
+               if(line ~ /^chore/){return "- 🔧 " line}
+               return "- " line }
+               { print map($0) }')
+          fi
+          echo "--- Generated list ---"
+          echo "$CHANGES" | head -40
+          esc=$(printf "%s" "$CHANGES" | sed 's/%/%25/g; s/\r/%0D/g; s/\n/%0A/g')
+          echo "list=$esc" >> $GITHUB_OUTPUT
+
       - name: Update pubspec.yaml version
         run: |
           next='${{ steps.next.outputs.value }}'
@@ -123,12 +154,19 @@ jobs:
           if ! grep -q "^## \[$next\]" CHANGELOG.md; then
             awk -v ver="$next" -v d="$date" 'BEGIN{added=0} {
               if(!added && /^## \[Unreleased\]/){
-                print $0; print ""; print "## [" ver "] - " d; print ""; print "- (placeholder) Describe changes here"; print ""; added=1; next
+                print $0; print ""; print "## [" ver "] - " d; print ""; print "__AUTO_CHANGELOG_PLACEHOLDER__"; print ""; added=1; next
               }
               print
             } END{ if(!added){ print "## [" ver "] - " d; print ""; print "- (placeholder) Describe changes here"; print "" } }' CHANGELOG.md > /tmp/_new && mv /tmp/_new CHANGELOG.md
           fi
           echo "Updated CHANGELOG.md"
+
+      - name: Inject generated changes into CHANGELOG
+        run: |
+          list='${{ steps.changes.outputs.list }}'
+          if [ -z "$list" ]; then echo "No list to inject"; exit 0; fi
+          perl -0777 -pe 's/__AUTO_CHANGELOG_PLACEHOLDER__/'"$list"'/g' CHANGELOG.md > /tmp/_chg && mv /tmp/_chg CHANGELOG.md
+          echo "Injected generated changes into CHANGELOG.md"
 
       - name: Show diff
         run: git --no-pager diff --name-only && git --no-pager diff | head -200
