@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/problem_difficulty.dart';
 import '../services/atcoder_service.dart';
-import 'problem_detail_screen.dart';
 import '../utils/atcoder_colors.dart';
 import '../utils/rating_utils.dart';
+import 'problem_detail_screen.dart';
 
 class RecommendScreen extends StatefulWidget {
   const RecommendScreen({super.key});
@@ -31,7 +32,7 @@ class _RecommendScreenState extends State<RecommendScreen> {
     if (rating >= 2000) return const Color(0xFFC0C000); // 黄
     if (rating >= 1600) return const Color(0xFF0000FF); // 青
     if (rating >= 1200) return const Color(0xFF00C0C0); // 水
-    if (rating >= 800) return const Color(0xFF008000);  // 緑
+    if (rating >= 800) return const Color(0xFF008000); // 緑
     if (rating >= 400) return const Color(0xFF804000); // 茶
     return const Color(0xFF808080); // 灰
   }
@@ -42,7 +43,7 @@ class _RecommendScreenState extends State<RecommendScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         border: Border.all(color: color, width: 1),
         borderRadius: BorderRadius.circular(999),
       ),
@@ -79,7 +80,7 @@ class _RecommendScreenState extends State<RecommendScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         border: Border.all(color: color, width: 1),
         borderRadius: BorderRadius.circular(999),
       ),
@@ -169,7 +170,7 @@ class _RecommendScreenState extends State<RecommendScreen> {
       if (username.isEmpty) {
         throw Exception('ユーザー名を入力してください');
       }
-      
+
       final ratingInfo = await _atcoderService.fetchAtcoderRatingInfo(username);
       if (ratingInfo == null) {
         throw Exception('ユーザーが見つからないか、レーティングがありません');
@@ -231,9 +232,7 @@ class _RecommendScreenState extends State<RecommendScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('おすすめ問題'),
-      ),
+      appBar: AppBar(title: const Text('おすすめ問題')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -317,10 +316,7 @@ class _RecommendScreenState extends State<RecommendScreen> {
             if (_isLoading)
               const CircularProgressIndicator()
             else if (_errorMessage != null)
-              Text(
-                _errorMessage!,
-                style: const TextStyle(color: Colors.red),
-              )
+              Text(_errorMessage!, style: const TextStyle(color: Colors.red))
             else
               Expanded(
                 child: ListView.builder(

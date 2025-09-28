@@ -33,10 +33,12 @@ class CustomSliverAppBar extends StatelessWidget {
           ? null
           : IconButton(
               icon: const Icon(Icons.arrow_back),
-              onPressed: onBackButtonPressed ?? () => Navigator.of(context).pop(),
-            ),      backgroundColor: WidgetStateColor.resolveWith(
+              onPressed:
+                  onBackButtonPressed ?? () => Navigator.of(context).pop(),
+            ),
+      backgroundColor: WidgetStateColor.resolveWith(
         (states) => states.contains(WidgetState.scrolledUnder)
-            ? Theme.of(context).colorScheme.surface.withOpacity(0.95)
+            ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.95)
             : Colors.transparent,
       ),
       actions: actions,

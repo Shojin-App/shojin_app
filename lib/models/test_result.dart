@@ -25,15 +25,22 @@ class TestResult {
 
   String get statusLabel {
     switch (status) {
-      case JudgeStatus.pending: return 'Pending';
-      case JudgeStatus.running: return 'Running';
-      case JudgeStatus.ac: return 'AC';
-      case JudgeStatus.wa: return 'WA';
-      case JudgeStatus.re: return 'RE';
-      case JudgeStatus.tle: return 'TLE'; // TLEはWandboxのレスポンスからは直接判断難しい場合あり
-      case JudgeStatus.ce: return 'CE'; // Compile Error
-      case JudgeStatus.ie: return 'IE'; // Internal Error
-      default: return 'Unknown';
+      case JudgeStatus.pending:
+        return 'Pending';
+      case JudgeStatus.running:
+        return 'Running';
+      case JudgeStatus.ac:
+        return 'AC';
+      case JudgeStatus.wa:
+        return 'WA';
+      case JudgeStatus.re:
+        return 'RE';
+      case JudgeStatus.tle:
+        return 'TLE'; // TLEはWandboxのレスポンスからは直接判断難しい場合あり
+      case JudgeStatus.ce:
+        return 'CE'; // Compile Error
+      case JudgeStatus.ie:
+        return 'IE'; // Internal Error
     }
   }
 }

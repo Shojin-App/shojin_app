@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
-import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:favicon/favicon.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/browser_site.dart';
 import 'image_color_extractor.dart';
 
@@ -14,7 +16,7 @@ class BrowserSiteService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final sitesJson = prefs.getStringList(_storageKey) ?? [];
-      
+
       return sitesJson.map((jsonString) {
         final map = Map<String, String?>.from(jsonDecode(jsonString));
         return BrowserSite.fromLegacyMap(map);
@@ -47,19 +49,31 @@ class BrowserSiteService {
       final icons = await FaviconFinder.getAll(url);
       if (icons.isNotEmpty) {
         faviconUrl = icons.first.url;
-        developer.log('Favicon found for $url: $faviconUrl', name: 'BrowserSiteService');
+        developer.log(
+          'Favicon found for $url: $faviconUrl',
+          name: 'BrowserSiteService',
+        );
 
         // 支配的な色を抽出
-        final dominantColor = await ImageColorExtractor.extractDominantColor(faviconUrl);
+        final dominantColor = await ImageColorExtractor.extractDominantColor(
+          faviconUrl,
+        );
         if (dominantColor != null) {
-          colorHex = '#${dominantColor.value.toRadixString(16).padLeft(8, '0')}';
-          developer.log('Dominant color found for $faviconUrl: $colorHex', name: 'BrowserSiteService');
+          colorHex =
+              '#${dominantColor.toARGB32().toRadixString(16).padLeft(8, '0')}';
+          developer.log(
+            'Dominant color found for $faviconUrl: $colorHex',
+            name: 'BrowserSiteService',
+          );
         }
       } else {
         developer.log('No favicon found for $url', name: 'BrowserSiteService');
       }
     } catch (e) {
-      developer.log('Error fetching metadata for $url: $e', name: 'BrowserSiteService');
+      developer.log(
+        'Error fetching metadata for $url: $e',
+        name: 'BrowserSiteService',
+      );
     }
 
     return SiteMetadata(faviconUrl: faviconUrl, colorHex: colorHex);
@@ -77,7 +91,12 @@ class BrowserSiteService {
   }
 
   /// 既存サイトとの重複をチェック
-  static bool isDuplicateSite(String title, String url, List<BrowserSite> existingSites, List<DefaultSite> defaultSites) {
+  static bool isDuplicateSite(
+    String title,
+    String url,
+    List<BrowserSite> existingSites,
+    List<DefaultSite> defaultSites,
+  ) {
     // デフォルトサイトとの重複チェック
     for (final defaultSite in defaultSites) {
       if (title == defaultSite.title && url == defaultSite.url) {
@@ -101,10 +120,7 @@ class SiteMetadata {
   final String? faviconUrl;
   final String? colorHex;
 
-  const SiteMetadata({
-    this.faviconUrl,
-    this.colorHex,
-  });
+  const SiteMetadata({this.faviconUrl, this.colorHex});
 }
 
 /// デフォルトサイト情報

@@ -1,10 +1,12 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:io';
-import 'package:package_info_plus/package_info_plus.dart';
-import 'package:pub_semver/pub_semver.dart';
+
 import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:pub_semver/pub_semver.dart';
 
 // 1. AppUpdateInfo Class
 class AppUpdateInfo {
@@ -39,8 +41,12 @@ class UpdateService {
   // isUpdateAvailable() method
   bool isUpdateAvailable(String currentVersionStr, String latestVersionStr) {
     try {
-      Version currentVersion = Version.parse(currentVersionStr.replaceAll('v', ''));
-      Version latestVersion = Version.parse(latestVersionStr.replaceAll('v', ''));
+      Version currentVersion = Version.parse(
+        currentVersionStr.replaceAll('v', ''),
+      );
+      Version latestVersion = Version.parse(
+        latestVersionStr.replaceAll('v', ''),
+      );
       return latestVersion > currentVersion;
     } catch (e) {
       // print('Error parsing version strings: $e'); // Less verbose for startup
@@ -49,10 +55,19 @@ class UpdateService {
   }
 
   // getLatestReleaseInfo() method
-  Future<AppUpdateInfo?> getLatestReleaseInfo(String owner, String repo, {bool silent = false}) async {
-    final url = Uri.parse('https://api.github.com/repos/$owner/$repo/releases/latest');
+  Future<AppUpdateInfo?> getLatestReleaseInfo(
+    String owner,
+    String repo, {
+    bool silent = false,
+  }) async {
+    final url = Uri.parse(
+      'https://api.github.com/repos/$owner/$repo/releases/latest',
+    );
     try {
-      final response = await http.get(url, headers: {'Accept': 'application/vnd.github.v3+json'});
+      final response = await http.get(
+        url,
+        headers: {'Accept': 'application/vnd.github.v3+json'},
+      );
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
@@ -64,7 +79,9 @@ class UpdateService {
         String? assetDownloadUrl;
         String? foundAssetName;
         if (jsonResponse['assets'] != null && jsonResponse['assets'] is List) {
-          Map<String, String?>? assetDetails = _getPlatformSpecificAssetUrl(jsonResponse['assets']);
+          Map<String, String?>? assetDetails = _getPlatformSpecificAssetUrl(
+            jsonResponse['assets'],
+          );
           if (assetDetails != null) {
             assetDownloadUrl = assetDetails['url'];
             foundAssetName = assetDetails['name'];
@@ -80,23 +97,39 @@ class UpdateService {
         );
       } else {
         if (!silent) {
-          print('Failed to get latest release info: ${response.statusCode} ${response.body}');
+          developer.log(
+            'Failed to get latest release info: ${response.statusCode} ${response.body}',
+            name: 'UpdateService',
+          );
         }
         return null;
       }
     } catch (e) {
       if (!silent) {
-        print('Error fetching latest release info: $e');
+        developer.log(
+          'Error fetching latest release info',
+          name: 'UpdateService',
+          error: e,
+        );
       }
       return null;
     }
   }
 
   // New method for startup check
-  Future<AppUpdateInfo?> checkForUpdateOnStartup(String currentVersion, String owner, String repo) async {
+  Future<AppUpdateInfo?> checkForUpdateOnStartup(
+    String currentVersion,
+    String owner,
+    String repo,
+  ) async {
     try {
-      AppUpdateInfo? releaseInfo = await getLatestReleaseInfo(owner, repo, silent: true);
-      if (releaseInfo != null && isUpdateAvailable(currentVersion, releaseInfo.version)) {
+      AppUpdateInfo? releaseInfo = await getLatestReleaseInfo(
+        owner,
+        repo,
+        silent: true,
+      );
+      if (releaseInfo != null &&
+          isUpdateAvailable(currentVersion, releaseInfo.version)) {
         return releaseInfo;
       }
       return null;
@@ -106,7 +139,6 @@ class UpdateService {
       return null;
     }
   }
-
 
   // _getPlatformSpecificAssetUrl() method
   Map<String, String?>? _getPlatformSpecificAssetUrl(List<dynamic> assets) {
@@ -127,31 +159,47 @@ class UpdateService {
 
     for (String pattern in prioritizedPatterns) {
       for (var asset in assets) {
-        if (asset is Map && asset.containsKey('name') && asset.containsKey('browser_download_url')) {
+        if (asset is Map &&
+            asset.containsKey('name') &&
+            asset.containsKey('browser_download_url')) {
           String name = asset['name'].toLowerCase();
           if (name.endsWith(pattern.toLowerCase())) {
-            return {'url': asset['browser_download_url'], 'name': asset['name']};
+            return {
+              'url': asset['browser_download_url'],
+              'name': asset['name'],
+            };
           }
         }
       }
     }
-    
+
     if (os == 'linux') {
-        for (var asset in assets) {
-            if (asset is Map && asset.containsKey('name') && asset.containsKey('browser_download_url')) {
-                String name = asset['name'].toLowerCase();
-                if (name.endsWith('.zip') || name.endsWith('.tar.gz')) {
-                     return {'url': asset['browser_download_url'], 'name': asset['name']};
-                }
-            }
+      for (var asset in assets) {
+        if (asset is Map &&
+            asset.containsKey('name') &&
+            asset.containsKey('browser_download_url')) {
+          String name = asset['name'].toLowerCase();
+          if (name.endsWith('.zip') || name.endsWith('.tar.gz')) {
+            return {
+              'url': asset['browser_download_url'],
+              'name': asset['name'],
+            };
+          }
         }
+      }
     }
     return null;
   }
 
-  Future<String?> downloadUpdate(AppUpdateInfo releaseInfo, Function(double progress) onProgress) async {
+  Future<String?> downloadUpdate(
+    AppUpdateInfo releaseInfo,
+    Function(double progress) onProgress,
+  ) async {
     if (releaseInfo.downloadUrl == null || releaseInfo.downloadUrl!.isEmpty) {
-      print('Error: Download URL is null or empty.');
+      developer.log(
+        'Error: Download URL is null or empty.',
+        name: 'UpdateService',
+      );
       return null;
     }
 
@@ -162,13 +210,19 @@ class UpdateService {
       final http.StreamedResponse response = await httpClient.send(request);
 
       if (response.statusCode != 200) {
-        print('Error downloading update: ${response.statusCode} ${response.reasonPhrase}');
+        developer.log(
+          'Error downloading update: ${response.statusCode} ${response.reasonPhrase}',
+          name: 'UpdateService',
+        );
         return null;
       }
 
       final Directory tempDir = await getTemporaryDirectory();
-      final String fileName = releaseInfo.assetName ?? Uri.parse(releaseInfo.downloadUrl!).pathSegments.last;
-      final String localFilePath = '${tempDir.path}${Platform.pathSeparator}$fileName';
+      final String fileName =
+          releaseInfo.assetName ??
+          Uri.parse(releaseInfo.downloadUrl!).pathSegments.last;
+      final String localFilePath =
+          '${tempDir.path}${Platform.pathSeparator}$fileName';
       final File file = File(localFilePath);
       final IOSink sink = file.openWrite();
 
@@ -182,17 +236,24 @@ class UpdateService {
           double currentProgress = bytesReceived / totalLength;
           onProgress(currentProgress);
         } else {
-          onProgress(-1); 
+          onProgress(-1);
         }
-      }).asFuture(); 
+      }).asFuture();
 
       await sink.flush();
       await sink.close();
-      print('Update downloaded to: $localFilePath');
+      developer.log(
+        'Update downloaded to: $localFilePath',
+        name: 'UpdateService',
+      );
       return localFilePath;
-
-    } catch (e) {
-      print('Error during download update: $e');
+    } catch (e, stackTrace) {
+      developer.log(
+        'Error during download update',
+        name: 'UpdateService',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return null;
     } finally {
       httpClient.close();
@@ -206,12 +267,18 @@ class UpdateService {
 
     if (Platform.isAndroid) {
       PermissionStatus status = await Permission.storage.status;
-      print('Current storage permission status: $status');
+      developer.log(
+        'Current storage permission status: $status',
+        name: 'UpdateService',
+      );
       if (status.isGranted) {
         return true;
       } else {
         status = await Permission.storage.request();
-        print('Storage permission status after request: $status');
+        developer.log(
+          'Storage permission status after request: $status',
+          name: 'UpdateService',
+        );
         return status.isGranted;
       }
     }

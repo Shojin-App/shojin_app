@@ -20,6 +20,11 @@ jobs:
               with:
                   fetch-depth: 0
 
+            - name: Set up Git user
+              run: |
+                  git config user.name "github-actions[bot]"
+                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
             - name: Extract version from commit or pubspec
               id: version
               run: |

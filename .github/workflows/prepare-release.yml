@@ -1,153 +1,276 @@
 name: Prepare Release
 
 on:
-    workflow_dispatch:
-        inputs:
-            bump:
-                type: choice
-                description: "Version bump type"
-                required: true
-                options:
-                    - patch
-                    - minor
-                    - major
-            preid:
-                description: "(Optional) prerelease identifier (e.g. alpha, beta, rc)"
-                required: false
-            dry_run:
-                type: boolean
-                description: "Dry run (do not push/PR)"
-                default: false
-                required: true
+  workflow_dispatch:
+    inputs:
+      bump:
+        type: choice
+        description: "Version bump type"
+        required: true
+        options:
+          - patch
+          - minor
+          - major
+      preid:
+        description: "(Optional) prerelease identifier (e.g. alpha, beta, rc)"
+        required: false
+      dry_run:
+        type: boolean
+        description: "Dry run (do not push/PR)"
+        default: false
+        required: true
+      force_update_existing:
+        type: boolean
+        description: "If release branch already exists, force update it"
+        default: false
+        required: false
 
 permissions:
-    contents: write
-    pull-requests: write
+  contents: write
+  pull-requests: write
 
 jobs:
-    prepare:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout dev
-              uses: actions/checkout@v4
-              with:
-                  ref: dev
-                  fetch-depth: 0
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout dev
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
 
-            - name: Set up Git user
-              run: |
-                  git config user.name "github-actions[bot]"
-                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Set up Git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-            - name: Read current version
-              id: current
-              run: |
-                  CURR=$(grep '^version:' pubspec.yaml | head -1 | awk '{print $2}')
-                  echo "current=$CURR" >> $GITHUB_OUTPUT
+      - name: Read current version
+        id: current
+        run: |
+          CURR=$(grep '^version:' pubspec.yaml | head -1 | awk '{print $2}')
+          echo "current=$CURR" >> $GITHUB_OUTPUT
 
-            - name: Compute next version
-              id: next
-              run: |
-                  set -e
-                  bump='${{ github.event.inputs.bump }}'
-                  curr='${{ steps.current.outputs.current }}'
-                  pre='${{ github.event.inputs.preid }}'
-                  base=${curr%%-*} # strip prerelease if any
-                  IFS='.' read -r MA MI PA <<< "$base"
-                  case "$bump" in
-                    patch) PA=$((PA+1));; 
-                    minor) MI=$((MI+1)); PA=0;;
-                    major) MA=$((MA+1)); MI=0; PA=0;;
-                  esac
-                  next="$MA.$MI.$PA"
-                  if [ -n "$pre" ]; then
-                    # If current already has same pre id, increment numeric suffix
-                    if [[ $curr == *"$pre"* ]]; then
-                      # Extract trailing digits
-                      suffix=$(echo "$curr" | sed -n "s/.*$pre\.\([0-9]\+\)$/\1/p")
-                      if [ -n "$suffix" ]; then
-                        next="$MA.$MI.$PA-$pre.$((suffix+1))"
-                      else
-                        next="$MA.$MI.$PA-$pre.1"
-                      fi
-                    else
-                      next="$MA.$MI.$PA-$pre.1"
-                    fi
-                  fi
-                  echo "value=$next" >> $GITHUB_OUTPUT
-                  echo "Next version: $next"
+      - name: Compute next version
+        id: next
+        run: |
+          set -e
+          bump='${{ github.event.inputs.bump }}'
+          curr='${{ steps.current.outputs.current }}'
+          pre='${{ github.event.inputs.preid }}'
+          base=${curr%%-*} # strip prerelease if any
+          IFS='.' read -r MA MI PA <<< "$base"
+          case "$bump" in
+            patch) PA=$((PA+1));; 
+            minor) MI=$((MI+1)); PA=0;;
+            major) MA=$((MA+1)); MI=0; PA=0;;
+          esac
+          next="$MA.$MI.$PA"
+          if [ -n "$pre" ]; then
+            # If current already has same pre id, increment numeric suffix
+            if [[ $curr == *"$pre"* ]]; then
+              # Extract trailing digits
+              suffix=$(echo "$curr" | sed -n "s/.*$pre\.\([0-9]\+\)$/\1/p")
+              if [ -n "$suffix" ]; then
+                next="$MA.$MI.$PA-$pre.$((suffix+1))"
+              else
+                next="$MA.$MI.$PA-$pre.1"
+              fi
+            else
+              next="$MA.$MI.$PA-$pre.1"
+            fi
+          fi
+          echo "value=$next" >> $GITHUB_OUTPUT
+          echo "Next version: $next"
 
-            - name: Update pubspec.yaml version
-              run: |
-                  next='${{ steps.next.outputs.value }}'
-                  sed -i "s/^version: .*/version: $next/" pubspec.yaml
-                  echo "Updated pubspec.yaml to $next"
+      - name: Update pubspec.yaml version
+        run: |
+          next='${{ steps.next.outputs.value }}'
+          sed -i "s/^version: .*/version: $next/" pubspec.yaml
+          echo "Updated pubspec.yaml to $next"
 
-            - name: Update CHANGELOG.md (prepend Unreleased section)
-              run: |
-                  next='${{ steps.next.outputs.value }}'
-                  date=$(date +%Y-%m-%d)
-                  if [ ! -f CHANGELOG.md ]; then
-                    echo "# Changelog" > CHANGELOG.md
-                    echo >> CHANGELOG.md
-                  fi
-                  # Ensure Changelog header exists
-                  if ! grep -q '^# Changelog' CHANGELOG.md; then
-                    { echo '# Changelog'; echo; cat CHANGELOG.md; } > /tmp/_ch && mv /tmp/_ch CHANGELOG.md
-                  fi
-                  # Ensure Unreleased section exists
-                  if ! grep -q '^## \[Unreleased\]' CHANGELOG.md; then
-                    { echo '## [Unreleased]'; echo; cat CHANGELOG.md; } > /tmp/_unrel && mv /tmp/_unrel CHANGELOG.md
-                  fi
-                  # Update or add the release section
-                  if ! grep -q "^## \[$next\]" CHANGELOG.md; then
-                    awk -v ver="$next" -v d="$date" 'BEGIN{added=0} {
-                      if(!added && /^## \[Unreleased\]/){
-                        print $0; print ""; print "## [" ver "] - " d; print ""; print "- (placeholder) Describe changes here"; print ""; added=1; next
-                      }
-                      print
-                    } END{ if(!added){ print "## [" ver "] - " d; print ""; print "- (placeholder) Describe changes here"; print "" } }' CHANGELOG.md > /tmp/_new && mv /tmp/_new CHANGELOG.md
-                  fi
-                  echo "Updated CHANGELOG.md"
+      - name: Update CHANGELOG.md (prepend Unreleased section)
+        run: |
+          next='${{ steps.next.outputs.value }}'
+          date=$(date +%Y-%m-%d)
+          if [ ! -f CHANGELOG.md ]; then
+            echo "# Changelog" > CHANGELOG.md
+            echo >> CHANGELOG.md
+          fi
+          # Ensure Changelog header exists
+          if ! grep -q '^# Changelog' CHANGELOG.md; then
+            { echo '# Changelog'; echo; cat CHANGELOG.md; } > /tmp/_ch && mv /tmp/_ch CHANGELOG.md
+          fi
+          # Ensure Unreleased section exists
+          if ! grep -q '^## \[Unreleased\]' CHANGELOG.md; then
+            { echo '## [Unreleased]'; echo; cat CHANGELOG.md; } > /tmp/_unrel && mv /tmp/_unrel CHANGELOG.md
+          fi
+          # Update or add the release section
+          if ! grep -q "^## \[$next\]" CHANGELOG.md; then
+            awk -v ver="$next" -v d="$date" 'BEGIN{added=0} {
+              if(!added && /^## \[Unreleased\]/){
+                print $0; print ""; print "## [" ver "] - " d; print ""; print "- (placeholder) Describe changes here"; print ""; added=1; next
+              }
+              print
+            } END{ if(!added){ print "## [" ver "] - " d; print ""; print "- (placeholder) Describe changes here"; print "" } }' CHANGELOG.md > /tmp/_new && mv /tmp/_new CHANGELOG.md
+          fi
+          echo "Updated CHANGELOG.md"
 
-            - name: Show diff
-              run: git --no-pager diff --name-only && git --no-pager diff | head -200
+      - name: Show diff
+        run: git --no-pager diff --name-only && git --no-pager diff | head -200
 
-            - name: Commit changes
-              if: ${{ github.event.inputs.dry_run == 'false' }}
-              run: |
-                  next='${{ steps.next.outputs.value }}'
-                  git add pubspec.yaml CHANGELOG.md
-                  git commit -m "chore(release): v$next\n\nPrepare release from dev"
+      - name: Commit changes
+        if: ${{ github.event.inputs.dry_run == 'false' }}
+        run: |
+          next='${{ steps.next.outputs.value }}'
+          git add pubspec.yaml CHANGELOG.md
+          if git diff --cached --quiet; then
+            echo "No changes to commit (version already set?)"
+          else
+            git commit -m "chore(release): v$next\n\nPrepare release from dev"
+          fi
 
-            - name: Push branch
-              if: ${{ github.event.inputs.dry_run == 'false' }}
-              id: push
-              run: |
-                  next='${{ steps.next.outputs.value }}'
-                  BRANCH="release/v$next"
-                  git push origin HEAD:$BRANCH
-                  echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+      - name: Push dev (ensure version bump recorded)
+        if: ${{ github.event.inputs.dry_run == 'false' }}
+        run: |
+          # Push dev so that origin/dev always reflects latest version bump
+          git push origin dev
 
-            - name: Create PR to main
-              if: ${{ github.event.inputs.dry_run == 'false' }}
-              uses: peter-evans/create-pull-request@v6
-              with:
-                  token: ${{ secrets.GITHUB_TOKEN }}
-                  branch: ${{ steps.push.outputs.branch }}
-                  base: main
-                  title: "chore(release): v${{ steps.next.outputs.value }}"
-                  body: |
-                      自動生成されたリリース準備 PR です。
+      - name: Push release branch (safe)
+        if: ${{ github.event.inputs.dry_run == 'false' }}
+        id: push
+        run: |
+          set -e
+          next='${{ steps.next.outputs.value }}'
+          BRANCH="release/v$next"
+          FORCE='${{ github.event.inputs.force_update_existing }}'
+          git fetch origin "$BRANCH" || true
+          if git rev-parse -q --verify "origin/$BRANCH" >/dev/null; then
+            echo "Remote branch exists: $BRANCH"
+            if [ "$FORCE" = "true" ]; then
+              echo "Force updating remote branch $BRANCH"
+              git push origin HEAD:$BRANCH --force
+            else
+              # Check divergence
+              LOCAL=$(git rev-parse HEAD)
+              REMOTE=$(git rev-parse "origin/$BRANCH")
+              if [ "$LOCAL" = "$REMOTE" ]; then
+                echo "Remote branch already up-to-date."
+              else
+                echo "Branch diverged. (Set force_update_existing=true to overwrite)"
+                echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+                exit 0
+              fi
+            fi
+          else
+            echo "Creating new remote branch $BRANCH"
+            git push origin HEAD:$BRANCH
+          fi
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
 
-                      - 元ブランチ: dev
-                      - 次バージョン: v${{ steps.next.outputs.value }}
-                      - CHANGELOG は placeholder を含む場合があります。必要に応じて編集してください。
+      - name: Determine target branch
+        id: target
+        run: |
+          pre='${{ github.event.inputs.preid }}'
+          if [ -n "$pre" ]; then
+            echo "base=dev" >> $GITHUB_OUTPUT
+            echo "pr_body=自動生成された **プレリリース (Beta)** 準備 PR です。" >> $GITHUB_OUTPUT
+          else
+            echo "base=main" >> $GITHUB_OUTPUT
+            echo "pr_body=自動生成された **正式リリース** 準備 PR です。" >> $GITHUB_OUTPUT
+          fi
 
-                      マージ後、publish-release ワークフローがタグと GitHub Release を作成します。
-                  labels: release
-                  draft: false
+      - name: Check diff with base
+        if: ${{ github.event.inputs.dry_run == 'false' && steps.push.outputs.branch != '' }}
+        id: diff
+        run: |
+          BASE='${{ steps.target.outputs.base }}'
+          HEAD_BR='${{ steps.push.outputs.branch }}'
+          set -e
+          echo "Fetching refs for base=$BASE head=$HEAD_BR ..."
+          # Fetch only the required branches (full history already available if checkout used fetch-depth:0)
+          git fetch origin "$BASE" "$HEAD_BR" --no-tags --prune || true
 
-            - name: Dry run note
-              if: ${{ github.event.inputs.dry_run == 'true' }}
-              run: echo "Dry run finished. No push/PR performed."
+          # Verify remote release branch exists
+          if ! git ls-remote --exit-code origin "$HEAD_BR" >/dev/null 2>&1; then
+            echo "Release branch '$HEAD_BR' not found on remote yet (skipping PR creation check)." >&2
+            echo "ahead_commits=0" >> $GITHUB_OUTPUT
+            echo "file_diff=0" >> $GITHUB_OUTPUT
+            echo "release_files_changed=0" >> $GITHUB_OUTPUT
+            echo "different=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          BASE_REF="origin/$BASE"
+            HEAD_REF="origin/$HEAD_BR"
+          git rev-parse "$BASE_REF" >/dev/null
+          git rev-parse "$HEAD_REF" >/dev/null || true
+
+          # Primary commit ahead count (commits reachable from HEAD_REF not in base)
+          AHEAD=$(git rev-list --right-only --count "$BASE_REF...$HEAD_REF" 2>/dev/null || echo 0)
+          echo "ahead_commits=$AHEAD" >> $GITHUB_OUTPUT
+
+          # Secondary: file diff check
+          if git diff --quiet "$BASE_REF...$HEAD_REF"; then
+            FILE_DIFF=0
+          else
+            FILE_DIFF=1
+          fi
+          echo "file_diff=$FILE_DIFF" >> $GITHUB_OUTPUT
+
+          # Tertiary: specific release related files changed
+          if git diff --name-only "$BASE_REF...$HEAD_REF" | grep -E '^(pubspec.yaml|CHANGELOG.md)$' >/dev/null; then
+            REL_FILES_CHANGED=1
+          else
+            REL_FILES_CHANGED=0
+          fi
+          echo "release_files_changed=$REL_FILES_CHANGED" >> $GITHUB_OUTPUT
+
+          if [ "$AHEAD" -gt 0 ] || [ "$FILE_DIFF" -eq 1 ] || [ "$REL_FILES_CHANGED" -eq 1 ]; then
+            echo "different=true" >> $GITHUB_OUTPUT
+            echo "Diff detected (ahead=$AHEAD file_diff=$FILE_DIFF release_files=$REL_FILES_CHANGED)"
+          else
+            echo "different=false" >> $GITHUB_OUTPUT
+            echo "No diff between $HEAD_BR and $BASE (ahead=$AHEAD file_diff=$FILE_DIFF release_files=$REL_FILES_CHANGED). PR will be skipped."
+          fi
+
+      - name: Create / Reuse PR (github-script)
+        if: ${{ github.event.inputs.dry_run == 'false' && steps.push.outputs.branch != '' && steps.diff.outputs.different == 'true' }}
+        uses: actions/github-script@v7
+        id: create_pr
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const next = process.env.NEXT_VERSION = `${{ steps.next.outputs.value }}`;
+            const head = `${{ steps.push.outputs.branch }}`; // already pushed 'release/vX.Y.Z'
+            const base = `${{ steps.target.outputs.base }}`;
+            const prTitle = `chore(release): v${{ steps.next.outputs.value }}`;
+            const body = (
+              `${{ steps.target.outputs.pr_body }}\n\n` +
+              `- 元ブランチ: dev\n` +
+              `- 次バージョン: v${{ steps.next.outputs.value }}\n` +
+              `- CHANGELOG は placeholder を含む場合があります。必要に応じて編集してください。\n\n` +
+              `**【重要】**\n` +
+              `- **正式リリース (main向け)**: マージ後、publish-release ワークフローがタグと GitHub Release を作成します。\n` +
+              `- **プレリリース (dev向け)**: マージ後、タグやリリースは作成されません。バージョン番号のみ取り込みます。`
+            ).trim();
+
+            const {owner, repo} = context.repo;
+            // Check existing open PR from head -> base
+            const existing = await github.rest.pulls.list({owner, repo, state: 'open', head: `${owner}:${head}`});
+            if (existing.data.length > 0) {
+              core.info(`Existing PR found: ${existing.data[0].html_url}`);
+              core.setOutput('url', existing.data[0].html_url);
+              return;
+            }
+            // Create new PR
+            const pr = await github.rest.pulls.create({owner, repo, head, base, title: prTitle, body});
+            core.info(`Created PR: ${pr.data.html_url}`);
+            core.setOutput('url', pr.data.html_url);
+
+      - name: Skip note (no diff)
+        if: ${{ github.event.inputs.dry_run == 'false' && steps.push.outputs.branch != '' && steps.diff.outputs.different == 'false' }}
+        run: echo "Base と release ブランチに差分が無いため PR 作成をスキップしました。"
+
+      - name: Dry run note
+        if: ${{ github.event.inputs.dry_run == 'true' }}
+        run: echo "Dry run finished. No push/PR performed."

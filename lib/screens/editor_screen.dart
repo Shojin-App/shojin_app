@@ -1,31 +1,33 @@
 import 'dart:async'; // TimeoutExceptionのために追加
 import 'dart:convert';
+import 'dart:developer' as developer; // developerログのために追加
 import 'dart:io';
-import 'package:path_provider/path_provider.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Clipboardのために追加
-import 'package:share_plus/share_plus.dart'; // コード共有用
 import 'package:flutter_code_editor/flutter_code_editor.dart';
+import 'package:flutter_highlight/themes/github.dart';
+import 'package:flutter_highlight/themes/monokai-sublime.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:highlight/languages/cpp.dart'; // clike.dart から cpp.dart に修正
+import 'package:highlight/languages/dart.dart'; // デフォルト用
+import 'package:highlight/languages/java.dart';
 // ハイライト言語のインポートを修正
 import 'package:highlight/languages/python.dart';
-import 'package:highlight/languages/cpp.dart'; // clike.dart から cpp.dart に修正
 import 'package:highlight/languages/rust.dart';
-import 'package:highlight/languages/java.dart';
-import 'package:highlight/languages/dart.dart'; // デフォルト用
-import 'package:flutter_highlight/themes/monokai-sublime.dart';
-import 'package:flutter_highlight/themes/github.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http; // HTTPリクエスト用
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart'; // コード共有用
+
 import '../models/problem.dart';
 import '../models/test_result.dart';
-import '../services/atcoder_service.dart';
 import '../providers/theme_provider.dart';
-import '../utils/text_style_helper.dart';
-import 'dart:developer' as developer; // developerログのために追加
-import 'submit_screen.dart'; // 提出画面を表示するWebViewスクリーン
+import '../services/atcoder_service.dart';
 import '../services/code_history_service.dart';
+import '../utils/text_style_helper.dart';
 import 'code_history_screen.dart';
+import 'submit_screen.dart'; // 提出画面を表示するWebViewスクリーン
 
 // 3点メニュー用のアクション列挙体（トップレベルに定義）
 enum _ToolbarAction { save, history, restore, reset, share }
@@ -96,6 +98,15 @@ class _EditorScreenState extends State<EditorScreen> {
     _stdinScrollController.dispose();
     _ioScrollController.dispose();
     super.dispose();
+  }
+
+  void _log(String message, {Object? error, StackTrace? stackTrace}) {
+    developer.log(
+      message,
+      name: 'EditorScreen',
+      error: error,
+      stackTrace: stackTrace,
+    );
   }
 
   void _onCodeChanged() {
@@ -169,8 +180,8 @@ class _EditorScreenState extends State<EditorScreen> {
       } else {
         _codeController.text = _getTemplateForLanguage(_selectedLanguage);
       }
-    } catch (e) {
-      print("コードの読み込みに失敗しました: $e");
+    } catch (e, stackTrace) {
+      _log('コードの読み込みに失敗しました', error: e, stackTrace: stackTrace);
       // エラー時もテンプレートを設定
       _codeController.text = _getTemplateForLanguage(_selectedLanguage);
     } finally {
@@ -384,7 +395,7 @@ public class Main {
   Future<void> _loadProblemData() async {
     // problemId が 'default_problem' の場合は何もしない
     if (widget.problemId == 'default_problem') {
-      print("Default problem ID detected, skipping problem data load.");
+      _log('Default problem ID detected, skipping problem data load.');
       // 必要なら _isLoadingCode を false にする
       if (mounted) {
         setState(() {
@@ -406,7 +417,7 @@ public class Main {
         // URLでない場合は、従来の方法でURL構築を試みる
         final parts = widget.problemId.split('_');
         if (parts.isEmpty) {
-          print("Invalid problem ID format: ${widget.problemId}");
+          _log('Invalid problem ID format: ${widget.problemId}');
           if (mounted) {
             setState(() {
               _isLoadingCode = false; // エラーでもローディング終了
@@ -422,34 +433,26 @@ public class Main {
             'https://atcoder.jp/contests/$contestId/tasks/${widget.problemId}';
       }
 
-      print("Fetching problem data from: $url"); // デバッグ用ログ
+      _log('Fetching problem data from: $url');
       final problem = await _atcoderService.fetchProblem(url);
-      print("Problem data fetched: ${problem.title}"); // デバッグ用ログ
+      _log('Problem data fetched: ${problem.title}');
       if (mounted) {
         setState(() {
           _currentProblem = problem;
-          // ★★★ デバッグログ追加 ★★★
-          print("Problem loaded: ${_currentProblem?.title}");
-          print("Samples found: ${_currentProblem?.samples.length ?? 0}");
-          // ★★★ デバッグログ追加 ★★★
+          _log('Problem loaded: ${_currentProblem?.title}');
+          _log('Samples found: ${_currentProblem?.samples.length ?? 0}');
         });
       }
     } catch (e) {
-      print("Failed to load problem data for testing: $e"); // 既存ログ
+      _log('Failed to load problem data for testing', error: e);
       if (mounted) {
-        // ★★★ デバッグログ追加 ★★★
-        print("Error loading problem data. _currentProblem is null.");
-        // ★★★ デバッグログ追加 ★★★
+        _log('Error loading problem data. _currentProblem is null.');
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('テストケースの読み込みに失敗しました: $e')));
       }
     } finally {
-      // _loadSavedCode と両方終わったことを確認するために
-      // _loadSavedCode 側で isLoadingCode を false にする
-      // ★★★ デバッグログ追加 ★★★
-      print("_loadProblemData finished. isLoadingCode: $_isLoadingCode");
-      // ★★★ デバッグログ追加 ★★★
+      _log('_loadProblemData finished. isLoadingCode: $_isLoadingCode');
     }
   }
 
@@ -461,10 +464,10 @@ public class Main {
     Function(VoidCallback) setDialogState,
   ) async {
     // 詳細なデバッグログを追加
-    print("★★★ Running test case ${testCase.index} ★★★");
-    print("Language: $wandboxLanguage");
-    print("Input length: ${testCase.input.length} chars");
-    print("Code length: ${code.length} chars");
+    _log('★★★ Running test case ${testCase.index} ★★★');
+    _log('Language: $wandboxLanguage');
+    _log('Input length: ${testCase.input.length} chars');
+    _log('Code length: ${code.length} chars');
 
     // ダイアログの状態を更新
     setDialogState(() {
@@ -473,7 +476,7 @@ public class Main {
 
     final url = Uri.parse('https://wandbox.org/api/compile.json');
     try {
-      print("Sending request to Wandbox API...");
+      _log('Sending request to Wandbox API...');
       final requestBody = {
         'code': code,
         'compiler': wandboxLanguage,
@@ -838,7 +841,7 @@ public class Main {
             decoration: BoxDecoration(
               color: Theme.of(
                 context,
-              ).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(4),
             ),
             child: SingleChildScrollView(
@@ -880,9 +883,11 @@ public class Main {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final codeFontFamily = themeProvider.codeFontFamily;
-    final bool isLoadingProblem = _isLoadingCode ||
+    final bool isLoadingProblem =
+        _isLoadingCode ||
         (widget.problemId != 'default_problem' && _currentProblem == null);
-    final bool isButtonDisabled = isLoadingProblem ||
+    final bool isButtonDisabled =
+        isLoadingProblem ||
         _isTesting ||
         _currentProblem == null ||
         (_currentProblem?.samples.isEmpty ?? true);
@@ -901,18 +906,15 @@ public class Main {
               if (widget.problemId.isEmpty ||
                   widget.problemId == 'default_problem') {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('No problem selected.'),
-                  ),
+                  const SnackBar(content: Text('No problem selected.')),
                 );
                 break;
               }
               final restoredCode = await Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => CodeHistoryScreen(
-                    problemId: widget.problemId,
-                  ),
+                  builder: (_) =>
+                      CodeHistoryScreen(problemId: widget.problemId),
                 ),
               );
               if (restoredCode != null && restoredCode is String) {
@@ -920,9 +922,7 @@ public class Main {
                   _codeController.text = restoredCode;
                 });
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Code restored from history.'),
-                  ),
+                  const SnackBar(content: Text('Code restored from history.')),
                 );
               }
               break;
@@ -930,9 +930,7 @@ public class Main {
               _restoreCode();
               break;
             case _ToolbarAction.reset:
-              _codeController.text = _getTemplateForLanguage(
-                _selectedLanguage,
-              );
+              _codeController.text = _getTemplateForLanguage(_selectedLanguage);
               _stdinController.clear();
               setState(() {
                 _output = '';
@@ -942,9 +940,9 @@ public class Main {
             case _ToolbarAction.share:
               final code = _codeController.text;
               if (code.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('共有するコードがありません')),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('共有するコードがありません')));
                 break;
               }
               String textToShare = code;
@@ -952,9 +950,7 @@ public class Main {
                 textToShare =
                     '${_currentProblem!.title} ($_selectedLanguage)\n\n$code';
               }
-              SharePlus.instance.share(
-                ShareParams(text: textToShare),
-              );
+              SharePlus.instance.share(ShareParams(text: textToShare));
               break;
           }
         },
@@ -965,7 +961,9 @@ public class Main {
             children: [
               // ローディング表示 or コードエディタ
               if (isLoadingProblem)
-                const Expanded(child: Center(child: CircularProgressIndicator()))
+                const Expanded(
+                  child: Center(child: CircularProgressIndicator()),
+                )
               else
                 Expanded(
                   flex: 3,
@@ -1033,7 +1031,7 @@ public class Main {
                           onPressed: isButtonDisabled
                               ? null
                               : () {
-                                  print('★★★ Test Button Pressed! ★★★');
+                                  _log('★★★ Test Button Pressed! ★★★');
                                   _runTests();
                                 },
                           style: ElevatedButton.styleFrom(
@@ -1054,8 +1052,9 @@ public class Main {
                           label: const Text('提出'),
                           onPressed: () {
                             final parts = widget.problemId.split('_');
-                            final contestId =
-                                parts.isNotEmpty ? parts[0] : widget.problemId;
+                            final contestId = parts.isNotEmpty
+                                ? parts[0]
+                                : widget.problemId;
                             final url =
                                 'https://atcoder.jp/contests/$contestId/submit?taskScreenName=${widget.problemId}';
                             Navigator.push(
@@ -1113,12 +1112,12 @@ public class Main {
                                       color: Theme.of(context)
                                           .colorScheme
                                           .surfaceContainerHighest
-                                          .withOpacity(0.3),
+                                          .withValues(alpha: 0.3),
                                       borderRadius: BorderRadius.circular(4),
                                       border: Border.all(
                                         color: Theme.of(
                                           context,
-                                        ).dividerColor.withOpacity(0.5),
+                                        ).dividerColor.withValues(alpha: 0.5),
                                       ),
                                     ),
                                     padding: const EdgeInsets.all(8),
@@ -1165,12 +1164,12 @@ public class Main {
                                       color: Theme.of(context)
                                           .colorScheme
                                           .surfaceContainerHighest
-                                          .withOpacity(0.15),
+                                          .withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(4),
                                       border: Border.all(
                                         color: Theme.of(
                                           context,
-                                        ).dividerColor.withOpacity(0.5),
+                                        ).dividerColor.withValues(alpha: 0.5),
                                       ),
                                     ),
                                     padding: const EdgeInsets.all(8),
@@ -1269,15 +1268,10 @@ class _EditorAppBar extends StatelessWidget implements PreferredSizeWidget {
                 isDense: true,
                 underline: Container(height: 1, color: Colors.grey),
                 onChanged: onLanguageChanged,
-                items: languages.map<DropdownMenuItem<String>>((
-                  String value,
-                ) {
+                items: languages.map<DropdownMenuItem<String>>((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
-                    child: Text(
-                      value,
-                      style: const TextStyle(fontSize: 14),
-                    ),
+                    child: Text(value, style: const TextStyle(fontSize: 14)),
                   );
                 }).toList(),
               ),
@@ -1368,10 +1362,7 @@ class _CodeEditor extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 2,
-      margin: const EdgeInsets.symmetric(
-        vertical: 4.0,
-        horizontal: 2.0,
-      ),
+      margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(4.0),
         child: CodeTheme(
@@ -1382,11 +1373,9 @@ class _CodeEditor extends StatelessWidget {
             child: CodeField(
               controller: codeController,
               textStyle: getMonospaceTextStyle(codeFontFamily),
-              gutterStyle: const GutterStyle(
+              gutterStyle: GutterStyle(
                 width: 32,
                 textAlign: TextAlign.right,
-              ),
-              lineNumberStyle: LineNumberStyle(
                 textStyle: TextStyle(
                   color: isDarkMode ? Colors.grey : Colors.grey.shade700,
                   fontSize: 12,

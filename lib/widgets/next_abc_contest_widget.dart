@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../models/contest.dart';
 import '../providers/contest_provider.dart';
 import '../screens/upcoming_contests_screen.dart';
@@ -29,9 +30,7 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
           return const Card(
             child: Padding(
               padding: EdgeInsets.all(16.0),
-              child: Center(
-                child: CircularProgressIndicator(),
-              ),
+              child: Center(child: CircularProgressIndicator()),
             ),
           );
         }
@@ -118,11 +117,7 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Icon(
-                    Icons.code,
-                    color: colorScheme.primary,
-                    size: 20,
-                  ),
+                  Icon(Icons.code, color: colorScheme.primary, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -155,19 +150,15 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
-              const SizedBox(height: 12),              _buildInfoRow(
+              const SizedBox(height: 12),
+              _buildInfoRow(
                 context,
                 Icons.event,
                 '開始時刻',
                 contest.startTimeWithWeekday,
               ),
               const SizedBox(height: 8),
-              _buildInfoRow(
-                context,
-                Icons.timer,
-                '時間',
-                contest.durationString,
-              ),
+              _buildInfoRow(context, Icons.timer, '時間', contest.durationString),
               if (contest.ratedRange != null) ...[
                 const SizedBox(height: 8),
                 _buildInfoRow(
@@ -206,64 +197,62 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
     String value,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Row(
       children: [
-        Icon(
-          icon,
-          size: 16,
-          color: colorScheme.onSurfaceVariant,
-        ),
+        Icon(icon, size: 16, color: colorScheme.onSurfaceVariant),
         const SizedBox(width: 8),
         Text(
           '$label: ',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
         ),
         Expanded(
           child: Text(
             value,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w500,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
           ),
         ),
       ],
     );
-  }  Widget _buildContestTypeChip(BuildContext context, Contest contest) {
+  }
+
+  Widget _buildContestTypeChip(BuildContext context, Contest contest) {
     final theme = Theme.of(context);
-    
+
     String type = 'その他';
     Color color = theme.colorScheme.outline;
-    
+
     // より確実な文字列マッチング
     final nameJa = contest.nameJa;
     final nameEn = contest.nameEn;
-    
-    if (contest.isABC || 
-        nameJa.contains('Beginner Contest') || 
+
+    if (contest.isABC ||
+        nameJa.contains('Beginner Contest') ||
         nameEn.contains('Beginner Contest') ||
-        nameJa.contains('AtCoder Beginner Contest') || 
+        nameJa.contains('AtCoder Beginner Contest') ||
         nameEn.contains('AtCoder Beginner Contest')) {
       type = 'ABC';
       color = Colors.green;
-    } else if (nameJa.contains('Regular Contest') || 
-               nameEn.contains('Regular Contest') ||
-               nameJa.contains('AtCoder Regular Contest') || 
-               nameEn.contains('AtCoder Regular Contest')) {
+    } else if (nameJa.contains('Regular Contest') ||
+        nameEn.contains('Regular Contest') ||
+        nameJa.contains('AtCoder Regular Contest') ||
+        nameEn.contains('AtCoder Regular Contest')) {
       type = 'ARC';
       color = Colors.orange;
-    } else if (nameJa.contains('Grand Contest') || 
-               nameEn.contains('Grand Contest') ||
-               nameJa.contains('AtCoder Grand Contest') || 
-               nameEn.contains('AtCoder Grand Contest')) {
+    } else if (nameJa.contains('Grand Contest') ||
+        nameEn.contains('Grand Contest') ||
+        nameJa.contains('AtCoder Grand Contest') ||
+        nameEn.contains('AtCoder Grand Contest')) {
       type = 'AGC';
       color = Colors.red;
-    } else if (nameJa.contains('Heuristic Contest') || 
-               nameEn.contains('Heuristic Contest') ||
-               nameJa.contains('AtCoder Heuristic Contest') || 
-               nameEn.contains('AtCoder Heuristic Contest')) {
+    } else if (nameJa.contains('Heuristic Contest') ||
+        nameEn.contains('Heuristic Contest') ||
+        nameJa.contains('AtCoder Heuristic Contest') ||
+        nameEn.contains('AtCoder Heuristic Contest')) {
       type = 'AHC';
       color = Colors.purple;
     }
@@ -271,7 +260,7 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color, width: 1),
       ),

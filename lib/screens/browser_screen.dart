@@ -1,5 +1,6 @@
 // filepath: d:\GitHub_yuubinnkyoku\shojin_app\lib\screens\browser_screen.dart
 import 'dart:developer' as developer;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -185,10 +186,13 @@ class _BrowserScreenState extends State<BrowserScreen>
     final urlController = TextEditingController();
     String? urlErrorText;
 
+    final navigator = Navigator.of(context);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     await showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setStateDialog) {
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setStateDialog) {
           return AlertDialog(
             title: const Text('サイトを追加'),
             content: Column(
@@ -217,7 +221,7 @@ class _BrowserScreenState extends State<BrowserScreen>
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(dialogContext),
                 child: const Text('キャンセル'),
               ),
               TextButton(
@@ -231,7 +235,7 @@ class _BrowserScreenState extends State<BrowserScreen>
                   });
 
                   if (title.isEmpty || url.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    scaffoldMessenger.showSnackBar(
                       const SnackBar(content: Text('タイトルとURLを入力してください。')),
                     );
                     isValid = false;
@@ -242,7 +246,7 @@ class _BrowserScreenState extends State<BrowserScreen>
                           defaultSite.title == title && defaultSite.url == url,
                     );
                     if (existingDefault) {
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      scaffoldMessenger.showSnackBar(
                         SnackBar(content: Text('$titleは既に追加されています。')),
                       );
                       isValid = false;
@@ -262,7 +266,7 @@ class _BrowserScreenState extends State<BrowserScreen>
 
                   if (isValid) {
                     showDialog(
-                      context: context,
+                      context: dialogContext,
                       barrierDismissible: false,
                       builder: (context) =>
                           const Center(child: CircularProgressIndicator()),
@@ -275,23 +279,39 @@ class _BrowserScreenState extends State<BrowserScreen>
                         faviconUrl: metadata.faviconUrl,
                         colorHex: metadata.colorHex,
                       );
-                      Navigator.pop(context); // Dismiss loading
+
+                      if (!mounted) {
+                        if (navigator.mounted && navigator.canPop()) {
+                          navigator.pop();
+                        }
+                        return;
+                      }
+
+                      if (navigator.mounted && navigator.canPop()) {
+                        navigator.pop(); // Dismiss loading
+                      }
 
                       _sites.add(siteWithMetadata);
                       await BrowserSiteService.saveSites(_sites);
                       if (mounted) {
                         setState(() {});
                       }
-                      Navigator.pop(context); // Close add dialog
+                      if (navigator.mounted && navigator.canPop()) {
+                        navigator.pop(); // Close add dialog
+                      }
                     } catch (e) {
-                      Navigator.pop(context); // Dismiss loading
+                      if (navigator.mounted && navigator.canPop()) {
+                        navigator.pop(); // Dismiss loading
+                      }
                       developer.log(
                         'Error adding site $url: $e',
                         name: 'BrowserScreenAddSite',
                       );
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('サイトメタデータの取得に失敗しました: $e')),
-                      );
+                      if (mounted) {
+                        scaffoldMessenger.showSnackBar(
+                          SnackBar(content: Text('サイトメタデータの取得に失敗しました: $e')),
+                        );
+                      }
                     }
                   }
                 },
@@ -338,10 +358,12 @@ class _BrowserScreenState extends State<BrowserScreen>
     final urlController = TextEditingController(text: site.url);
     String? urlErrorText;
 
+    final navigator = Navigator.of(context);
+
     await showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setStateDialog) {
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setStateDialog) {
           return AlertDialog(
             title: const Text('サイトを編集'),
             content: Column(
@@ -369,13 +391,13 @@ class _BrowserScreenState extends State<BrowserScreen>
             actions: [
               TextButton(
                 onPressed: () async {
-                  Navigator.pop(context);
+                  Navigator.pop(dialogContext);
                   await _removeSite(index);
                 },
                 child: const Text('削除', style: TextStyle(color: Colors.red)),
               ),
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(dialogContext),
                 child: const Text('キャンセル'),
               ),
               TextButton(
@@ -414,7 +436,9 @@ class _BrowserScreenState extends State<BrowserScreen>
                     _updateMissingMetadata();
                   }
 
-                  Navigator.pop(context);
+                  if (navigator.mounted && navigator.canPop()) {
+                    navigator.pop();
+                  }
                 },
                 child: const Text('更新'),
               ),
@@ -467,7 +491,7 @@ class _BrowserScreenState extends State<BrowserScreen>
       // MaterialYou使用時はプライマリカラーで軽いティントを追加してコントラストを向上
       final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
       if (themeProvider.useMaterialYou) {
-        backgroundColor = backgroundColor.withOpacity(0.9);
+        backgroundColor = backgroundColor.withValues(alpha: 0.9);
       }
     }
 
@@ -514,7 +538,7 @@ class _BrowserScreenState extends State<BrowserScreen>
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: textColor.withOpacity(0.5),
+                    color: textColor.withValues(alpha: 0.5),
                     width: 1.0,
                   ),
                 ),
@@ -527,7 +551,7 @@ class _BrowserScreenState extends State<BrowserScreen>
                     errorBuilder: (context, error, stackTrace) => Icon(
                       Icons.public,
                       size: 18,
-                      color: textColor.withOpacity(0.8),
+                      color: textColor.withValues(alpha: 0.8),
                     ),
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) return child;
@@ -547,7 +571,11 @@ class _BrowserScreenState extends State<BrowserScreen>
                 ),
               )
             else
-              Icon(Icons.public, size: 18, color: textColor.withOpacity(0.8)),
+              Icon(
+                Icons.public,
+                size: 18,
+                color: textColor.withValues(alpha: 0.8),
+              ),
             const SizedBox(width: 8),
             Text(
               title,
@@ -630,7 +658,7 @@ class _BrowserScreenState extends State<BrowserScreen>
                     padding: const EdgeInsets.all(20),
                     color: Theme.of(
                       context,
-                    ).colorScheme.surfaceContainerHigh.withOpacity(0.9),
+                    ).colorScheme.surfaceContainerHigh.withValues(alpha: 0.9),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
@@ -661,7 +689,9 @@ class _BrowserScreenState extends State<BrowserScreen>
 
               if (_isControllerReady && _isLoadingWebView && !_loadFailed)
                 Container(
-                  color: Theme.of(context).colorScheme.surface.withOpacity(0.3),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.surface.withValues(alpha: 0.3),
                   child: const Center(child: CircularProgressIndicator()),
                 ),
             ],

@@ -17,8 +17,8 @@ const _hackgenFontFamily = Package(
   authors: ['Yuko Otawara'],
   isMarkdown: false,
   isSdk: false,
-  dependencies: const [],
-  devDependencies: const [],
+  dependencies: [],
+  devDependencies: [],
   homepage: 'https://github.com/yuru7/HackGen',
   version:
       null, // Font version not strictly required; omit to avoid stale info.

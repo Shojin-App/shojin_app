@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import '../models/code_history.dart';
 import '../services/code_history_service.dart';
 
@@ -9,7 +10,7 @@ class CodeHistoryScreen extends StatefulWidget {
   const CodeHistoryScreen({super.key, required this.problemId});
 
   @override
-  _CodeHistoryScreenState createState() => _CodeHistoryScreenState();
+  State<CodeHistoryScreen> createState() => _CodeHistoryScreenState();
 }
 
 class _CodeHistoryScreenState extends State<CodeHistoryScreen> {
@@ -25,9 +26,7 @@ class _CodeHistoryScreenState extends State<CodeHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Code History'),
-      ),
+      appBar: AppBar(title: const Text('Code History')),
       body: FutureBuilder<List<CodeHistory>>(
         future: _historyFuture,
         builder: (context, snapshot) {
@@ -44,7 +43,9 @@ class _CodeHistoryScreenState extends State<CodeHistoryScreen> {
               itemBuilder: (context, index) {
                 final history = historyList[index];
                 return ListTile(
-                  title: Text(DateFormat.yMMMd().add_jms().format(history.timestamp)),
+                  title: Text(
+                    DateFormat.yMMMd().add_jms().format(history.timestamp),
+                  ),
                   subtitle: Text(
                     history.content,
                     maxLines: 2,
@@ -65,9 +66,7 @@ class _CodeHistoryScreenState extends State<CodeHistoryScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(DateFormat.yMMMd().add_jms().format(history.timestamp)),
-        content: SingleChildScrollView(
-          child: SelectableText(history.content),
-        ),
+        content: SingleChildScrollView(child: SelectableText(history.content)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -76,7 +75,9 @@ class _CodeHistoryScreenState extends State<CodeHistoryScreen> {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop(); // Close the dialog
-              Navigator.of(context).pop(history.content); // Pop the screen and return the code
+              Navigator.of(
+                context,
+              ).pop(history.content); // Pop the screen and return the code
             },
             child: const Text('Restore'),
           ),

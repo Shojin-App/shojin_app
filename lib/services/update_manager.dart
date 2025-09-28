@@ -18,11 +18,22 @@ class UpdateManager extends ChangeNotifier {
   double get downloadProgress => _downloadProgress;
   String get statusMessage => _statusMessage;
 
+  void _log(String message) {
+    debugPrint('[UpdateManager] $message');
+  }
+
+  void _logError(String message, Object error, [StackTrace? stackTrace]) {
+    debugPrint('[UpdateManager] $message: $error');
+    if (stackTrace != null) {
+      debugPrint(stackTrace.toString());
+    }
+  }
+
   Future<void> applyUpdate(String filePath, String? assetName) async {
     String fileName = assetName ?? filePath.split(Platform.pathSeparator).last;
     String fileExtension = fileName.split('.').last.toLowerCase();
 
-    print(
+    _log(
       'Attempting to apply update for file: $filePath with extension: .$fileExtension',
     );
     if (Platform.isAndroid) {
@@ -34,24 +45,24 @@ class UpdateManager extends ChangeNotifier {
       }
       if (fileExtension == 'apk') {
         try {
-          print('Starting APK installation process for: $filePath');
+          _log('Starting APK installation process for: $filePath');
           await _installApk(filePath); // Added await here
-        } catch (e) {
-          print('Exception during APK installation: $e');
+        } catch (e, stackTrace) {
+          _logError('Exception during APK installation', e, stackTrace);
           _statusMessage = 'APKのインストール中にエラーが発生しました: $e';
           notifyListeners(); // Notify listeners on error
         }
       } else {
-        print('Error: Android update file is not an APK. Path: $filePath');
+        _log('Error: Android update file is not an APK. Path: $filePath');
         _statusMessage = 'Androidの更新ファイルはAPKではありません。'; // Set status message
         notifyListeners(); // Notify listeners
         // throw Exception('Androidの更新ファイルはAPKではありません。'); // Consider if throwing is still desired
       }
     } else if (Platform.isIOS) {
-      print(
+      _log(
         'Direct update application is not supported on iOS from within the app.',
       );
-      print('Please distribute updates via TestFlight or the App Store.');
+      _log('Please distribute updates via TestFlight or the App Store.');
       // Example: Launching a URL to the App Store or release page
       // if (releaseUrl != null) {
       //   if (await canLaunchUrl(Uri.parse(releaseUrl))) {
@@ -61,10 +72,10 @@ class UpdateManager extends ChangeNotifier {
     } else if (Platform.isWindows) {
       if (fileExtension == 'exe' || fileExtension == 'msi') {
         try {
-          print('Attempting to launch Windows installer: $filePath');
+          _log('Attempting to launch Windows installer: $filePath');
           if (!await launchUrl(Uri.file(filePath))) {
             // launchUrl is from url_launcher
-            print(
+            _log(
               'Failed to launch Windows installer using url_launcher. Attempting Process.run...',
             );
             ProcessResult result = await Process.run(
@@ -72,67 +83,67 @@ class UpdateManager extends ChangeNotifier {
               [],
               runInShell: true,
             );
-            print(
+            _log(
               'Windows installer launch result: exitCode=${result.exitCode}, stdout=${result.stdout}, stderr=${result.stderr}',
             );
           } else {
-            print('Windows installer launched successfully via url_launcher.');
+            _log('Windows installer launched successfully via url_launcher.');
           }
-        } catch (e) {
-          print('Error launching Windows installer: $e');
+        } catch (e, stackTrace) {
+          _logError('Error launching Windows installer', e, stackTrace);
         }
       } else if (fileExtension == 'zip') {
-        print(
+        _log(
           'Update (ZIP) downloaded to $filePath. Please extract and apply manually.',
         );
       } else {
-        print(
+        _log(
           'Downloaded $filePath. Manual installation required for this file type on Windows.',
         );
       }
     } else if (Platform.isMacOS) {
       if (fileExtension == 'dmg') {
         try {
-          print('Attempting to open macOS DMG: $filePath');
+          _log('Attempting to open macOS DMG: $filePath');
           if (!await launchUrl(Uri.file(filePath))) {
             // launchUrl is from url_launcher
-            print('Failed to open DMG using url_launcher.');
+            _log('Failed to open DMG using url_launcher.');
           } else {
-            print('DMG opened successfully via url_launcher.');
+            _log('DMG opened successfully via url_launcher.');
           }
-        } catch (e) {
-          print('Error opening DMG: $e');
+        } catch (e, stackTrace) {
+          _logError('Error opening DMG', e, stackTrace);
         }
       } else if (fileExtension == 'zip' || fileExtension == 'app') {
         // .app might be inside a .zip
-        print(
+        _log(
           'Update ($fileName) downloaded to $filePath. Please extract (if zipped) and apply manually.',
         );
       } else {
-        print(
+        _log(
           'Downloaded $filePath. Manual installation required for this file type on macOS.',
         );
       }
     } else if (Platform.isLinux) {
       if (fileExtension == 'appimage') {
-        print(
+        _log(
           'AppImage downloaded to $filePath. Please make it executable (chmod +x $filePath) and run.',
         );
       } else if (fileExtension == 'deb') {
-        print(
+        _log(
           'Debian package downloaded to $filePath. Please install using your package manager (e.g., sudo dpkg -i $filePath or via a GUI installer).',
         );
       } else if (fileExtension == 'tar.gz' || fileExtension == 'zip') {
-        print(
+        _log(
           'Archive ($fileName) downloaded to $filePath. Please extract and apply manually.',
         );
       } else {
-        print(
+        _log(
           'Downloaded $filePath. Manual installation required for this file type on Linux.',
         );
       }
     } else {
-      print(
+      _log(
         'Update downloaded to $filePath. Platform not explicitly handled, please manage manually.',
       );
     }
