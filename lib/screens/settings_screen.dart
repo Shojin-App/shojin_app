@@ -61,7 +61,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _currentVersion = "取得エラー";
         });
       }
-      print('Failed to load current version: $e');
+        debugPrint('Failed to load current version: $e');
     }
   }
 
@@ -142,7 +142,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         });
       }
     } catch (e) {
-      print('Failed to load show update dialog preference: $e');
+        debugPrint('Failed to load show update dialog preference: $e');
     }
   }
 
@@ -158,7 +158,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         });
       }
     } catch (e) {
-      print('Failed to save show update dialog preference: $e');
+        debugPrint('Failed to save show update dialog preference: $e');
     }
   }
 
@@ -207,7 +207,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _updateCheckResult = "更新チェック中にエラーが発生しました: $e";
         });
       }
-      print('Error checking for updates: $e');
+          debugPrint('Error checking for updates: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -249,31 +249,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
         SliverList(
           delegate: SliverChildListDelegate([
             // AtCoder 設定セクション（最上部）
-            _SAtCoderSection(),
+            _buildAtcoderSection(),
             const SizedBox(height: 16),
 
             // テーマ設定セクション
-            _SUpdateThemeUI(),
+            _buildThemeSection(),
             const SizedBox(height: 16),
 
             // 言語設定セクション
-            _SUpdateLanguageUI(),
+            _buildLanguageSection(),
             const SizedBox(height: 16),
 
             // テンプレート設定セクション
-            _STemplateSection(),
+            _buildTemplateSection(),
             const SizedBox(height: 16),
 
             // 更新設定セクション
-            _SUpdateSection(),
+            _buildUpdateSection(),
             const SizedBox(height: 16),
 
             // エクスポート/インポート設定セクション
-            _SExportSection(),
+            _buildExportSection(),
             const SizedBox(height: 16),
 
             // アプリについてセクション
-            _SAboutSection(),
+            _buildAboutSection(),
             const SizedBox(height: 32),
           ]),
         ),
@@ -281,7 +281,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   } // 新しいセクションウィジェット群
 
-  Widget _SAtCoderSection() {
+  Widget _buildAtcoderSection() {
     return _SettingsSection(
       title: 'AtCoder設定',
       icon: Icons.person_outline,
@@ -319,7 +319,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _SUpdateThemeUI() {
+  Widget _buildThemeSection() {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
         return _SettingsSection(
@@ -363,7 +363,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20.0, 16.0, 20.0, 8.0),
               child: DropdownButtonFormField<String>(
-                value: themeProvider.codeFontFamily,
+                initialValue: themeProvider.codeFontFamily,
                 decoration: InputDecoration(
                   labelText: 'コードブロックのフォント',
                   border: const OutlineInputBorder(),
@@ -430,7 +430,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _STemplateSection() {
+  Widget _buildTemplateSection() {
     return Consumer<TemplateProvider>(
       builder: (context, templateProvider, child) {
         return _SettingsSection(
@@ -466,7 +466,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _SUpdateSection() {
+  Widget _buildUpdateSection() {
     return _SettingsSection(
       title: '更新設定',
       icon: Icons.system_update_alt,
@@ -543,7 +543,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _SUpdateLanguageUI() {
+  Widget _buildLanguageSection() {
     return _SettingsSection(
       title: '言語設定',
       icon: Icons.language,
@@ -571,7 +571,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _SExportSection() {
+  Widget _buildExportSection() {
     return _SettingsSection(
       title: 'エクスポート/インポート',
       icon: Icons.import_export,
@@ -641,7 +641,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _SAboutSection() {
+  Widget _buildAboutSection() {
     return _SettingsSection(
       title: 'アプリについて',
       icon: Icons.info_outline,
@@ -653,7 +653,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onCopy: _copyAllAppInfo,
         ),
         // 開発者セクション（ソーシャルメディアリンク付き）
-        _DeveloperSection(),
+            _buildDeveloperSection(),
         const Divider(),
         ListTile(
           leading: const Icon(Icons.rule_folder_outlined),
@@ -774,7 +774,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     ];
   }
 
-  Widget _DeveloperSection() {
+  Widget _buildDeveloperSection() {
     return ExpansionTile(
       title: Text(
         '開発者',
@@ -1073,19 +1073,27 @@ class _HapticRadioListTile<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return RadioListTile<T>(
+    final bool isSelected = value == groupValue;
+
+    return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20.0),
+      leading: secondary,
       title: Text(
         title,
         style: AppFonts.notoSansJp(fontSize: 16, fontWeight: FontWeight.w400),
       ),
-      value: value,
-      groupValue: groupValue,
-      onChanged: (newValue) {
+      trailing: Icon(
+        isSelected
+            ? Icons.radio_button_checked
+            : Icons.radio_button_unchecked,
+        color: isSelected
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+      onTap: () {
         HapticFeedback.lightImpact();
-        onChanged(newValue);
+        onChanged(value);
       },
-      secondary: secondary,
     );
   }
 }

@@ -52,7 +52,8 @@ class BrowserSiteService {
         // 支配的な色を抽出
         final dominantColor = await ImageColorExtractor.extractDominantColor(faviconUrl);
         if (dominantColor != null) {
-          colorHex = '#${dominantColor.value.toRadixString(16).padLeft(8, '0')}';
+          colorHex =
+              '#${dominantColor.toARGB32().toRadixString(16).padLeft(8, '0')}';
           developer.log('Dominant color found for $faviconUrl: $colorHex', name: 'BrowserSiteService');
         }
       } else {

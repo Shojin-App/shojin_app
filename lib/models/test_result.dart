@@ -33,7 +33,6 @@ class TestResult {
       case JudgeStatus.tle: return 'TLE'; // TLEはWandboxのレスポンスからは直接判断難しい場合あり
       case JudgeStatus.ce: return 'CE'; // Compile Error
       case JudgeStatus.ie: return 'IE'; // Internal Error
-      default: return 'Unknown';
     }
   }
 }

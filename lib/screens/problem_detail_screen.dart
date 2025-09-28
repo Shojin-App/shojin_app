@@ -346,7 +346,12 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
+            border: Border.all(
+              color: Theme.of(context)
+                  .colorScheme
+                  .outline
+                  .withValues(alpha: 0.3),
+            ),
           ),
           // TexWidgetを使い、フォントスタイルを維持
           child: TexWidget(
@@ -374,7 +379,12 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
+                border: Border.all(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .outline
+                      .withValues(alpha: 0.3),
+                ),
               ),
               child: Text(
                 parts[i].trim(),
@@ -442,7 +452,12 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
+            border: Border.all(
+              color: Theme.of(context)
+                  .colorScheme
+                  .outline
+                  .withValues(alpha: 0.3),
+            ),
           ),
           child: Text(sample.input, style: getMonospaceTextStyle(codeFontFamily)),
         ),
@@ -475,7 +490,12 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
+            border: Border.all(
+              color: Theme.of(context)
+                  .colorScheme
+                  .outline
+                  .withValues(alpha: 0.3),
+            ),
           ),
           child: Text(sample.output, style: getMonospaceTextStyle(codeFontFamily)),
         ),

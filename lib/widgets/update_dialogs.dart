@@ -333,7 +333,7 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
+                    color: Colors.orange.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Column(
@@ -427,11 +427,8 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        // Prevent dialog dismissal during download
-        return !_isDownloading;
-      },
+    return PopScope(
+      canPop: !_isDownloading,
       child: AlertDialog(
         title: Row(
           children: [

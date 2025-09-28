@@ -42,7 +42,7 @@ class _RecommendScreenState extends State<RecommendScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+  color: color.withValues(alpha: 0.12),
         border: Border.all(color: color, width: 1),
         borderRadius: BorderRadius.circular(999),
       ),
@@ -79,7 +79,7 @@ class _RecommendScreenState extends State<RecommendScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+  color: color.withValues(alpha: 0.12),
         border: Border.all(color: color, width: 1),
         borderRadius: BorderRadius.circular(999),
       ),

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:developer' as developer;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:http/http.dart' as http;
@@ -80,13 +81,20 @@ class UpdateService {
         );
       } else {
         if (!silent) {
-          print('Failed to get latest release info: ${response.statusCode} ${response.body}');
+          developer.log(
+            'Failed to get latest release info: ${response.statusCode} ${response.body}',
+            name: 'UpdateService',
+          );
         }
         return null;
       }
     } catch (e) {
       if (!silent) {
-        print('Error fetching latest release info: $e');
+        developer.log(
+          'Error fetching latest release info',
+          name: 'UpdateService',
+          error: e,
+        );
       }
       return null;
     }
@@ -151,7 +159,10 @@ class UpdateService {
 
   Future<String?> downloadUpdate(AppUpdateInfo releaseInfo, Function(double progress) onProgress) async {
     if (releaseInfo.downloadUrl == null || releaseInfo.downloadUrl!.isEmpty) {
-      print('Error: Download URL is null or empty.');
+      developer.log(
+        'Error: Download URL is null or empty.',
+        name: 'UpdateService',
+      );
       return null;
     }
 
@@ -162,7 +173,10 @@ class UpdateService {
       final http.StreamedResponse response = await httpClient.send(request);
 
       if (response.statusCode != 200) {
-        print('Error downloading update: ${response.statusCode} ${response.reasonPhrase}');
+        developer.log(
+          'Error downloading update: ${response.statusCode} ${response.reasonPhrase}',
+          name: 'UpdateService',
+        );
         return null;
       }
 
@@ -188,11 +202,19 @@ class UpdateService {
 
       await sink.flush();
       await sink.close();
-      print('Update downloaded to: $localFilePath');
+      developer.log(
+        'Update downloaded to: $localFilePath',
+        name: 'UpdateService',
+      );
       return localFilePath;
 
-    } catch (e) {
-      print('Error during download update: $e');
+    } catch (e, stackTrace) {
+      developer.log(
+        'Error during download update',
+        name: 'UpdateService',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return null;
     } finally {
       httpClient.close();
@@ -206,12 +228,18 @@ class UpdateService {
 
     if (Platform.isAndroid) {
       PermissionStatus status = await Permission.storage.status;
-      print('Current storage permission status: $status');
+      developer.log(
+        'Current storage permission status: $status',
+        name: 'UpdateService',
+      );
       if (status.isGranted) {
         return true;
       } else {
         status = await Permission.storage.request();
-        print('Storage permission status after request: $status');
+        developer.log(
+          'Storage permission status after request: $status',
+          name: 'UpdateService',
+        );
         return status.isGranted;
       }
     }

@@ -88,7 +88,10 @@ class ImageColorExtractor {
     }
 
     if (mostFrequentColor != null) {
-      developer.log('Dominant color found for $imageUrl: #${mostFrequentColor.value.toRadixString(16)}', name: 'ImageColorExtractor');
+      developer.log(
+        'Dominant color found for $imageUrl: #${mostFrequentColor.toARGB32().toRadixString(16)}',
+        name: 'ImageColorExtractor',
+      );
     } else {
       developer.log('Could not determine dominant color for $imageUrl', name: 'ImageColorExtractor');
     }
@@ -113,7 +116,7 @@ class ImageColorExtractor {
         final color = _createColorFromPixels(pixels, i);
         
         if (_isValidColor(color, minAlpha, minColorValue, maxColorValue)) {
-          final colorValue = color.value;
+          final colorValue = color.toARGB32();
           colorCounts[colorValue] = (colorCounts[colorValue] ?? 0) + 1;
           
           if (colorCounts[colorValue]! > maxCount) {
@@ -158,9 +161,17 @@ class ImageColorExtractor {
 
   /// 色が有効かどうかを判定
   static bool _isValidColor(Color color, int minAlpha, int minColorValue, int maxColorValue) {
-    return color.alpha > minAlpha &&
-           (color.red > minColorValue || color.green > minColorValue || color.blue > minColorValue) &&
-           (color.red < maxColorValue || color.green < maxColorValue || color.blue < maxColorValue);
+  final minAlphaNormalized = minAlpha / 255.0;
+  final minColorNormalized = minColorValue / 255.0;
+  final maxColorNormalized = maxColorValue / 255.0;
+
+  return color.a > minAlphaNormalized &&
+    (color.r > minColorNormalized ||
+      color.g > minColorNormalized ||
+      color.b > minColorNormalized) &&
+    (color.r < maxColorNormalized ||
+      color.g < maxColorNormalized ||
+      color.b < maxColorNormalized);
   }
 
   /// キャッシュをクリア

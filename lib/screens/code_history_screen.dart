@@ -9,7 +9,7 @@ class CodeHistoryScreen extends StatefulWidget {
   const CodeHistoryScreen({super.key, required this.problemId});
 
   @override
-  _CodeHistoryScreenState createState() => _CodeHistoryScreenState();
+  State<CodeHistoryScreen> createState() => _CodeHistoryScreenState();
 }
 
 class _CodeHistoryScreenState extends State<CodeHistoryScreen> {

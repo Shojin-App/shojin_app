@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../config/build_config.dart';
 import '../utils/app_fonts.dart';
 
 /// Returns a TextStyle for a monospace font.

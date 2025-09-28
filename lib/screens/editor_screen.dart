@@ -98,6 +98,15 @@ class _EditorScreenState extends State<EditorScreen> {
     super.dispose();
   }
 
+  void _log(String message, {Object? error, StackTrace? stackTrace}) {
+    developer.log(
+      message,
+      name: 'EditorScreen',
+      error: error,
+      stackTrace: stackTrace,
+    );
+  }
+
   void _onCodeChanged() {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(seconds: 2), () {
@@ -169,8 +178,8 @@ class _EditorScreenState extends State<EditorScreen> {
       } else {
         _codeController.text = _getTemplateForLanguage(_selectedLanguage);
       }
-    } catch (e) {
-      print("コードの読み込みに失敗しました: $e");
+    } catch (e, stackTrace) {
+      _log('コードの読み込みに失敗しました', error: e, stackTrace: stackTrace);
       // エラー時もテンプレートを設定
       _codeController.text = _getTemplateForLanguage(_selectedLanguage);
     } finally {
@@ -384,7 +393,7 @@ public class Main {
   Future<void> _loadProblemData() async {
     // problemId が 'default_problem' の場合は何もしない
     if (widget.problemId == 'default_problem') {
-      print("Default problem ID detected, skipping problem data load.");
+      _log('Default problem ID detected, skipping problem data load.');
       // 必要なら _isLoadingCode を false にする
       if (mounted) {
         setState(() {
@@ -406,7 +415,7 @@ public class Main {
         // URLでない場合は、従来の方法でURL構築を試みる
         final parts = widget.problemId.split('_');
         if (parts.isEmpty) {
-          print("Invalid problem ID format: ${widget.problemId}");
+          _log('Invalid problem ID format: ${widget.problemId}');
           if (mounted) {
             setState(() {
               _isLoadingCode = false; // エラーでもローディング終了
@@ -422,34 +431,26 @@ public class Main {
             'https://atcoder.jp/contests/$contestId/tasks/${widget.problemId}';
       }
 
-      print("Fetching problem data from: $url"); // デバッグ用ログ
+      _log('Fetching problem data from: $url');
       final problem = await _atcoderService.fetchProblem(url);
-      print("Problem data fetched: ${problem.title}"); // デバッグ用ログ
+      _log('Problem data fetched: ${problem.title}');
       if (mounted) {
         setState(() {
           _currentProblem = problem;
-          // ★★★ デバッグログ追加 ★★★
-          print("Problem loaded: ${_currentProblem?.title}");
-          print("Samples found: ${_currentProblem?.samples.length ?? 0}");
-          // ★★★ デバッグログ追加 ★★★
+          _log('Problem loaded: ${_currentProblem?.title}');
+          _log('Samples found: ${_currentProblem?.samples.length ?? 0}');
         });
       }
     } catch (e) {
-      print("Failed to load problem data for testing: $e"); // 既存ログ
+      _log('Failed to load problem data for testing', error: e);
       if (mounted) {
-        // ★★★ デバッグログ追加 ★★★
-        print("Error loading problem data. _currentProblem is null.");
-        // ★★★ デバッグログ追加 ★★★
+        _log('Error loading problem data. _currentProblem is null.');
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('テストケースの読み込みに失敗しました: $e')));
       }
     } finally {
-      // _loadSavedCode と両方終わったことを確認するために
-      // _loadSavedCode 側で isLoadingCode を false にする
-      // ★★★ デバッグログ追加 ★★★
-      print("_loadProblemData finished. isLoadingCode: $_isLoadingCode");
-      // ★★★ デバッグログ追加 ★★★
+      _log('_loadProblemData finished. isLoadingCode: $_isLoadingCode');
     }
   }
 
@@ -461,10 +462,10 @@ public class Main {
     Function(VoidCallback) setDialogState,
   ) async {
     // 詳細なデバッグログを追加
-    print("★★★ Running test case ${testCase.index} ★★★");
-    print("Language: $wandboxLanguage");
-    print("Input length: ${testCase.input.length} chars");
-    print("Code length: ${code.length} chars");
+  _log('★★★ Running test case ${testCase.index} ★★★');
+  _log('Language: $wandboxLanguage');
+  _log('Input length: ${testCase.input.length} chars');
+  _log('Code length: ${code.length} chars');
 
     // ダイアログの状態を更新
     setDialogState(() {
@@ -473,7 +474,7 @@ public class Main {
 
     final url = Uri.parse('https://wandbox.org/api/compile.json');
     try {
-      print("Sending request to Wandbox API...");
+  _log('Sending request to Wandbox API...');
       final requestBody = {
         'code': code,
         'compiler': wandboxLanguage,
@@ -838,7 +839,7 @@ public class Main {
             decoration: BoxDecoration(
               color: Theme.of(
                 context,
-              ).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(4),
             ),
             child: SingleChildScrollView(
@@ -1033,7 +1034,7 @@ public class Main {
                           onPressed: isButtonDisabled
                               ? null
                               : () {
-                                  print('★★★ Test Button Pressed! ★★★');
+                                  _log('★★★ Test Button Pressed! ★★★');
                                   _runTests();
                                 },
                           style: ElevatedButton.styleFrom(
@@ -1110,15 +1111,15 @@ public class Main {
                                   child: Container(
                                     width: double.infinity,
                                     decoration: BoxDecoration(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .surfaceContainerHighest
-                                          .withOpacity(0.3),
+                    color: Theme.of(context)
+                      .colorScheme
+                      .surfaceContainerHighest
+                      .withValues(alpha: 0.3),
                                       borderRadius: BorderRadius.circular(4),
                                       border: Border.all(
                                         color: Theme.of(
                                           context,
-                                        ).dividerColor.withOpacity(0.5),
+                                        ).dividerColor.withValues(alpha: 0.5),
                                       ),
                                     ),
                                     padding: const EdgeInsets.all(8),
@@ -1162,15 +1163,15 @@ public class Main {
                                   child: Container(
                                     width: double.infinity,
                                     decoration: BoxDecoration(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .surfaceContainerHighest
-                                          .withOpacity(0.15),
+                    color: Theme.of(context)
+                      .colorScheme
+                      .surfaceContainerHighest
+                      .withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(4),
                                       border: Border.all(
                                         color: Theme.of(
                                           context,
-                                        ).dividerColor.withOpacity(0.5),
+                                        ).dividerColor.withValues(alpha: 0.5),
                                       ),
                                     ),
                                     padding: const EdgeInsets.all(8),
@@ -1382,11 +1383,9 @@ class _CodeEditor extends StatelessWidget {
             child: CodeField(
               controller: codeController,
               textStyle: getMonospaceTextStyle(codeFontFamily),
-              gutterStyle: const GutterStyle(
+              gutterStyle: GutterStyle(
                 width: 32,
                 textAlign: TextAlign.right,
-              ),
-              lineNumberStyle: LineNumberStyle(
                 textStyle: TextStyle(
                   color: isDarkMode ? Colors.grey : Colors.grey.shade700,
                   fontSize: 12,

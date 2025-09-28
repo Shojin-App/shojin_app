@@ -8,7 +8,6 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
-import '../config/build_config.dart';
 import 'android_package_service.dart';
 
 /// アップデート情報クラス

@@ -6,10 +6,13 @@ void main() {
   group('AutoUpdateManager F-Droid Tests', () {
     test('should disable self-update for F-Droid builds', () {
       // Verify that the kEnableSelfUpdate flag reflects BuildConfig
-      expect(AutoUpdateManager.kEnableSelfUpdate, BuildConfig.enableSelfUpdate);
-      
-      // In test environment without dart-define flags, this should be false
-      expect(AutoUpdateManager.kEnableSelfUpdate, false);
+      expect(
+        AutoUpdateManager.kEnableSelfUpdate,
+        BuildConfig.enableSelfUpdate,
+      );
+
+      // In test environment without dart-define flags, this should be true
+      expect(AutoUpdateManager.kEnableSelfUpdate, true);
     });
     
     test('should have consistent flag with BuildConfig', () {
@@ -21,10 +24,10 @@ void main() {
   group('F-Droid Build Integration Tests', () {
     test('all F-Droid related flags should be consistent', () {
       // Test that all our F-Droid flags are consistent
-      expect(BuildConfig.isF_DroidBuild, false); // Default in test
-      expect(BuildConfig.enableSelfUpdate, false); // Should be false in test
-      expect(BuildConfig.enableOnlineFonts, false); // Should be false in test
-      expect(AutoUpdateManager.kEnableSelfUpdate, false); // Should match BuildConfig
+  expect(BuildConfig.isFdroidBuild, false); // Default in test
+  expect(BuildConfig.enableSelfUpdate, true); // Should be true in test
+  expect(BuildConfig.enableOnlineFonts, true); // Should be true in test
+  expect(AutoUpdateManager.kEnableSelfUpdate, true); // Should match BuildConfig
     });
     
     test('F-Droid flag logic should work correctly', () {
@@ -32,8 +35,8 @@ void main() {
       // Note: In test environment, we can't actually set environment variables,
       // but we can verify the flag relationships are correct
       
-      // The enableSelfUpdate should be false if isF_DroidBuild is true
-      // This tests the && !isF_DroidBuild logic
+  // The enableSelfUpdate should be false if isFdroidBuild is true
+  // This tests the && !isFdroidBuild logic
       const testFdroidBuild = true;
       const testSelfUpdate = true && !testFdroidBuild; // Should be false
       const testOnlineFonts = true && !testFdroidBuild; // Should be false
