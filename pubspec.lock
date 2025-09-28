@@ -242,10 +242,10 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_code_editor
-      sha256: "52da5d30f14b58ebd49a7ffa9f281430899b8bd02c12bf63a68756206470d99e"
+      sha256: "9af48ba8e3558b6ea4bb98b84c5eb1649702acf53e61a84d88383eeb79b239b0"
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.4"
+    version: "0.3.5"
   flutter_highlight:
     dependency: "direct main"
     description:
