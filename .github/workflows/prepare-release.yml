@@ -101,11 +101,14 @@ jobs:
           if [ -n "$LAST_TAG" ]; then RANGE="$LAST_TAG..HEAD"; fi
           RAW=$(git log --pretty=format:%s $RANGE)
           echo "Raw subjects:\n$RAW" | head -40
-          FILTERED=$(echo "$RAW" | grep -v -E '^chore\(release\):' | grep -v -E '^Merge pull request' || true)
+          # 除外: release bump, merge 系, 自動生成的な release 行
+          FILTERED=$(echo "$RAW" | grep -v -E '^(chore\(release\):|Merge |Merge pull request|Merge branch|Merge remote-tracking branch|chore: release )' || true)
+          # 正規化: 先頭が 'Refactor ' で始まるものを refactor: に統一
+          NORMALIZED=$(echo "$FILTERED" | awk '/^Refactor /{sub(/^Refactor /,"refactor: ");} {print}')
           if [ -z "$FILTERED" ]; then
             CHANGES='- (変更点なし / No notable changes)'
           else
-            CHANGES=$(echo "$FILTERED" | awk 'function map(line){
+            CHANGES=$(echo "$NORMALIZED" | awk 'function map(line){
                if(line ~ /^feat/){return "- ✨ " line}
                if(line ~ /^fix/){return "- 🐛 " line}
                if(line ~ /^perf/){return "- 🚀 " line}
@@ -119,8 +122,12 @@ jobs:
           fi
           echo "--- Generated list ---"
           echo "$CHANGES" | head -40
-          esc=$(printf "%s" "$CHANGES" | sed 's/%/%25/g; s/\r/%0D/g; s/\n/%0A/g')
-          echo "list=$esc" >> $GITHUB_OUTPUT
+          # GitHub Actions multiline output (改行をそのまま保持)
+          {
+            echo 'list<<__EOT__'
+            printf '%s\n' "$CHANGES"
+            echo '__EOT__'
+          } >> $GITHUB_OUTPUT
 
       - name: Update pubspec.yaml version
         run: |
