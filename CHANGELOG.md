@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 This file is maintained automatically by release-please (Conventional Commits).
 
+## [1.2.0](https://github.com/Shojin-App/shojin_app/compare/v1.1.2...v1.2.0) (2025-09-28)
+
+
+### Features
+
+* リリース準備と公開ワークフローを追加 ([9906569](https://github.com/Shojin-App/shojin_app/commit/99065698edbdc8b4fe0ac53b37e9f1721f9be391))
+
 ## [1.1.2](https://github.com/Shojin-App/shojin_app/compare/v1.1.2...v1.1.2) (2025-09-27)
 
 
