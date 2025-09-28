@@ -19,6 +19,11 @@ on:
                 description: "Dry run (do not push/PR)"
                 default: false
                 required: true
+            force_update_existing:
+                type: boolean
+                description: "If release branch already exists, force update it"
+                default: false
+                required: false
 
 permissions:
     contents: write
@@ -118,33 +123,74 @@ jobs:
               run: |
                   next='${{ steps.next.outputs.value }}'
                   git add pubspec.yaml CHANGELOG.md
-                  git commit -m "chore(release): v$next\n\nPrepare release from dev"
+                  if git diff --cached --quiet; then
+                    echo "No changes to commit (version already set?)"
+                  else
+                    git commit -m "chore(release): v$next\n\nPrepare release from dev"
+                  fi
 
-            - name: Push branch
+            - name: Push release branch (safe)
               if: ${{ github.event.inputs.dry_run == 'false' }}
               id: push
               run: |
+                  set -e
                   next='${{ steps.next.outputs.value }}'
                   BRANCH="release/v$next"
-                  git push origin HEAD:$BRANCH
+                  FORCE='${{ github.event.inputs.force_update_existing }}'
+                  git fetch origin "$BRANCH" || true
+                  if git rev-parse -q --verify "origin/$BRANCH" >/dev/null; then
+                    echo "Remote branch exists: $BRANCH"
+                    if [ "$FORCE" = "true" ]; then
+                      echo "Force updating remote branch $BRANCH"
+                      git push origin HEAD:$BRANCH --force
+                    else
+                      # Check divergence
+                      LOCAL=$(git rev-parse HEAD)
+                      REMOTE=$(git rev-parse "origin/$BRANCH")
+                      if [ "$LOCAL" = "$REMOTE" ]; then
+                        echo "Remote branch already up-to-date."
+                      else
+                        echo "Branch diverged. (Set force_update_existing=true to overwrite)"
+                        echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+                        exit 0
+                      fi
+                    fi
+                  else
+                    echo "Creating new remote branch $BRANCH"
+                    git push origin HEAD:$BRANCH
+                  fi
                   echo "branch=$BRANCH" >> $GITHUB_OUTPUT
 
-            - name: Create PR to main
-              if: ${{ github.event.inputs.dry_run == 'false' }}
+            - name: Determine target branch
+              id: target
+              run: |
+                  pre='${{ github.event.inputs.preid }}'
+                  if [ -n "$pre" ]; then
+                    echo "base=dev" >> $GITHUB_OUTPUT
+                    echo "pr_body=自動生成された **プレリリース (Beta)** 準備 PR です。" >> $GITHUB_OUTPUT
+                  else
+                    echo "base=main" >> $GITHUB_OUTPUT
+                    echo "pr_body=自動生成された **正式リリース** 準備 PR です。" >> $GITHUB_OUTPUT
+                  fi
+
+            - name: Create PR
+              if: ${{ github.event.inputs.dry_run == 'false' && steps.push.outputs.branch != '' }}
               uses: peter-evans/create-pull-request@v6
               with:
                   token: ${{ secrets.GITHUB_TOKEN }}
                   branch: ${{ steps.push.outputs.branch }}
-                  base: main
+                  base: ${{ steps.target.outputs.base }}
                   title: "chore(release): v${{ steps.next.outputs.value }}"
                   body: |
-                      自動生成されたリリース準備 PR です。
+                      ${{ steps.target.outputs.pr_body }}
 
                       - 元ブランチ: dev
                       - 次バージョン: v${{ steps.next.outputs.value }}
                       - CHANGELOG は placeholder を含む場合があります。必要に応じて編集してください。
 
-                      マージ後、publish-release ワークフローがタグと GitHub Release を作成します。
+                      **【重要】**
+                      - **正式リリース (main向け)**: マージ後、`publish-release` ワークフローがタグと GitHub Release を作成します。
+                      - **プレリリース (dev向け)**: マージ後、タグやリリースは作成されません。バージョン番号のみ取り込みます。
                   labels: release
                   draft: false
 
