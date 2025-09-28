@@ -179,26 +179,86 @@ jobs:
             echo "pr_body=自動生成された **正式リリース** 準備 PR です。" >> $GITHUB_OUTPUT
           fi
 
-      - name: Create PR
+      - name: Check diff with base
         if: ${{ github.event.inputs.dry_run == 'false' && steps.push.outputs.branch != '' }}
-        uses: peter-evans/create-pull-request@v6
+        id: diff
+        run: |
+          BASE='${{ steps.target.outputs.base }}'
+          HEAD_BR='${{ steps.push.outputs.branch }}'
+          set -e
+          echo "Fetching full history for reliable diff..."
+          git fetch origin "$BASE" --depth=0 || true
+          git fetch origin "$HEAD_BR" --depth=0 || true
+          # Ensure we have refs
+          git rev-parse "origin/$BASE" >/dev/null
+          git rev-parse "$HEAD_BR" >/dev/null
+
+          # Primary commit ahead count (commits reachable from HEAD_BR not in base)
+          AHEAD=$(git rev-list --right-only --count "origin/$BASE...$HEAD_BR" || echo 0)
+          echo "ahead_commits=$AHEAD" >> $GITHUB_OUTPUT
+
+          # Secondary: file diff check (handles rewritten history / same commit count but content changes)
+          if git diff --quiet "origin/$BASE...$HEAD_BR"; then
+            FILE_DIFF=0
+          else
+            FILE_DIFF=1
+          fi
+          echo "file_diff=$FILE_DIFF" >> $GITHUB_OUTPUT
+
+            # Tertiary: changed pubspec / changelog specifically (release related)
+          if git diff --name-only "origin/$BASE...$HEAD_BR" | grep -E '^(pubspec.yaml|CHANGELOG.md)$' >/dev/null; then
+            REL_FILES_CHANGED=1
+          else
+            REL_FILES_CHANGED=0
+          fi
+          echo "release_files_changed=$REL_FILES_CHANGED" >> $GITHUB_OUTPUT
+
+          if [ "$AHEAD" -gt 0 ] || [ "$FILE_DIFF" -eq 1 ] || [ "$REL_FILES_CHANGED" -eq 1 ]; then
+            echo "different=true" >> $GITHUB_OUTPUT
+            echo "Diff detected (ahead=$AHEAD file_diff=$FILE_DIFF release_files=$REL_FILES_CHANGED)"
+          else
+            echo "different=false" >> $GITHUB_OUTPUT
+            echo "No diff between $HEAD_BR and $BASE. PR will be skipped."
+            echo "(ahead=$AHEAD file_diff=$FILE_DIFF release_files=$REL_FILES_CHANGED)"
+          fi
+
+      - name: Create / Reuse PR (github-script)
+        if: ${{ github.event.inputs.dry_run == 'false' && steps.push.outputs.branch != '' && steps.diff.outputs.different == 'true' }}
+        uses: actions/github-script@v7
+        id: create_pr
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ steps.push.outputs.branch }}
-          base: ${{ steps.target.outputs.base }}
-          title: "chore(release): v${{ steps.next.outputs.value }}"
-          body: |
-            ${{ steps.target.outputs.pr_body }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const next = process.env.NEXT_VERSION = `${{ steps.next.outputs.value }}`;
+            const head = `${{ steps.push.outputs.branch }}`; // already pushed 'release/vX.Y.Z'
+            const base = `${{ steps.target.outputs.base }}`;
+            const prTitle = `chore(release): v${{ steps.next.outputs.value }}`;
+            const body = (
+              `${{ steps.target.outputs.pr_body }}\n\n` +
+              `- 元ブランチ: dev\n` +
+              `- 次バージョン: v${{ steps.next.outputs.value }}\n` +
+              `- CHANGELOG は placeholder を含む場合があります。必要に応じて編集してください。\n\n` +
+              `**【重要】**\n` +
+              `- **正式リリース (main向け)**: マージ後、publish-release ワークフローがタグと GitHub Release を作成します。\n` +
+              `- **プレリリース (dev向け)**: マージ後、タグやリリースは作成されません。バージョン番号のみ取り込みます。`
+            ).trim();
 
-            - 元ブランチ: dev
-            - 次バージョン: v${{ steps.next.outputs.value }}
-            - CHANGELOG は placeholder を含む場合があります。必要に応じて編集してください。
+            const {owner, repo} = context.repo;
+            // Check existing open PR from head -> base
+            const existing = await github.rest.pulls.list({owner, repo, state: 'open', head: `${owner}:${head}`});
+            if (existing.data.length > 0) {
+              core.info(`Existing PR found: ${existing.data[0].html_url}`);
+              core.setOutput('url', existing.data[0].html_url);
+              return;
+            }
+            // Create new PR
+            const pr = await github.rest.pulls.create({owner, repo, head, base, title: prTitle, body});
+            core.info(`Created PR: ${pr.data.html_url}`);
+            core.setOutput('url', pr.data.html_url);
 
-            **【重要】**
-            - **正式リリース (main向け)**: マージ後、`publish-release` ワークフローがタグと GitHub Release を作成します。
-            - **プレリリース (dev向け)**: マージ後、タグやリリースは作成されません。バージョン番号のみ取り込みます。
-          labels: release
-          draft: false
+      - name: Skip note (no diff)
+        if: ${{ github.event.inputs.dry_run == 'false' && steps.push.outputs.branch != '' && steps.diff.outputs.different == 'false' }}
+        run: echo "Base と release ブランチに差分が無いため PR 作成をスキップしました。"
 
       - name: Dry run note
         if: ${{ github.event.inputs.dry_run == 'true' }}
