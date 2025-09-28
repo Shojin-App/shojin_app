@@ -7620,13 +7620,13 @@ SOFTWARE.''',
     devDependencies: [PackageRef('path')],
   );
 
-/// shojin_app 1.1.10
+/// shojin_app 1.1.11
 const _shojin_app = Package(
     name: 'shojin_app',
     description: 'AtCoderの精進をスマホでも。',
     homepage: 'https://github.com/Shojin-App/shojin_app',
     authors: [],
-    version: '1.1.10',
+    version: '1.1.11',
     license: '''GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
 

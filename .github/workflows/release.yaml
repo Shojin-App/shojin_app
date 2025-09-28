@@ -1,150 +1,181 @@
 name: Release APKs
 
 on:
-    release:
-        types:
-            - published
-    workflow_dispatch:
-        inputs:
-            tag_name:
-                description: "Existing release tag to upload assets to (required for manual runs)"
-                required: false
-                type: string
-            flavor:
-                description: "Which flavor to build"
-                type: choice
-                required: true
-                options:
-                    - oss
-                    - fdroid
-                    - both
-                default: both
-            build_type:
-                description: "APK Build Type (split per ABI or single universal)"
-                type: choice
-                required: true
-                options:
-                    - split
-                    - single
-                default: split
-            run_tests:
-                description: "Run Flutter tests before building APKs"
-                type: boolean
-                required: true
-                default: false
+  # 既存: Release publish 時
+  release:
+    types:
+      - published
+  # 新規: タグ push (publish-release.yml が vX.Y.Z を作成した直後) でも起動
+  push:
+    tags:
+      - "v[0-9]*"
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Existing release tag to upload assets to (required for manual runs)"
+        required: false
+        type: string
+      flavor:
+        description: "Which flavor to build"
+        type: choice
+        required: true
+        options:
+          - oss
+          - fdroid
+          - both
+        default: both
+      build_type:
+        description: "APK Build Type (split per ABI or single universal)"
+        type: choice
+        required: true
+        options:
+          - split
+          - single
+        default: split
+      run_tests:
+        description: "Run Flutter tests before building APKs"
+        type: boolean
+        required: true
+        default: false
 
 permissions:
-    contents: write
+  contents: write
 
 concurrency:
-    group: release-apk-${{ github.event.release.tag_name || github.event.inputs.tag_name || github.ref }}
-    cancel-in-progress: false
+  group: release-apk-${{ github.event.release.tag_name || github.event.inputs.tag_name || github.ref }}
+  cancel-in-progress: false
 
 jobs:
-    build_and_attach:
-        name: Build and attach APKs
-        runs-on: ubuntu-latest
+  build_and_attach:
+    name: Build and attach APKs
+    runs-on: ubuntu-latest
+    env:
+      BUILD_TYPE: ${{ github.event.inputs.build_type || 'split' }}
+      FLAVOR: ${{ github.event.inputs.flavor || 'both' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Get Flutter dependencies
+        run: flutter pub get || flutter pub get || flutter pub get
+
+      - name: Analyze project source (optional)
+        if: ${{ github.event.inputs.run_tests == 'true' }}
+        run: flutter analyze --no-fatal-warnings || true
+
+      - name: Run tests (optional)
+        if: ${{ github.event.inputs.run_tests == 'true' }}
+        run: flutter test
+
+      - name: Determine target release tag
+        id: release_meta
         env:
-            BUILD_TYPE: ${{ github.event.inputs.build_type || 'split' }}
-            FLAVOR: ${{ github.event.inputs.flavor || 'both' }}
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
+          EVENT_NAME: ${{ github.event_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          INPUT_TAG: ${{ github.event.inputs.tag_name }}
+          GITHUB_REF: ${{ github.ref }}
+        run: |
+          set -e
+          case "$EVENT_NAME" in
+            release)
+              if [ -z "$RELEASE_TAG" ]; then echo "::error::Release tag not detected." >&2; exit 1; fi
+              TAG="$RELEASE_TAG" ;;
+            push)
+              # refs/tags/v1.2.3 -> v1.2.3
+              TAG="${GITHUB_REF##refs/tags/}" ;;
+            workflow_dispatch)
+              if [ -z "$INPUT_TAG" ]; then echo "::error::Please provide tag_name when running manually." >&2; exit 1; fi
+              TAG="$INPUT_TAG" ;;
+            *) echo "::error::Unsupported event $EVENT_NAME" >&2; exit 1 ;;
+          esac
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Using tag: $TAG"
 
-            - name: Set up JDK 21
-              uses: actions/setup-java@v4
-              with:
-                  distribution: "temurin"
-                  java-version: "21"
+      - name: Skip if assets already present
+        id: maybe_skip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          TAG='${{ steps.release_meta.outputs.tag }}'
+          # 既に同タグのリリースがあり、且つ apk 資産が1つでもあるならスキップ
+          API="https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG"
+          RESP=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" -H 'Accept: application/vnd.github+json' "$API" || true)
+          if echo "$RESP" | grep -q '"assets"'; then
+            COUNT=$(echo "$RESP" | jq '[.assets[] | select(.name|test("apk$"))] | length')
+            echo "Existing APK asset count: $COUNT"
+            if [ "$COUNT" -gt 0 ]; then
+              echo "skip=true" >> $GITHUB_OUTPUT
+              echo "Detected existing APK assets. Skipping build/upload." 
+            else
+              echo "skip=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
 
-            - name: Set up Flutter
-              uses: subosito/flutter-action@v2
-              with:
-                  channel: stable
-                  cache: true
+      - name: Build APK (Split per ABI, OSS)
+        if: ${{ steps.maybe_skip.outputs.skip != 'true' && contains(env.BUILD_TYPE, 'split') && (env.FLAVOR == 'oss' || env.FLAVOR == 'both') }}
+        run: flutter build apk --flavor oss --release --split-per-abi --build-number=${{ github.run_number }}
 
-            - name: Get Flutter dependencies
-              run: flutter pub get || flutter pub get || flutter pub get
+      - name: Build APK (Split per ABI, FDroid)
+        if: ${{ steps.maybe_skip.outputs.skip != 'true' && contains(env.BUILD_TYPE, 'split') && (env.FLAVOR == 'fdroid' || env.FLAVOR == 'both') }}
+        run: flutter build apk --flavor fdroid --release --split-per-abi --build-number=${{ github.run_number }} --dart-define=ENABLE_SELF_UPDATE=false
 
-            - name: Analyze project source (optional)
-              if: ${{ github.event.inputs.run_tests == 'true' }}
-              run: flutter analyze --no-fatal-warnings || true
+      - name: Build APK (Single Universal, OSS)
+        if: ${{ steps.maybe_skip.outputs.skip != 'true' && contains(env.BUILD_TYPE, 'single') && (env.FLAVOR == 'oss' || env.FLAVOR == 'both') }}
+        run: flutter build apk --flavor oss --release --build-number=${{ github.run_number }}
 
-            - name: Run tests (optional)
-              if: ${{ github.event.inputs.run_tests == 'true' }}
-              run: flutter test
+      - name: Build APK (Single Universal, FDroid)
+        if: ${{ steps.maybe_skip.outputs.skip != 'true' && contains(env.BUILD_TYPE, 'single') && (env.FLAVOR == 'fdroid' || env.FLAVOR == 'both') }}
+        run: flutter build apk --flavor fdroid --release --build-number=${{ github.run_number }} --dart-define=ENABLE_SELF_UPDATE=false
 
-            - name: Determine target release tag
-              id: release_meta
-              env:
-                  EVENT_NAME: ${{ github.event_name }}
-                  RELEASE_TAG: ${{ github.event.release.tag_name }}
-                  INPUT_TAG: ${{ github.event.inputs.tag_name }}
-              run: |
-                  if [ "$EVENT_NAME" = "release" ]; then
-                    if [ -z "$RELEASE_TAG" ]; then
-                      echo "::error::Release tag not detected." >&2
-                      exit 1
-                    fi
-                    echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
-                  else
-                    if [ -z "$INPUT_TAG" ]; then
-                      echo "::error::Please provide tag_name when running manually." >&2
-                      exit 1
-                    fi
-                    echo "tag=$INPUT_TAG" >> "$GITHUB_OUTPUT"
-                  fi
+      - name: Upload Split APKs (OSS)
+        if: ${{ steps.maybe_skip.outputs.skip != 'true' && contains(env.BUILD_TYPE, 'split') && (env.FLAVOR == 'oss' || env.FLAVOR == 'both') }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_meta.outputs.tag }}
+          draft: false
+          prerelease: false
+          files: build/app/outputs/flutter-apk/app-oss-*-release.apk
 
-            - name: Build APK (Split per ABI, OSS)
-              if: ${{ contains(env.BUILD_TYPE, 'split') && (env.FLAVOR == 'oss' || env.FLAVOR == 'both') }}
-              run: flutter build apk --flavor oss --release --split-per-abi --build-number=${{ github.run_number }}
+      - name: Upload Split APKs (FDroid)
+        if: ${{ steps.maybe_skip.outputs.skip != 'true' && contains(env.BUILD_TYPE, 'split') && (env.FLAVOR == 'fdroid' || env.FLAVOR == 'both') }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_meta.outputs.tag }}
+          draft: false
+          prerelease: false
+          files: build/app/outputs/flutter-apk/app-fdroid-*-release.apk
 
-            - name: Build APK (Split per ABI, FDroid)
-              if: ${{ contains(env.BUILD_TYPE, 'split') && (env.FLAVOR == 'fdroid' || env.FLAVOR == 'both') }}
-              run: flutter build apk --flavor fdroid --release --split-per-abi --build-number=${{ github.run_number }} --dart-define=ENABLE_SELF_UPDATE=false
+      - name: Upload Single APK (OSS)
+        if: ${{ steps.maybe_skip.outputs.skip != 'true' && contains(env.BUILD_TYPE, 'single') && (env.FLAVOR == 'oss' || env.FLAVOR == 'both') }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_meta.outputs.tag }}
+          draft: false
+          prerelease: false
+          files: build/app/outputs/flutter-apk/app-oss-release.apk
 
-            - name: Build APK (Single Universal, OSS)
-              if: ${{ contains(env.BUILD_TYPE, 'single') && (env.FLAVOR == 'oss' || env.FLAVOR == 'both') }}
-              run: flutter build apk --flavor oss --release --build-number=${{ github.run_number }}
-
-            - name: Build APK (Single Universal, FDroid)
-              if: ${{ contains(env.BUILD_TYPE, 'single') && (env.FLAVOR == 'fdroid' || env.FLAVOR == 'both') }}
-              run: flutter build apk --flavor fdroid --release --build-number=${{ github.run_number }} --dart-define=ENABLE_SELF_UPDATE=false
-
-            - name: Upload Split APKs (OSS)
-              if: ${{ contains(env.BUILD_TYPE, 'split') && (env.FLAVOR == 'oss' || env.FLAVOR == 'both') }}
-              uses: softprops/action-gh-release@v2
-              with:
-                  tag_name: ${{ steps.release_meta.outputs.tag }}
-                  draft: false
-                  prerelease: false
-                  files: build/app/outputs/flutter-apk/app-oss-*-release.apk
-
-            - name: Upload Split APKs (FDroid)
-              if: ${{ contains(env.BUILD_TYPE, 'split') && (env.FLAVOR == 'fdroid' || env.FLAVOR == 'both') }}
-              uses: softprops/action-gh-release@v2
-              with:
-                  tag_name: ${{ steps.release_meta.outputs.tag }}
-                  draft: false
-                  prerelease: false
-                  files: build/app/outputs/flutter-apk/app-fdroid-*-release.apk
-
-            - name: Upload Single APK (OSS)
-              if: ${{ contains(env.BUILD_TYPE, 'single') && (env.FLAVOR == 'oss' || env.FLAVOR == 'both') }}
-              uses: softprops/action-gh-release@v2
-              with:
-                  tag_name: ${{ steps.release_meta.outputs.tag }}
-                  draft: false
-                  prerelease: false
-                  files: build/app/outputs/flutter-apk/app-oss-release.apk
-
-            - name: Upload Single APK (FDroid)
-              if: ${{ contains(env.BUILD_TYPE, 'single') && (env.FLAVOR == 'fdroid' || env.FLAVOR == 'both') }}
-              uses: softprops/action-gh-release@v2
-              with:
-                  tag_name: ${{ steps.release_meta.outputs.tag }}
-                  draft: false
-                  prerelease: false
-                  files: build/app/outputs/flutter-apk/app-fdroid-release.apk
+      - name: Upload Single APK (FDroid)
+        if: ${{ steps.maybe_skip.outputs.skip != 'true' && contains(env.BUILD_TYPE, 'single') && (env.FLAVOR == 'fdroid' || env.FLAVOR == 'both') }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_meta.outputs.tag }}
+          draft: false
+          prerelease: false
+          files: build/app/outputs/flutter-apk/app-fdroid-release.apk

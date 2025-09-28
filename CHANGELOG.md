@@ -1,5 +1,29 @@
 ## [Unreleased]
 
+## [1.1.11] - 2025-09-28
+
+- 🔧 chore: release.yamlのフォーマットを統一し、可読性を向上
+- 🔧 chore: release.yamlのイベントトリガーを更新し、タグプッシュを追加
+- 🐛 fix: CHANGELOGの生成ロジックを改善し、不要なコミットメッセージを除外
+- ✨ feat: CHANGELOG.mdに自動生成された変更点を注入する機能を追加
+- ✨ feat: FlutterのセットアップとOSSライセンスファイルの生成を追加
+- 🔧 chore: バージョンを1.1.8に更新
+- ♻️  refactor: PR作成ロジックを改善し、リモートブランチの存在確認を追加
+- ♻️  refactor: PR作成ロジックを改善し、差分チェックを追加
+- ♻️  refactor: code for improved readability and consistency
+- ♻️  refactor: and enhance various components
+- 🔧 chore: update shojin_app version to 1.1.3
+- 🔧 chore: prepare release workflow with force update option
+- 🔧 chore: 不要なブランチ指定を削除
+- 🔧 chore: Gitユーザーの設定を追加
+- 🔧 chore: share_plusのバージョンを12.0.0に更新
+- 🔧 chore: release-pleaseワークフローを削除
+- 🔧 chore: リリース運用のフローとコミット規約を更新
+- 🔧 chore: prepare release workflowの整形とコメントの追加
+- ✨ feat: リリース準備と公開ワークフローを追加 リリース準備と公開のための新しいGitHub Actionsワークフローを追加しました。これにより、バージョンの自動計算、CHANGELOGの更新、GitHubリリースの作成が可能になります。
+- 🧱 build(deps): bump share_plus from 11.1.0 to 12.0.0
+
+
 ## [1.1.10] - 2025-09-28
 
 - 🐛 fix: CHANGELOGの生成ロジックを改善し、不要なコミットメッセージを除外
