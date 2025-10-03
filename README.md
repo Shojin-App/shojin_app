@@ -1,6 +1,4 @@
-<p align="center">
-  <h1>Shojin_App</h1>
-</p>
+<h1 align="center">Shojin_App</h1>
 
 AtCoderの精進をスマホでも。
 
