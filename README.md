@@ -10,16 +10,34 @@
     alt="Get it on GitHub"
     height="80">](https://github.com/Shojin-App/shojin_app/releases)
 
+<table>
+  <tr>
+    <td>
+      <a href="https://github.com/Shojin-App/shojin_app/releases"><img src="https://img.shields.io/github/v/release/Shojin-App/shojin_app?include_prereleases" alt="Latest release"></a>
+      <a href="https://github.com/Shojin-App/shojin_app/releases"><img src="https://img.shields.io/github/downloads/Shojin-App/shojin_app/total" alt="Downloads"></a>
+    </td>
+    <td>
+      <a href="https://github.com/Shojin-App/shojin_app/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Shojin-App/shojin_app" alt="License"></a>
+      <a href="https://github.com/Shojin-App/shojin_app"><img src="https://img.shields.io/github/repo-size/Shojin-App/shojin_app" alt="Repo Size"></a>
+      <a href="https://github.com/Shojin-App/shojin_app"><img src="https://img.shields.io/github/languages/code-size/Shojin-App/shojin_app" alt="Code Size"></a>
+      <a href="https://github.com/Shojin-App/shojin_app/actions/workflows/build.yaml"><img src="https://github.com/Shojin-App/shojin_app/actions/workflows/build.yaml/badge.svg" alt="Android Build"></a>
+    </td>
+    <td>
+      <a href="https://github.com/Shojin-App/shojin_app/stargazers"><img src="https://img.shields.io/github/stars/Shojin-App/shojin_app" alt="GitHub Stars"></a>
+      <a href="https://github.com/Shojin-App/shojin_app/network/members"><img src="https://img.shields.io/github/forks/Shojin-App/shojin_app" alt="Forks"></a>
+      <a href="https://github.com/Shojin-App/shojin_app/issues"><img src="https://img.shields.io/github/issues/Shojin-App/shojin_app" alt="Issues"></a>
+      <a href="https://deepwiki.com/Shojin-App/shojin_app"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
+    </td>
+  </tr>
+</table>
 
-| リリース | コードベース | その他 |
-| --- | --- | --- |
-| [![Latest release](https://img.shields.io/github/v/release/Shojin-App/shojin_app?include_prereleases)](https://github.com/Shojin-App/shojin_app/releases) [![Downloads](https://img.shields.io/github/downloads/Shojin-App/shojin_app/total)](https://github.com/Shojin-App/shojin_app/releases) | [![License](https://img.shields.io/github/license/Shojin-App/shojin_app)](https://github.com/Shojin-App/shojin_app/blob/main/LICENSE) [![Repo Size](https://img.shields.io/github/repo-size/Shojin-App/shojin_app)](https://github.com/Shojin-App/shojin_app) [![Code Size](https://img.shields.io/github/languages/code-size/Shojin-App/shojin_app)](https://github.com/Shojin-App/shojin_app) [![Android Build](https://github.com/Shojin-App/shojin_app/actions/workflows/build.yaml/badge.svg)](https://github.com/Shojin-App/shojin_app/actions/workflows/build.yaml) | [![GitHub Stars](https://img.shields.io/github/stars/Shojin-App/shojin_app)](https://github.com/Shojin-App/shojin_app/stargazers) [![Forks](https://img.shields.io/github/forks/Shojin-App/shojin_app)](https://github.com/Shojin-App/shojin_app/network/members) [![Issues](https://img.shields.io/github/issues/Shojin-App/shojin_app)](https://github.com/Shojin-App/shojin_app/issues) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Shojin-App/shojin_app) |
+
 
 > [!IMPORTANT]
 > **`v1.1.0`でパッケージ名が変更されました。**<br>
 > `v1.0.0`以前のリリースが既にインストールされている場合は別のアプリとしてインストールされます。<br>
 > 設定等は引き継がれないのでお気をつけて。<br>
-> (~~早く設定のエクスポート機能を実装しろ~~)
+> (~~早く設定のエクスポート機能を実装しろ~~しました)
 
 ## 機能
 
