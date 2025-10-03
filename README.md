@@ -1,5 +1,5 @@
 <p align="center">
-  # Shojin_App
+  <h1>Shojin_App</h1>
 </p>
 
 AtCoderの精進をスマホでも。
