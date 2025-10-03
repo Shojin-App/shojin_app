@@ -6,8 +6,11 @@
 </p>
 
 
-[<img src="https://github.com/machiav3lli/oandbackupx/blob/034b226cea5c1b30eb4f6a6f313e4dadcbb0ece4/badge_github.png"
-alt="Get it on GitHub" height="80" align="center">](https://github.com/Shojin-App/shojin_app/releases)
+<div align="center">
+  <a href="https://github.com/Shojin-App/shojin_app/releases">
+    <img src="https://github.com/machiav3lli/oandbackupx/blob/034b226cea5c1b30eb4f6a6f313e4dadcbb0ece4/badge_github.png" alt="Get it on GitHub" height="80">
+  </a>
+</div>
 
 <table>
   <tr>
