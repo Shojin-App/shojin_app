@@ -1,4 +1,4 @@
-<h1 sytle="text-aling: center">Shojin_App</h1>
+<h1 sytle="text-aling: center;">Shojin_App</h1>
 
 AtCoderの精進をスマホでも。
 
