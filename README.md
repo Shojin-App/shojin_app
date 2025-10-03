@@ -1,3 +1,5 @@
+![logo](/assets%2Ficon%2Fadaptive_foreground.png)
+
 <h1 align="center">Shojin_App</h1>
 
 
