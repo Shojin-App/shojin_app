@@ -1,4 +1,6 @@
-![logo](/assets%2Ficon%2Fadaptive_foreground.png)
+<div align="center">
+    <img src="https://github.com/Shojin-App/shojin_app/blob/main/assets%2Ficon%2Fadaptive_foreground.png" alt="logo" height="80">
+</div>
 
 <h1 align="center">Shojin_App</h1>
 
