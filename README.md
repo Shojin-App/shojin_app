@@ -8,14 +8,23 @@
 
 <br>
 
-<div align="center">
-  <a href="https://github.com/Shojin-App/shojin_app/releases">
-    <img src="assets/badge_github.png" alt="Get it on GitHub" height="50">
-  </a>&nbsp;&nbsp;&nbsp;&nbsp;
-  <a href="https://apps.obtainium.imranr.dev/redirect.html?r=obtainium://add/https://github.com/Shojin-App/shojin_app">
-    <img src="assets/badge_obtainium.png" alt="Get it on Obtainium" height="50">
-  </a>
-</div>
+<table align="center">
+  <tr>
+    <td align="center">
+      <a href="https://github.com/Shojin-App/shojin_app/releases">
+        <img src="assets/badge_github.png" alt="Get it on GitHub" height="50">
+      </a>
+    </td>
+    <td style="width: 24px;">&nbsp;</td>
+    <td align="center">
+      <a href="https://apps.obtainium.imranr.dev/redirect.html?r=obtainium://add/https://github.com/Shojin-App/shojin_app">
+        <img src="assets/badge_obtainium.png" alt="Get it on Obtainium" height="50">
+      </a>
+    </td>
+  </tr>
+  <tr><td colspan="3" height="10"></td></tr>
+  <!-- ↑ スペース幅は上記の width 値で調整可能 -->
+</table>
 
 <br>
 
