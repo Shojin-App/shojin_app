@@ -11,7 +11,7 @@
 <div align="center">
   <a href="https://github.com/Shojin-App/shojin_app/releases">
     <img src="assets/badge_github.png" alt="Get it on GitHub" height="50">
-  </a>  
+  </a>&nbsp;&nbsp;&nbsp;&nbsp;
   <a href="https://apps.obtainium.imranr.dev/redirect.html?r=obtainium://add/https://github.com/Shojin-App/shojin_app">
     <img src="assets/badge_obtainium.png" alt="Get it on Obtainium" height="50">
   </a>
