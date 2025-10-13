@@ -6,6 +6,7 @@
   AtCoderの精進をスマホでも。
 </p>
 
+<br>
 
 <div align="center">
   <a href="https://github.com/Shojin-App/shojin_app/releases">
