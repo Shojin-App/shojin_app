@@ -11,6 +11,7 @@ import '../providers/theme_provider.dart';
 import '../services/about_info.dart'; // Import AboutInfo
 import '../services/auto_update_manager.dart'; // Import auto update manager
 import '../services/enhanced_update_service.dart'; // Use enhanced service
+import '../services/settings_service.dart';
 import '../utils/app_fonts.dart'; // Import app fonts helper
 import '../utils/text_style_helper.dart';
 import '../widgets/shared/custom_sliver_app_bar.dart'; // Import CustomSliverAppBar
@@ -578,13 +579,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
       children: [
         ListTile(
           title: Text(
-            '設定をエクスポート',
+            '設定をクリップボードにコピー',
             style: AppFonts.notoSansJp(
               fontSize: 16,
               fontWeight: FontWeight.w400,
             ),
           ),
-          subtitle: const Text('現在の設定をファイルに保存'),
+          subtitle: const Text('現在の設定をクリップボードにコピーします'),
+          leading: const Icon(Icons.copy_all_outlined),
+          onTap: () async {
+            HapticFeedback.lightImpact();
+            await _exportSettingsToClipboard();
+          },
+        ),
+        ListTile(
+          title: Text(
+            'クリップボードから設定をインポート',
+            style: AppFonts.notoSansJp(
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+          subtitle: const Text('クリップボードから設定を復元します'),
+          leading: const Icon(Icons.paste_outlined),
+          onTap: () async {
+            HapticFeedback.lightImpact();
+            await _importSettingsFromClipboard();
+          },
+        ),
+        const Divider(),
+        ListTile(
+          title: Text(
+            '設定をファイルにエクスポート',
+            style: AppFonts.notoSansJp(
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+          subtitle: const Text('現在の設定をファイルに保存/共有'),
           leading: const Icon(Icons.upload_file),
           onTap: () async {
             HapticFeedback.lightImpact();
@@ -593,7 +625,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         ListTile(
           title: Text(
-            '設定をインポート',
+            'ファイルから設定をインポート',
             style: AppFonts.notoSansJp(
               fontSize: 16,
               fontWeight: FontWeight.w400,
@@ -860,31 +892,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // エクスポート/インポートメソッド群
   Future<void> _exportSettings() async {
-    try {
-      // ここで SharedPreferences や ThemeProvider を用いて設定を収集し、
-      // 今後ファイルへ書き出す処理を実装予定。
-      // 将来的にファイルとして保存する実装を追加
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('設定のエクスポート機能は開発中です')));
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('設定のエクスポートに失敗しました: $e')));
-    }
+    final settingsService = SettingsService(context);
+    await settingsService.exportSettings();
   }
 
   Future<void> _importSettings() async {
-    try {
-      // 将来的にファイルから設定を読み込む実装を追加
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('設定のインポート機能は開発中です')));
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('設定のインポートに失敗しました: $e')));
-    }
+    final settingsService = SettingsService(context);
+    await settingsService.importSettings();
+  }
+
+  Future<void> _exportSettingsToClipboard() async {
+    final settingsService = SettingsService(context);
+    await settingsService.exportSettingsToClipboard();
+  }
+
+  Future<void> _importSettingsFromClipboard() async {
+    final settingsService = SettingsService(context);
+    await settingsService.importSettingsFromClipboard();
   }
 
   Future<void> _exportTemplates() async {
