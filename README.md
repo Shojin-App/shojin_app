@@ -9,11 +9,11 @@
 
 <div align="center">
   <a href="https://github.com/Shojin-App/shojin_app/releases">
-    <img src="https://github.com/machiav3lli/oandbackupx/blob/034b226cea5c1b30eb4f6a6f313e4dadcbb0ece4/badge_github.png" alt="Get it on GitHub" height="82">
+    <img src="assets/badge_github.png" alt="Get it on GitHub" height="80">
   </a>
   
   <a href="https://apps.obtainium.imranr.dev/redirect.html?r=obtainium://add/https://github.com/Shojin-App/shojin_app">
-    <img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" alt="Get it on Obtainium" height="50">
+    <img src="assets/badge_obtainium.png" alt="Get it on Obtainium" height="80">
   </a>
   
 </div>
