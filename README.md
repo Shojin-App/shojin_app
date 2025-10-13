@@ -5,17 +5,16 @@
 <p align="center">
   AtCoderの精進をスマホでも。
 </p>
-
+<br>
 <div align="center">
   <a href="https://github.com/Shojin-App/shojin_app/releases">
     <img src="assets/badge_github.png" alt="Get it on GitHub" height="60">
   </a>
-  <br><br>
+  <br>
   <a href="https://apps.obtainium.imranr.dev/redirect.html?r=obtainium://add/https://github.com/Shojin-App/shojin_app">
     <img src="assets/badge_obtainium.png" alt="Get it on Obtainium" height="60">
   </a>
 </div>
-<br>
 
 <table>
   <tr>
