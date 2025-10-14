@@ -7,6 +7,9 @@ gem "fastlane", "~> 2.228"
 gem "abbrev", "~> 0.1"
 gem "fiddle", "~> 1.1"
 
+# Ruby 3.5+ でデフォルト gem から外れるため、警告抑制と将来互換のため追加
+gem "ostruct"
+
 # iOS は現状非対応だが、依存で参照されることがあるため念のため
 gem "xcodeproj", "~> 1.24", platforms: [:ruby]
 
