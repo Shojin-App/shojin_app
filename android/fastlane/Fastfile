@@ -1,0 +1,93 @@
+# fastlane configuration for Android (Flutter)
+
+default_platform(:android)
+
+# Allow overriding Flutter executable (e.g. with FVM) via FLUTTER_BIN
+def flutter_bin
+  ENV['FLUTTER_BIN'] || 'flutter'
+end
+
+platform :android do
+  desc "Run static analysis (flutter analyze)"
+  lane :analyze do
+    sh(flutter_bin, "analyze")
+  end
+
+  desc "Run Flutter tests"
+  lane :test do
+    sh(flutter_bin, "test", "--coverage")
+  end
+
+  desc "Build APK (default flavor: oss, build_type: release)"
+  lane :apk do |options|
+    flavor = (options[:flavor] || ENV['FLAVOR'] || 'oss')
+    build_type = (options[:build_type] || ENV['BUILD_TYPE'] || 'release')
+    dart_defines = options[:dart_defines] || ENV['DART_DEFINES']
+
+    cmd = [flutter_bin, "build", "apk", "--flavor=#{flavor}", "--#{build_type}"]
+    if dart_defines && !dart_defines.empty?
+      dart_defines.split(/[,;]/).each do |d|
+        d = d.strip
+        next if d.empty?
+        cmd << "--dart-define=#{d}"
+      end
+    end
+    sh(*cmd)
+
+    UI.message("APK build completed. Check build/app/outputs/apk/**/#{build_type}/*.apk")
+  end
+
+  desc "Build App Bundle (AAB) (default flavor: oss, build_type: release)"
+  lane :aab do |options|
+    flavor = (options[:flavor] || ENV['FLAVOR'] || 'oss')
+    build_type = (options[:build_type] || ENV['BUILD_TYPE'] || 'release')
+    dart_defines = options[:dart_defines] || ENV['DART_DEFINES']
+
+    cmd = [flutter_bin, "build", "appbundle", "--flavor=#{flavor}", "--#{build_type}"]
+    if dart_defines && !dart_defines.empty?
+      dart_defines.split(/[,;]/).each do |d|
+        d = d.strip
+        next if d.empty?
+        cmd << "--dart-define=#{d}"
+      end
+    end
+    sh(*cmd)
+
+    UI.message("AAB build completed. Check build/app/outputs/bundle/**/#{build_type}/*.aab")
+  end
+
+  desc "Upload to Google Play (default track: internal). Requires SUPPLY_JSON_KEY or SUPPLY_JSON_KEY_DATA."
+  lane :beta do |options|
+    track = options[:track] || ENV['SUPPLY_TRACK'] || 'internal'
+    package = options[:package_name] || ENV['ANDROID_PACKAGE_NAME'] || 'io.github.shojinapp.kyopro'
+    aab_path = options[:aab] || Dir['build/app/outputs/bundle/**/release/*.aab'].max
+
+    UI.user_error!("AAB not found. Run 'fastlane aab' first or pass aab: 'path/to.aab'") unless aab_path
+
+    upload_to_play_store(
+      track: track,
+      package_name: package,
+      aab: aab_path,
+      json_key: ENV['SUPPLY_JSON_KEY'],        # Path to service account JSON file
+      json_key_data: ENV['SUPPLY_JSON_KEY_DATA'], # Raw JSON string (alternative)
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_metadata: true,
+      release_status: options[:release_status] || ENV['RELEASE_STATUS'] || 'draft'
+    )
+  end
+
+  desc "Upload to Internal App Sharing (IAS)"
+  lane :ias do |options|
+    package = options[:package_name] || ENV['ANDROID_PACKAGE_NAME'] || 'io.github.shojinapp.kyopro'
+    aab_path = options[:aab] || Dir['build/app/outputs/bundle/**/release/*.aab'].max
+    UI.user_error!("AAB not found. Run 'fastlane aab' first or pass aab: 'path/to.aab'") unless aab_path
+
+    upload_to_play_store_internal_app_sharing(
+      aab: aab_path,
+      package_name: package,
+      json_key: ENV['SUPPLY_JSON_KEY'],
+      json_key_data: ENV['SUPPLY_JSON_KEY_DATA']
+    )
+  end
+end

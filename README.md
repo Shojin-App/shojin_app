@@ -151,6 +151,40 @@ flutter build apk \
         ```
     *   その他のプラットフォームやビルドオプションについては、[Flutter公式ビルドドキュメント](https://flutter.dev/docs/deployment)を参照してください。
 
+## fastlane (Android 配布の自動化)
+
+このリポジトリは Android 向けに fastlane を導入しています（iOS は現状非対応）。
+
+前提:
+- Flutter SDK が導入済み
+- Ruby + Bundler が利用可能（Windows の場合は RubyInstaller か WSL を推奨）
+- Google Play Console のサービスアカウント JSON（アップロード権限）
+
+初回セットアップ:
+
+```powershell
+bundle install
+```
+
+主な Lane:
+- 解析: `bundle exec fastlane android analyze`
+- テスト: `bundle exec fastlane android test`
+- APK ビルド: `bundle exec fastlane android apk`
+  - 例) `bundle exec fastlane android apk flavor:fdroid build_type:release`
+- AAB ビルド: `bundle exec fastlane android aab`
+- 内部配信（Google Play 内部テスト）: `bundle exec fastlane android beta`
+  - 事前に AAB をビルドしておくか、`aab:` 引数でパスを指定
+
+必要な環境変数:
+- `ANDROID_PACKAGE_NAME` … パッケージ名（省略時 `io.github.shojinapp.kyopro`）
+- `SUPPLY_JSON_KEY` … Play Console サービスアカウント JSON のパス
+  または `SUPPLY_JSON_KEY_DATA` … JSON の中身（CI での利用を想定）
+- 任意 `SUPPLY_TRACK` … デフォルト `internal`
+- 任意 `RELEASE_STATUS` … `draft`/`inProgress`/`completed` など（デフォルト `draft`）
+
+補足:
+- 本プロジェクトはビルドフレーバーとして `oss`/`fdroid` を用意しています。lane の `flavor:` 引数で切り替え可能です。
+- 署名鍵まわりは各自の環境に合わせて設定してください（本リポジトリでは Debug 署名で動作する設定になっています）。
 ## コントリビューション
 
 このプロジェクトへの貢献を歓迎します！バグ報告、機能提案、プルリクエストなど、どのような形でも結構です。
