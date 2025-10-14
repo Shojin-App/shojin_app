@@ -7,15 +7,53 @@ def flutter_bin
   ENV['FLUTTER_BIN'] || 'flutter'
 end
 
+# Compute repository root from this Fastfile's directory (android/fastlane)
+REPO_ROOT = File.expand_path('../..', __dir__)
+
 platform :android do
   desc "Run static analysis (flutter analyze)"
   lane :analyze do
-    sh("#{flutter_bin} analyze")
+    Dir.chdir(REPO_ROOT) do
+      sh("#{flutter_bin} analyze")
+    end
   end
 
-  desc "Run Flutter tests"
-  lane :test do
-    sh("#{flutter_bin} test --coverage")
+  desc "Run Flutter tests (split: default env + F-Droid specific tests)"
+  lane :test do |options|
+    fdroid_flags = options[:fdroid_defines] || 'FDROID_BUILD=true;ENABLE_SELF_UPDATE=false;ENABLE_ONLINE_FONTS=false'
+
+    Dir.chdir(REPO_ROOT) do
+      # Collect test files
+      all = Dir['test/**/*_test.dart']
+      fdroid_files = [
+        'test/services/android_package_service_test.dart',
+        'test/utils/app_fonts_test.dart'
+      ].select { |p| File.exist?(p) }
+      default_files = all - fdroid_files
+
+      # 1) Run default-env tests (no dart-defines)
+      if default_files.any?
+        UI.message("Running default-env tests: #{default_files.join(' ')}")
+        sh([flutter_bin, 'test', '--coverage', *default_files].join(' '))
+      else
+        UI.message('No default-env tests detected.')
+      end
+
+      # 2) Run F-Droid-specific tests with defines
+      if fdroid_files.any?
+        UI.message("Running F-Droid-env tests: #{fdroid_files.join(' ')}")
+        cmd = [flutter_bin, 'test']
+        fdroid_flags.split(/[,;]/).each do |d|
+          d = d.strip
+          next if d.empty?
+          cmd << "--dart-define=#{d}"
+        end
+        cmd += fdroid_files
+        sh(cmd.join(' '))
+      else
+        UI.message('No F-Droid-env tests detected.')
+      end
+    end
   end
 
   desc "Build APK (default flavor: oss, build_type: release)"
@@ -25,7 +63,7 @@ platform :android do
     dart_defines = options[:dart_defines] || ENV['DART_DEFINES']
 
   cmd = [flutter_bin, "build", "apk", "--flavor=#{flavor}", "--#{build_type}"]
-    if dart_defines && !dart_defines.empty?
+  if dart_defines && !dart_defines.empty?
       dart_defines.split(/[,;]/).each do |d|
         d = d.strip
         next if d.empty?
@@ -34,7 +72,9 @@ platform :android do
     end
     sh(*cmd)
 
-    sh(cmd.join(' '))
+    Dir.chdir(REPO_ROOT) do
+      sh(cmd.join(' '))
+    end
     UI.message("APK build completed. Check build/app/outputs/apk/**/#{build_type}/*.apk")
   end
 
@@ -45,7 +85,7 @@ platform :android do
     dart_defines = options[:dart_defines] || ENV['DART_DEFINES']
 
   cmd = [flutter_bin, "build", "appbundle", "--flavor=#{flavor}", "--#{build_type}"]
-    if dart_defines && !dart_defines.empty?
+  if dart_defines && !dart_defines.empty?
       dart_defines.split(/[,;]/).each do |d|
         d = d.strip
         next if d.empty?
@@ -54,7 +94,9 @@ platform :android do
     end
     sh(*cmd)
 
-    sh(cmd.join(' '))
+    Dir.chdir(REPO_ROOT) do
+      sh(cmd.join(' '))
+    end
     UI.message("AAB build completed. Check build/app/outputs/bundle/**/#{build_type}/*.aab")
   end
 
@@ -62,7 +104,12 @@ platform :android do
   lane :beta do |options|
     track = options[:track] || ENV['SUPPLY_TRACK'] || 'internal'
     package = options[:package_name] || ENV['ANDROID_PACKAGE_NAME'] || 'io.github.shojinapp.kyopro'
-    aab_path = options[:aab] || Dir['build/app/outputs/bundle/**/release/*.aab'].max
+    aab_path = options[:aab]
+    unless aab_path
+      Dir.chdir(REPO_ROOT) do
+        aab_path = Dir['build/app/outputs/bundle/**/release/*.aab'].max
+      end
+    end
 
     UI.user_error!("AAB not found. Run 'fastlane aab' first or pass aab: 'path/to.aab'") unless aab_path
 

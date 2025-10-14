@@ -1,0 +1,5 @@
+# Root Fastfile to expose Android lanes from android/fastlane
+
+default_platform(:android)
+
+import '../android/fastlane/Fastfile'
