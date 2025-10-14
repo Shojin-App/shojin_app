@@ -10,12 +10,12 @@ end
 platform :android do
   desc "Run static analysis (flutter analyze)"
   lane :analyze do
-    sh(flutter_bin, "analyze")
+    sh("#{flutter_bin} analyze")
   end
 
   desc "Run Flutter tests"
   lane :test do
-    sh(flutter_bin, "test", "--coverage")
+    sh("#{flutter_bin} test --coverage")
   end
 
   desc "Build APK (default flavor: oss, build_type: release)"
@@ -24,7 +24,7 @@ platform :android do
     build_type = (options[:build_type] || ENV['BUILD_TYPE'] || 'release')
     dart_defines = options[:dart_defines] || ENV['DART_DEFINES']
 
-    cmd = [flutter_bin, "build", "apk", "--flavor=#{flavor}", "--#{build_type}"]
+  cmd = [flutter_bin, "build", "apk", "--flavor=#{flavor}", "--#{build_type}"]
     if dart_defines && !dart_defines.empty?
       dart_defines.split(/[,;]/).each do |d|
         d = d.strip
@@ -34,6 +34,7 @@ platform :android do
     end
     sh(*cmd)
 
+    sh(cmd.join(' '))
     UI.message("APK build completed. Check build/app/outputs/apk/**/#{build_type}/*.apk")
   end
 
@@ -43,7 +44,7 @@ platform :android do
     build_type = (options[:build_type] || ENV['BUILD_TYPE'] || 'release')
     dart_defines = options[:dart_defines] || ENV['DART_DEFINES']
 
-    cmd = [flutter_bin, "build", "appbundle", "--flavor=#{flavor}", "--#{build_type}"]
+  cmd = [flutter_bin, "build", "appbundle", "--flavor=#{flavor}", "--#{build_type}"]
     if dart_defines && !dart_defines.empty?
       dart_defines.split(/[,;]/).each do |d|
         d = d.strip
@@ -53,6 +54,7 @@ platform :android do
     end
     sh(*cmd)
 
+    sh(cmd.join(' '))
     UI.message("AAB build completed. Check build/app/outputs/bundle/**/#{build_type}/*.aab")
   end
 
