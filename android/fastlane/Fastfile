@@ -1,0 +1,129 @@
+# fastlane configuration for Android (Flutter)
+
+default_platform(:android)
+
+# Allow overriding Flutter executable (e.g. with FVM) via FLUTTER_BIN
+def flutter_bin
+  ENV['FLUTTER_BIN'] || 'flutter'
+end
+
+# Compute repository root from this Fastfile's directory (android/fastlane)
+REPO_ROOT = File.expand_path('../..', __dir__)
+
+platform :android do
+  desc "Run static analysis (flutter analyze)"
+  lane :analyze do
+    Dir.chdir(REPO_ROOT) do
+      sh("#{flutter_bin} analyze --no-fatal-infos --no-fatal-warnings")
+    end
+  end
+
+  desc "Run Flutter tests (split: default env + F-Droid specific tests)"
+  lane :test do |options|
+    fdroid_flags = options[:fdroid_defines] || 'FDROID_BUILD=true;ENABLE_SELF_UPDATE=false;ENABLE_ONLINE_FONTS=false'
+
+    Dir.chdir(REPO_ROOT) do
+      # 1) Default-env tests (no dart-defines)
+      default_files = [
+        'test/config/build_config_test.dart',
+        'test/fdroid_integration_test.dart'
+      ].select { |p| File.exist?(p) }
+
+      if default_files.any?
+        UI.message("Running default-env tests: #{default_files.join(' ')}")
+        sh([flutter_bin, 'test', '--coverage', *default_files].join(' '))
+      end
+
+      # 1b) AndroidPackageService tests (default-env subset)
+      aps_file = 'test/services/android_package_service_test.dart'
+      if File.exist?(aps_file)
+        default_names = [
+          'should have correct InstallStatus enum values',
+          'getInstallStatusByCode should return correct status for known codes'
+        ]
+        UI.message("Running AndroidPackageService default-env subset")
+        default_names.each do |n|
+          cmd = [flutter_bin, 'test', aps_file, "--name=\"#{n}\""]
+          sh(cmd.join(' '))
+        end
+      end
+
+      # 2) F-Droid-env tests (with defines)
+      fdroid_files = [
+        'test/utils/app_fonts_test.dart'
+      ].select { |p| File.exist?(p) }
+
+      if fdroid_files.any?
+        UI.message("Running F-Droid-env tests: #{fdroid_files.join(' ')}")
+        cmd = [flutter_bin, 'test']
+        fdroid_flags.split(/[,;]/).each do |d|
+          d = d.strip
+          next if d.empty?
+          cmd << "--dart-define=#{d}"
+        end
+        cmd += fdroid_files
+        sh(cmd.join(' '))
+      end
+
+      # 2b) AndroidPackageService tests (F-Droid subset)
+      if File.exist?(aps_file)
+        fdroid_names = [
+          'should reject APK installation when self-update is disabled',
+          'getInstallStatusByCode should return failure when self-update disabled',
+          'canInstallApks should return false when self-update disabled'
+        ]
+        UI.message("Running AndroidPackageService F-Droid-env subset")
+        fdroid_names.each do |n|
+          cmd = [flutter_bin, 'test']
+          fdroid_flags.split(/[,;]/).each do |d|
+            d = d.strip
+            next if d.empty?
+            cmd << "--dart-define=#{d}"
+          end
+          cmd += [aps_file, "--name=\"#{n}\""]
+          sh(cmd.join(' '))
+        end
+      end
+    end
+  end
+
+  desc "Build APK (default flavor: oss, build_type: release)"
+  lane :apk do |options|
+    flavor = (options[:flavor] || ENV['FLAVOR'] || 'oss')
+    build_type = (options[:build_type] || ENV['BUILD_TYPE'] || 'release')
+    dart_defines = options[:dart_defines] || ENV['DART_DEFINES']
+
+  cmd = [flutter_bin, "build", "apk", "--flavor=#{flavor}", "--#{build_type}"]
+  if dart_defines && !dart_defines.empty?
+      dart_defines.split(/[,;]/).each do |d|
+        d = d.strip
+        next if d.empty?
+        cmd << "--dart-define=#{d}"
+      end
+    end
+    Dir.chdir(REPO_ROOT) do
+      sh(cmd.join(' '))
+    end
+    UI.message("APK build completed. Check build/app/outputs/apk/**/#{build_type}/*.apk")
+  end
+
+  desc "Build App Bundle (AAB) (default flavor: oss, build_type: release)"
+  lane :aab do |options|
+    flavor = (options[:flavor] || ENV['FLAVOR'] || 'oss')
+    build_type = (options[:build_type] || ENV['BUILD_TYPE'] || 'release')
+    dart_defines = options[:dart_defines] || ENV['DART_DEFINES']
+
+  cmd = [flutter_bin, "build", "appbundle", "--flavor=#{flavor}", "--#{build_type}"]
+  if dart_defines && !dart_defines.empty?
+      dart_defines.split(/[,;]/).each do |d|
+        d = d.strip
+        next if d.empty?
+        cmd << "--dart-define=#{d}"
+      end
+    end
+    Dir.chdir(REPO_ROOT) do
+      sh(cmd.join(' '))
+    end
+    UI.message("AAB build completed. Check build/app/outputs/bundle/**/#{build_type}/*.aab")
+  end
+end

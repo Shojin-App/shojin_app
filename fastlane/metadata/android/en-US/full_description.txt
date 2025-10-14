@@ -1,0 +1,15 @@
+Shojin App helps you practice AtCoder problems on mobile.
+
+Features:
+- Problem list & detailed view
+- Login via WebView
+- Code & math rendering (Markdown & LaTeX)
+- Theme switching / licenses viewer
+
+F-Droid build differences:
+- Self-update disabled (FDROID_BUILD / ENABLE_SELF_UPDATE=false)
+- APK download/install UI removed
+- No online Google Fonts (only bundled or system fonts)
+
+Privacy:
+- No tracking or ads. Network access is limited to public AtCoder pages.
