@@ -1,6 +1,6 @@
 report.xml
 Preview.html
 screenshots/
-metadata/
-*/metadata/
 keys.json
+## Keep Fastlane metadata in VCS
+#! Do NOT ignore metadata; F-Droid/Play read from this folder.
