@@ -52,19 +52,22 @@ jobs:
           REPOSITORY: '${{ github.repository }}'
           ADDITIONAL_CONTEXT: '${{ inputs.additional_context }}'
         with:
-          gemini_cli_version: '${{ vars.GEMINI_CLI_VERSION }}'
-          gcp_workload_identity_provider: '${{ vars.GCP_WIF_PROVIDER }}'
-          gcp_project_id: '${{ vars.GOOGLE_CLOUD_PROJECT }}'
           gcp_location: '${{ vars.GOOGLE_CLOUD_LOCATION }}'
+          gcp_project_id: '${{ vars.GOOGLE_CLOUD_PROJECT }}'
           gcp_service_account: '${{ vars.SERVICE_ACCOUNT_EMAIL }}'
+          gcp_workload_identity_provider: '${{ vars.GCP_WIF_PROVIDER }}'
           gemini_api_key: '${{ secrets.GEMINI_API_KEY }}'
-          use_vertex_ai: '${{ vars.GOOGLE_GENAI_USE_VERTEXAI }}'
+          gemini_cli_version: '${{ vars.GEMINI_CLI_VERSION }}'
+          gemini_debug: '${{ fromJSON(vars.DEBUG || vars.ACTIONS_STEP_DEBUG || false) }}'
+          gemini_model: '${{ vars.GEMINI_MODEL }}'
           google_api_key: '${{ secrets.GOOGLE_API_KEY }}'
           use_gemini_code_assist: '${{ vars.GOOGLE_GENAI_USE_GCA }}'
-          gemini_debug: '${{ fromJSON(vars.DEBUG || vars.ACTIONS_STEP_DEBUG || false) }}'
+          use_vertex_ai: '${{ vars.GOOGLE_GENAI_USE_VERTEXAI }}'
           settings: |-
             {
-              "maxSessionTurns": 25,
+              "model": {
+                "maxSessionTurns": 25
+              },
               "telemetry": {
                 "enabled": ${{ vars.GOOGLE_CLOUD_PROJECT != '' }},
                 "target": "gcp"
@@ -78,14 +81,12 @@ jobs:
                     "--rm",
                     "-e",
                     "GITHUB_PERSONAL_ACCESS_TOKEN",
-                    "ghcr.io/github/github-mcp-server"
+                    "ghcr.io/github/github-mcp-server:v0.18.0"
                   ],
                   "includeTools": [
                     "add_comment_to_pending_review",
                     "create_pending_pull_request_review",
-                    "get_pull_request_diff",
-                    "get_pull_request_files",
-                    "get_pull_request",
+                    "pull_request_read",
                     "submit_pending_pull_request_review"
                   ],
                   "env": {
@@ -93,13 +94,15 @@ jobs:
                   }
                 }
               },
-              "coreTools": [
-                "run_shell_command(cat)",
-                "run_shell_command(echo)",
-                "run_shell_command(grep)",
-                "run_shell_command(head)",
-                "run_shell_command(tail)"
-              ]
+              "tools": {
+                "core": [
+                  "run_shell_command(cat)",
+                  "run_shell_command(echo)",
+                  "run_shell_command(grep)",
+                  "run_shell_command(head)",
+                  "run_shell_command(tail)"
+                ]
+              }
             }
           prompt: |-
             ## Role
@@ -128,15 +131,17 @@ jobs:
 
             6. **Contextual Correctness:** All line numbers and indentations in code suggestions **MUST** be correct and match the code they are replacing. Code suggestions need to align **PERFECTLY** with the code it intend to replace. Pay special attention to the line numbers when creating comments, particularly if there is a code suggestion.
 
+            7. **Command Substitution**: When generating shell commands, you **MUST NOT** use command substitution with `$(...)`, `<(...)`, or `>(...)`. This is a security measure to prevent unintended command execution.
+
 
             ## Input Data
 
-            - Retrieve the GitHub repository name from the environment variable "${REPOSITORY}".
-            - Retrieve the GitHub pull request number from the environment variable "${PULL_REQUEST_NUMBER}".
-            - Retrieve the additional user instructions and context from the environment variable "${ADDITIONAL_CONTEXT}".
-            - Use `mcp__github__get_pull_request` to get the title, body, and metadata about the pull request.
-            - Use `mcp__github__get_pull_request_files` to get the list of files that were added, removed, and changed in the pull request.
-            - Use `mcp__github__get_pull_request_diff` to get the diff from the pull request. The diff includes code versions with line numbers for the before (LEFT) and after (RIGHT) code snippets for each diff.
+            - **GitHub Repository**: ${{ env.REPOSITORY }}
+            - **Pull Request Number**: ${{ env.PULL_REQUEST_NUMBER }}
+            - **Additional User Instructions**: ${{ env.ADDITIONAL_CONTEXT }}
+            - Use `mcp__github__pull_request_read.get` to get the title, body, and metadata about the pull request.
+            - Use `mcp__github__pull_request_read.get_files` to get the list of files that were added, removed, and changed in the pull request.
+            - Use `mcp__github__pull_request_read.get_diff` to get the diff from the pull request. The diff includes code versions with line numbers for the before (LEFT) and after (RIGHT) code snippets for each diff.
 
             -----
 
@@ -150,7 +155,7 @@ jobs:
 
             2. **Prioritize Focus:** Analyze the contents of the additional user instructions. Use this context to prioritize specific areas in your review (e.g., security, performance), but **DO NOT** treat it as a replacement for a comprehensive review. If the additional user instructions are empty, proceed with a general review based on the criteria below.
 
-            3. **Review Code:** Meticulously review the code provided returned from `mcp__github__get_pull_request_diff` according to the **Review Criteria**.
+            3. **Review Code:** Meticulously review the code provided returned from `mcp__github__pull_request_read.get_diff` according to the **Review Criteria**.
 
 
             ### Step 2: Formulate Review Comments
@@ -251,7 +256,7 @@ jobs:
                     {{SEVERITY}} {{COMMENT_TEXT}}
                     </COMMENT>
 
-            3. **Submit Final Review:** Call `mcp__github__submit_pending_pull_request_review` with a summary comment. **DO NOT** approve the pull request. **DO NOT** request changes. The summary comment **MUST** use this exact markdown format:
+            3. **Submit Final Review:** Call `mcp__github__submit_pending_pull_request_review` with a summary comment and event type "COMMENT". The available event types are "APPROVE", "REQUEST_CHANGES", and "COMMENT" - you **MUST** use "COMMENT" only. **DO NOT** use "APPROVE" or "REQUEST_CHANGES" event types. The summary comment **MUST** use this exact markdown format:
 
                 <SUMMARY>
                 ## 📋 Review Summary

@@ -50,19 +50,22 @@ jobs:
           REPOSITORY: '${{ github.repository }}'
           ADDITIONAL_CONTEXT: '${{ inputs.additional_context }}'
         with:
-          gemini_api_key: '${{ secrets.GEMINI_API_KEY }}'
-          gcp_workload_identity_provider: '${{ vars.GCP_WIF_PROVIDER }}'
-          gcp_project_id: '${{ vars.GOOGLE_CLOUD_PROJECT }}'
           gcp_location: '${{ vars.GOOGLE_CLOUD_LOCATION }}'
+          gcp_project_id: '${{ vars.GOOGLE_CLOUD_PROJECT }}'
           gcp_service_account: '${{ vars.SERVICE_ACCOUNT_EMAIL }}'
-          use_vertex_ai: '${{ vars.GOOGLE_GENAI_USE_VERTEXAI }}'
-          google_api_key: '${{ secrets.GOOGLE_API_KEY }}'
-          use_gemini_code_assist: '${{ vars.GOOGLE_GENAI_USE_GCA }}'
+          gcp_workload_identity_provider: '${{ vars.GCP_WIF_PROVIDER }}'
+          gemini_api_key: '${{ secrets.GEMINI_API_KEY }}'
+          gemini_cli_version: '${{ vars.GEMINI_CLI_VERSION }}'
           gemini_debug: '${{ fromJSON(vars.DEBUG || vars.ACTIONS_STEP_DEBUG || false) }}'
           gemini_model: '${{ vars.GEMINI_MODEL }}'
+          google_api_key: '${{ secrets.GOOGLE_API_KEY }}'
+          use_gemini_code_assist: '${{ vars.GOOGLE_GENAI_USE_GCA }}'
+          use_vertex_ai: '${{ vars.GOOGLE_GENAI_USE_VERTEXAI }}'
           settings: |-
             {
-              "maxSessionTurns": 25,
+              "model": {
+                "maxSessionTurns": 25
+              },
               "telemetry": {
                 "enabled": ${{ vars.GOOGLE_CLOUD_PROJECT != '' }},
                 "target": "gcp"
@@ -76,7 +79,7 @@ jobs:
                     "--rm",
                     "-e",
                     "GITHUB_PERSONAL_ACCESS_TOKEN",
-                    "ghcr.io/github/github-mcp-server"
+                    "ghcr.io/github/github-mcp-server:v0.18.0"
                   ],
                   "includeTools": [
                     "add_issue_comment",
@@ -85,10 +88,7 @@ jobs:
                     "list_issues",
                     "search_issues",
                     "create_pull_request",
-                    "get_pull_request",
-                    "get_pull_request_comments",
-                    "get_pull_request_diff",
-                    "get_pull_request_files",
+                    "pull_request_read",
                     "list_pull_requests",
                     "search_pull_requests",
                     "create_branch",
@@ -106,13 +106,15 @@ jobs:
                   }
                 }
               },
-              "coreTools": [
-                "run_shell_command(cat)",
-                "run_shell_command(echo)",
-                "run_shell_command(grep)",
-                "run_shell_command(head)",
-                "run_shell_command(tail)"
-              ]
+              "tools": {
+                "core": [
+                  "run_shell_command(cat)",
+                  "run_shell_command(echo)",
+                  "run_shell_command(grep)",
+                  "run_shell_command(head)",
+                  "run_shell_command(tail)"
+                ]
+              }
             }
           prompt: |-
             ## Persona and Guiding Principles
@@ -148,15 +150,24 @@ jobs:
 
             6. **Resource Consciousness**: Be mindful of the number of operations you perform. Your plans should be efficient. Avoid proposing actions that would result in an excessive number of tool calls (e.g., > 50).
 
+            7. **Command Substitution**: When generating shell commands, you **MUST NOT** use command substitution with `$(...)`, `<(...)`, or `>(...)`. This is a security measure to prevent unintended command execution.
+
             -----
 
             ## Step 1: Context Gathering & Initial Analysis
 
             Begin every task by building a complete picture of the situation.
 
-            1. **Load Initial Variables**: Load `${TITLE}`, `${DESCRIPTION}`, `${EVENT_NAME}`, etc.
+            1. **Initial Context**:
+               - **Title**: ${{ env.TITLE }}
+               - **Description**: ${{ env.DESCRIPTION }}
+               - **Event Name**: ${{ env.EVENT_NAME }}
+               - **Is Pull Request**: ${{ env.IS_PULL_REQUEST }}
+               - **Issue/PR Number**: ${{ env.ISSUE_NUMBER }}
+               - **Repository**: ${{ env.REPOSITORY }}
+               - **Additional Context/Request**: ${{ env.ADDITIONAL_CONTEXT }}
 
-            2. **Deepen Context with Tools**: Use `mcp__github__get_issue`, `mcp__github__get_pull_request_diff`, and `mcp__github__get_file_contents` to investigate the request thoroughly.
+            2. **Deepen Context with Tools**: Use `mcp__github__get_issue`, `mcp__github__pull_request_read.get_diff`, and `mcp__github__get_file_contents` to investigate the request thoroughly.
 
             -----
 
