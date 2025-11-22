@@ -37,12 +37,30 @@ on:
         type: boolean
         required: true
         default: false
+  workflow_call:
+    inputs:
+      tag_name:
+        description: "Existing release tag to upload assets to"
+        required: true
+        type: string
+      flavor:
+        description: "Which flavor to build"
+        type: string
+        default: both
+      build_type:
+        description: "APK Build Type"
+        type: string
+        default: split
+      run_tests:
+        description: "Run Flutter tests before building APKs"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
 
 concurrency:
-  group: release-apk-${{ github.event.release.tag_name || github.event.inputs.tag_name || github.ref }}
+  group: release-apk-${{ github.event.release.tag_name || inputs.tag_name || github.event.inputs.tag_name || github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -50,8 +68,8 @@ jobs:
     name: Build and attach APKs
     runs-on: ubuntu-latest
     env:
-      BUILD_TYPE: ${{ github.event.inputs.build_type || 'split' }}
-      FLAVOR: ${{ github.event.inputs.flavor || 'both' }}
+      BUILD_TYPE: ${{ inputs.build_type || github.event.inputs.build_type || 'split' }}
+      FLAVOR: ${{ inputs.flavor || github.event.inputs.flavor || 'both' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -74,11 +92,11 @@ jobs:
         run: flutter pub get || flutter pub get || flutter pub get
 
       - name: Analyze project source (optional)
-        if: ${{ github.event.inputs.run_tests == 'true' }}
+        if: ${{ inputs.run_tests == true || inputs.run_tests == 'true' || github.event.inputs.run_tests == 'true' }}
         run: flutter analyze --no-fatal-warnings || true
 
       - name: Run tests (optional)
-        if: ${{ github.event.inputs.run_tests == 'true' }}
+        if: ${{ inputs.run_tests == true || inputs.run_tests == 'true' || github.event.inputs.run_tests == 'true' }}
         run: flutter test
 
       - name: Determine target release tag
@@ -86,7 +104,7 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
-          INPUT_TAG: ${{ github.event.inputs.tag_name }}
+          INPUT_TAG: ${{ inputs.tag_name || github.event.inputs.tag_name }}
           GITHUB_REF: ${{ github.ref }}
         run: |
           set -e
@@ -97,7 +115,7 @@ jobs:
             push)
               # refs/tags/v1.2.3 -> v1.2.3
               TAG="${GITHUB_REF##refs/tags/}" ;;
-            workflow_dispatch)
+            workflow_dispatch|workflow_call)
               if [ -z "$INPUT_TAG" ]; then echo "::error::Please provide tag_name when running manually." >&2; exit 1; fi
               TAG="$INPUT_TAG" ;;
             *) echo "::error::Unsupported event $EVENT_NAME" >&2; exit 1 ;;

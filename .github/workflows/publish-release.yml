@@ -14,6 +14,8 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.value }}
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
@@ -82,3 +84,13 @@ jobs:
           prerelease: ${{ contains(steps.version.outputs.value, '-') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  call-release-workflow:
+    needs: publish
+    uses: ./.github/workflows/release.yaml
+    with:
+      tag_name: v${{ needs.publish.outputs.version }}
+      flavor: both
+      build_type: split
+      run_tests: false
+    secrets: inherit
