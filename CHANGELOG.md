@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+## [1.2.0] - 2025-11-22
+
+__AUTO_CHANGELOG_PLACEHOLDER__
+
+
 ## [1.1.11] - 2025-09-28
 
 - 🔧 chore: release.yamlのフォーマットを統一し、可読性を向上
