@@ -77,6 +77,15 @@ class MonacoCodeEditorState extends State<MonacoCodeEditor> {
         }
       });
 
+      // Listen to focus events for debugging
+      _controller!.onFocus.listen((_) {
+        debugPrint('Monaco Editor focused');
+      });
+
+      _controller!.onBlur.listen((_) {
+        debugPrint('Monaco Editor blurred');
+      });
+
       if (mounted && !_isDisposed) {
         setState(() {
           _isInitialized = true;
@@ -147,6 +156,13 @@ class MonacoCodeEditorState extends State<MonacoCodeEditor> {
   /// Get the current value synchronously (from cache)
   String get currentValue => _currentValue;
 
+  /// Request focus on the editor to show keyboard
+  Future<void> focus() async {
+    if (_controller != null && _isInitialized) {
+      await _controller!.focus();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Check if platform is supported
@@ -172,7 +188,14 @@ class MonacoCodeEditorState extends State<MonacoCodeEditor> {
       margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(4.0),
-        child: _controller!.webViewWidget,
+        child: GestureDetector(
+          onTap: () async {
+            // Request focus when tapped to ensure keyboard shows
+            await focus();
+          },
+          behavior: HitTestBehavior.translucent,
+          child: _controller!.webViewWidget,
+        ),
       ),
     );
   }
