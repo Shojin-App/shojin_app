@@ -257,6 +257,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildThemeSection(),
             const SizedBox(height: 16),
 
+            // エディタ設定セクション
+            _buildEditorSection(),
+            const SizedBox(height: 16),
+
             // 言語設定セクション
             _buildLanguageSection(),
             const SizedBox(height: 16),
@@ -360,40 +364,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               icon: Icons.emoji_events_outlined,
             ),
             const Divider(),
-            // Font Family Selector
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20.0, 16.0, 20.0, 8.0),
-              child: DropdownButtonFormField<String>(
-                initialValue: themeProvider.codeFontFamily,
-                decoration: InputDecoration(
-                  labelText: 'コードブロックのフォント',
-                  border: const OutlineInputBorder(),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12.0,
-                    vertical: 8.0,
-                  ),
-                  prefixIcon: const Icon(Icons.font_download_outlined),
-                ),
-                items: themeProvider.availableCodeFontFamilies.map((
-                  String fontFamily,
-                ) {
-                  return DropdownMenuItem<String>(
-                    value: fontFamily,
-                    child: Text(
-                      fontFamily,
-                      style: getMonospaceTextStyle(fontFamily),
-                    ),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  if (newValue != null) {
-                    HapticFeedback.lightImpact();
-                    themeProvider.setCodeFontFamily(newValue);
-                  }
-                },
-              ),
-            ),
-            const Divider(),
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: 20.0,
@@ -429,6 +399,100 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       },
     );
+  }
+
+  Widget _buildEditorSection() {
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return _SettingsSection(
+          title: 'エディタ設定',
+          icon: Icons.code,
+          children: [
+            // Editor type selection
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20.0, 16.0, 20.0, 8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'エディタタイプ',
+                    style: AppFonts.notoSansJp(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Monaco EditorはVS Codeと同じエディタです。Android, iOS, macOS, Windowsで利用可能です。',
+                    style: AppFonts.notoSansJp(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ...EditorType.values.map(
+              (type) => _HapticRadioListTile<EditorType>(
+                title: type.label,
+                value: type,
+                groupValue: themeProvider.editorType,
+                onChanged: (value) {
+                  if (value != null) {
+                    themeProvider.setEditorType(value);
+                  }
+                },
+                secondary: _getEditorTypeIcon(type),
+              ),
+            ),
+            const Divider(),
+            // Font Family Selector
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20.0, 16.0, 20.0, 8.0),
+              child: DropdownButtonFormField<String>(
+                initialValue: themeProvider.codeFontFamily,
+                decoration: InputDecoration(
+                  labelText: 'コードブロックのフォント',
+                  border: const OutlineInputBorder(),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12.0,
+                    vertical: 8.0,
+                  ),
+                  prefixIcon: const Icon(Icons.font_download_outlined),
+                ),
+                items: themeProvider.availableCodeFontFamilies.map((
+                  String fontFamily,
+                ) {
+                  return DropdownMenuItem<String>(
+                    value: fontFamily,
+                    child: Text(
+                      fontFamily,
+                      style: getMonospaceTextStyle(fontFamily),
+                    ),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  if (newValue != null) {
+                    HapticFeedback.lightImpact();
+                    themeProvider.setCodeFontFamily(newValue);
+                  }
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _getEditorTypeIcon(EditorType type) {
+    switch (type) {
+      case EditorType.classic:
+        return const Icon(Icons.text_fields);
+      case EditorType.monaco:
+        return const Icon(Icons.integration_instructions);
+    }
   }
 
   Widget _buildTemplateSection() {

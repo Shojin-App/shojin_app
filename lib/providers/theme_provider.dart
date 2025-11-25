@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../services/atcoder_service.dart';
 import '../utils/atcoder_colors.dart';
 
 const String _navOpacityKey = 'nav_opacity'; // Key for bottom nav opacity
-const String _useMaterialYouKey = 'use_material_you'; // Key for Material You setting
-const String _codeFontFamilyKey = 'code_font_family'; // Key for code font family
-const String _customCodeFontsKey = 'custom_code_fonts'; // Key for custom code fonts list
-const String _useAtcoderRatingColorKey = 'use_atcoder_rating_color'; // Key for AtCoder accent option
+const String _useMaterialYouKey =
+    'use_material_you'; // Key for Material You setting
+const String _codeFontFamilyKey =
+    'code_font_family'; // Key for code font family
+const String _customCodeFontsKey =
+    'custom_code_fonts'; // Key for custom code fonts list
+const String _useAtcoderRatingColorKey =
+    'use_atcoder_rating_color'; // Key for AtCoder accent option
+const String _editorTypeKey = 'editor_type'; // Key for editor type selection
 
 // Built-in supported Google fonts and generic fallback
 const List<String> defaultCodeFontFamilies = [
@@ -27,16 +33,27 @@ const List<String> assetCodeFontFamilies = [
   'HackGen35Console',
 ];
 
+// Enum for editor type selection
+enum EditorType {
+  classic('従来のエディタ'),
+  monaco('Monaco Editor');
+
+  final String label;
+  const EditorType(this.label);
+}
+
 class ThemeProvider extends ChangeNotifier {
   final String _prefsKey = 'theme_mode';
   double _navBarOpacity = 0.5; // Default bottom nav opacity
   ThemeModeOption _themeMode = ThemeModeOption.system;
   bool _useMaterialYou = true; // Default to true
   String _codeFontFamily = defaultCodeFontFamilies.first; // Default font
-  final List<String> _customCodeFonts = []; // User-added font family names (must be declared in pubspec)
+  final List<String> _customCodeFonts =
+      []; // User-added font family names (must be declared in pubspec)
   bool _isLoading = true;
   bool _useAtcoderRatingColor = false; // Default off
   Color? _atcoderAccentColor; // Resolved accent color based on rating
+  EditorType _editorType = EditorType.classic; // Default to classic editor
 
   ThemeProvider() {
     _loadFromPrefs();
@@ -60,12 +77,15 @@ class ThemeProvider extends ChangeNotifier {
   // Code block font family
   String get codeFontFamily => _codeFontFamily;
 
+  // Editor type selection
+  EditorType get editorType => _editorType;
+
   // Available code fonts = built-ins + custom
   List<String> get availableCodeFontFamilies => [
-        ...defaultCodeFontFamilies,
-        ...assetCodeFontFamilies,
-        ..._customCodeFonts,
-      ];
+    ...defaultCodeFontFamilies,
+    ...assetCodeFontFamilies,
+    ..._customCodeFonts,
+  ];
 
   // ローディング状態
   bool get isLoading => _isLoading;
@@ -111,7 +131,8 @@ class ThemeProvider extends ChangeNotifier {
   // Set code font family
   Future<void> setCodeFontFamily(String fontFamily) async {
     // Allow any font from available list (built-in or custom)
-    if (!availableCodeFontFamilies.contains(fontFamily) || _codeFontFamily == fontFamily) {
+    if (!availableCodeFontFamilies.contains(fontFamily) ||
+        _codeFontFamily == fontFamily) {
       return;
     }
     _codeFontFamily = fontFamily;
@@ -119,10 +140,19 @@ class ThemeProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Set editor type
+  Future<void> setEditorType(EditorType type) async {
+    if (_editorType == type) return;
+    _editorType = type;
+    await _saveToPrefs();
+    notifyListeners();
+  }
+
   // Add a custom code font family
   Future<void> addCustomCodeFont(String fontFamily) async {
     if (fontFamily.trim().isEmpty) return;
-    if (defaultCodeFontFamilies.contains(fontFamily)) return; // already built-in
+    if (defaultCodeFontFamilies.contains(fontFamily))
+      return; // already built-in
     if (_customCodeFonts.contains(fontFamily)) return; // already added
     _customCodeFonts.add(fontFamily);
     await _saveToPrefs();
@@ -170,8 +200,19 @@ class ThemeProvider extends ChangeNotifier {
       ..addAll(savedCustomFonts.where((e) => e.trim().isNotEmpty));
 
     if (savedFontFamily != null &&
-        ([...defaultCodeFontFamilies, ..._customCodeFonts]).contains(savedFontFamily)) {
+        ([
+          ...defaultCodeFontFamilies,
+          ..._customCodeFonts,
+        ]).contains(savedFontFamily)) {
       _codeFontFamily = savedFontFamily;
+    }
+
+    // Load editor type if exists
+    final savedEditorTypeIndex = prefs.getInt(_editorTypeKey);
+    if (savedEditorTypeIndex != null &&
+        savedEditorTypeIndex >= 0 &&
+        savedEditorTypeIndex < EditorType.values.length) {
+      _editorType = EditorType.values[savedEditorTypeIndex];
     }
 
     if (themeModeIndex != null &&
@@ -193,10 +234,23 @@ class ThemeProvider extends ChangeNotifier {
   Future<void> _saveToPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_prefsKey, _themeMode.index);
-    await prefs.setBool(_useMaterialYouKey, _useMaterialYou); // Save Material You setting
-    await prefs.setString(_codeFontFamilyKey, _codeFontFamily); // Save font family
-    await prefs.setStringList(_customCodeFontsKey, _customCodeFonts); // Save custom fonts
-    await prefs.setBool(_useAtcoderRatingColorKey, _useAtcoderRatingColor); // Save AtCoder accent option
+    await prefs.setBool(
+      _useMaterialYouKey,
+      _useMaterialYou,
+    ); // Save Material You setting
+    await prefs.setString(
+      _codeFontFamilyKey,
+      _codeFontFamily,
+    ); // Save font family
+    await prefs.setStringList(
+      _customCodeFontsKey,
+      _customCodeFonts,
+    ); // Save custom fonts
+    await prefs.setBool(
+      _useAtcoderRatingColorKey,
+      _useAtcoderRatingColor,
+    ); // Save AtCoder accent option
+    await prefs.setInt(_editorTypeKey, _editorType.index); // Save editor type
   }
 
   // Set bottom nav opacity and persist
@@ -236,11 +290,11 @@ class ThemeProvider extends ChangeNotifier {
 
 // テーマモードの選択肢
 enum ThemeModeOption {
-  system('システム設定に従う'), 
-  light('ライトモード'), 
+  system('システム設定に従う'),
+  light('ライトモード'),
   dark('ダークモード'),
   pureBlack('ピュアブラック');
-  
+
   final String label;
   const ThemeModeOption(this.label);
 }

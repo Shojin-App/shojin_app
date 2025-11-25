@@ -1,0 +1,224 @@
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_monaco/flutter_monaco.dart';
+
+/// Monaco Editor wrapper widget for the editor screen.
+/// This provides VS Code-like editing experience.
+class MonacoCodeEditor extends StatefulWidget {
+  const MonacoCodeEditor({
+    super.key,
+    required this.initialValue,
+    required this.language,
+    required this.isDarkMode,
+    required this.onChanged,
+  });
+
+  final String initialValue;
+  final String language;
+  final bool isDarkMode;
+  final ValueChanged<String> onChanged;
+
+  @override
+  State<MonacoCodeEditor> createState() => MonacoCodeEditorState();
+}
+
+class MonacoCodeEditorState extends State<MonacoCodeEditor> {
+  MonacoController? _controller;
+  bool _isInitialized = false;
+  bool _isDisposed = false;
+  String _currentValue = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _currentValue = widget.initialValue;
+    _initializeEditor();
+  }
+
+  Future<void> _initializeEditor() async {
+    if (_isDisposed) return;
+
+    try {
+      _controller = await MonacoController.create(
+        options: EditorOptions(
+          language: _getMonacoLanguage(widget.language),
+          theme: widget.isDarkMode ? MonacoTheme.vsDark : MonacoTheme.vs,
+          fontSize: 14,
+          minimap: false, // Disable minimap for mobile
+          lineNumbers: true,
+          wordWrap: false,
+          automaticLayout: true,
+          tabSize: 4,
+          insertSpaces: true,
+          scrollBeyondLastLine: false,
+          renderWhitespace: RenderWhitespace.selection,
+          bracketPairColorization: true,
+          quickSuggestions: true,
+          parameterHints: true,
+        ),
+      );
+
+      if (_isDisposed) {
+        _controller?.dispose();
+        return;
+      }
+
+      // Set initial value
+      await _controller!.setValue(widget.initialValue);
+
+      // Listen to content changes
+      _controller!.onContentChanged.listen((isFlush) async {
+        if (_isDisposed) return;
+        final value = await _controller!.getValue();
+        if (value != _currentValue) {
+          _currentValue = value;
+          widget.onChanged(value);
+        }
+      });
+
+      if (mounted && !_isDisposed) {
+        setState(() {
+          _isInitialized = true;
+        });
+      }
+    } catch (e) {
+      debugPrint('Failed to initialize Monaco Editor: $e');
+    }
+  }
+
+  MonacoLanguage _getMonacoLanguage(String language) {
+    switch (language) {
+      case 'Python':
+        return MonacoLanguage.python;
+      case 'C++':
+        return MonacoLanguage.cpp;
+      case 'Rust':
+        return MonacoLanguage.rust;
+      case 'Java':
+        return MonacoLanguage.java;
+      default:
+        return MonacoLanguage.plaintext;
+    }
+  }
+
+  @override
+  void didUpdateWidget(MonacoCodeEditor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (_controller != null && _isInitialized) {
+      // Update language if changed
+      if (oldWidget.language != widget.language) {
+        _controller!.setLanguage(_getMonacoLanguage(widget.language));
+      }
+
+      // Update theme if changed
+      if (oldWidget.isDarkMode != widget.isDarkMode) {
+        _controller!.setTheme(
+          widget.isDarkMode ? MonacoTheme.vsDark : MonacoTheme.vs,
+        );
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  /// Get the current code value
+  Future<String> getValue() async {
+    if (_controller != null && _isInitialized) {
+      return await _controller!.getValue();
+    }
+    return _currentValue;
+  }
+
+  /// Set the code value
+  Future<void> setValue(String value) async {
+    _currentValue = value;
+    if (_controller != null && _isInitialized) {
+      await _controller!.setValue(value);
+    }
+  }
+
+  /// Get the current value synchronously (from cache)
+  String get currentValue => _currentValue;
+
+  @override
+  Widget build(BuildContext context) {
+    // Check if platform is supported
+    if (!_isPlatformSupported()) {
+      return _buildUnsupportedPlatformMessage();
+    }
+
+    if (!_isInitialized || _controller == null) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Monaco Editor を初期化中...'),
+          ],
+        ),
+      );
+    }
+
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(4.0),
+        child: _controller!.webViewWidget,
+      ),
+    );
+  }
+
+  bool _isPlatformSupported() {
+    // Monaco Editor supports Android, iOS, macOS, Windows
+    // Web and Linux are not supported
+    return Platform.isAndroid ||
+        Platform.isIOS ||
+        Platform.isMacOS ||
+        Platform.isWindows;
+  }
+
+  Widget _buildUnsupportedPlatformMessage() {
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                size: 48,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Monaco Editor はこのプラットフォームでサポートされていません',
+                style: Theme.of(context).textTheme.titleMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '設定から「従来のエディタ」を選択してください',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

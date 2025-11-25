@@ -26,6 +26,7 @@ import '../providers/theme_provider.dart';
 import '../services/atcoder_service.dart';
 import '../services/code_history_service.dart';
 import '../utils/text_style_helper.dart';
+import '../widgets/monaco_code_editor.dart';
 import 'code_history_screen.dart';
 import 'submit_screen.dart'; // 提出画面を表示するWebViewスクリーン
 
@@ -47,6 +48,9 @@ class EditorScreen extends StatefulWidget {
 class _EditorScreenState extends State<EditorScreen> {
   // コードエディタのコントローラー
   late final CodeController _codeController; // late final のまま
+  // Monaco Editor用のキー
+  final GlobalKey<MonacoCodeEditorState> _monacoEditorKey =
+      GlobalKey<MonacoCodeEditorState>();
   // 標準入力用コントローラー
   final TextEditingController _stdinController = TextEditingController();
   // スクロールコントローラー（PrimaryScrollController競合回避のため個別に用意）
@@ -75,6 +79,7 @@ class _EditorScreenState extends State<EditorScreen> {
   bool get _isDarkMode => Theme.of(context).brightness == Brightness.dark;
 
   bool _isLoadingCode = true; // コード読み込み中フラグ
+  String _monacoCode = ''; // Monaco Editor用のコードキャッシュ
 
   @override
   void initState() {
@@ -109,6 +114,30 @@ class _EditorScreenState extends State<EditorScreen> {
     );
   }
 
+  // 現在のエディタタイプを取得
+  EditorType get _currentEditorType {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    return themeProvider.editorType;
+  }
+
+  // 現在のコードを取得（エディタタイプに応じて）
+  String get _currentCode {
+    if (_currentEditorType == EditorType.monaco) {
+      return _monacoEditorKey.currentState?.currentValue ?? _monacoCode;
+    }
+    return _codeController.text;
+  }
+
+  // コードを設定（エディタタイプに応じて）
+  Future<void> _setCode(String code) async {
+    if (_currentEditorType == EditorType.monaco) {
+      _monacoCode = code;
+      await _monacoEditorKey.currentState?.setValue(code);
+    } else {
+      _codeController.text = code;
+    }
+  }
+
   void _onCodeChanged() {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(seconds: 2), () {
@@ -116,14 +145,17 @@ class _EditorScreenState extends State<EditorScreen> {
     });
   }
 
+  // Monaco Editor用のコード変更ハンドラ
+  void _onMonacoCodeChanged(String code) {
+    _monacoCode = code;
+    _onCodeChanged();
+  }
+
   Future<void> _saveHistory() async {
     if (widget.problemId.isEmpty || widget.problemId == 'default_problem') {
       return;
     }
-    await _codeHistoryService.saveHistory(
-      widget.problemId,
-      _codeController.text,
-    );
+    await _codeHistoryService.saveHistory(widget.problemId, _currentCode);
     // Optional: Show a subtle feedback to the user
     // ScaffoldMessenger.of(context).showSnackBar(
     //   const SnackBar(content: Text('History saved'), duration: Duration(seconds: 1)),
@@ -169,21 +201,26 @@ class _EditorScreenState extends State<EditorScreen> {
     });
     try {
       final filePath = await _getFilePath();
+      String loadedCode;
       if (filePath.isEmpty) {
-        _codeController.text = _getTemplateForLanguage(_selectedLanguage);
-        return;
-      }
-      final file = File(filePath);
-      if (await file.exists()) {
-        final savedCode = await file.readAsString();
-        _codeController.text = savedCode;
+        loadedCode = _getTemplateForLanguage(_selectedLanguage);
       } else {
-        _codeController.text = _getTemplateForLanguage(_selectedLanguage);
+        final file = File(filePath);
+        if (await file.exists()) {
+          loadedCode = await file.readAsString();
+        } else {
+          loadedCode = _getTemplateForLanguage(_selectedLanguage);
+        }
       }
+      // 両方のエディタに設定
+      _codeController.text = loadedCode;
+      _monacoCode = loadedCode;
     } catch (e, stackTrace) {
       _log('コードの読み込みに失敗しました', error: e, stackTrace: stackTrace);
       // エラー時もテンプレートを設定
-      _codeController.text = _getTemplateForLanguage(_selectedLanguage);
+      final template = _getTemplateForLanguage(_selectedLanguage);
+      _codeController.text = template;
+      _monacoCode = template;
     } finally {
       setState(() {
         _isLoadingCode = false;
@@ -204,7 +241,9 @@ class _EditorScreenState extends State<EditorScreen> {
       final file = File(filePath);
       // ディレクトリが存在しない場合は作成
       await file.parent.create(recursive: true);
-      await file.writeAsString(_codeController.text);
+      // 現在のエディタからコードを取得
+      final code = _currentCode;
+      await file.writeAsString(code);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('コードを $filePath に保存しました')));
@@ -314,7 +353,7 @@ public class Main {
 
     final url = Uri.parse('https://wandbox.org/api/compile.json');
     final wandboxLanguage = _getWandboxLanguageName(_selectedLanguage);
-    final code = _codeController.text;
+    final code = _currentCode;
     final stdin = _stdinController.text;
 
     try {
@@ -373,9 +412,8 @@ public class Main {
       final file = File(filePath);
       if (await file.exists()) {
         final savedCode = await file.readAsString();
-        setState(() {
-          _codeController.text = savedCode;
-        });
+        await _setCode(savedCode);
+        setState(() {});
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('$_selectedLanguage のコードを復元しました')),
         );
@@ -597,7 +635,7 @@ public class Main {
       name: 'EditorScreen',
     );
 
-    final code = _codeController.text;
+    final code = _currentCode;
     final wandboxLanguage = _getWandboxLanguageName(_selectedLanguage);
     developer.log(
       'Code length: ${code.length}, Wandbox language: $wandboxLanguage',
@@ -918,9 +956,8 @@ public class Main {
                 ),
               );
               if (restoredCode != null && restoredCode is String) {
-                setState(() {
-                  _codeController.text = restoredCode;
-                });
+                _setCode(restoredCode);
+                setState(() {});
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Code restored from history.')),
                 );
@@ -930,7 +967,8 @@ public class Main {
               _restoreCode();
               break;
             case _ToolbarAction.reset:
-              _codeController.text = _getTemplateForLanguage(_selectedLanguage);
+              final template = _getTemplateForLanguage(_selectedLanguage);
+              _setCode(template);
               _stdinController.clear();
               setState(() {
                 _output = '';
@@ -938,7 +976,7 @@ public class Main {
               });
               break;
             case _ToolbarAction.share:
-              final code = _codeController.text;
+              final code = _currentCode;
               if (code.isEmpty) {
                 ScaffoldMessenger.of(
                   context,
@@ -967,11 +1005,21 @@ public class Main {
               else
                 Expanded(
                   flex: 3,
-                  child: _CodeEditor(
-                    codeController: _codeController,
-                    isDarkMode: _isDarkMode,
-                    codeFontFamily: codeFontFamily,
-                  ),
+                  child: themeProvider.editorType == EditorType.monaco
+                      ? MonacoCodeEditor(
+                          key: _monacoEditorKey,
+                          initialValue: _monacoCode.isNotEmpty
+                              ? _monacoCode
+                              : _codeController.text,
+                          language: _selectedLanguage,
+                          isDarkMode: _isDarkMode,
+                          onChanged: _onMonacoCodeChanged,
+                        )
+                      : _CodeEditor(
+                          codeController: _codeController,
+                          isDarkMode: _isDarkMode,
+                          codeFontFamily: codeFontFamily,
+                        ),
                 ),
 
               // 入出力エリア: ボタン行 + 左右分割 (stdin | stdout/stderr)
@@ -1062,7 +1110,7 @@ public class Main {
                               MaterialPageRoute(
                                 builder: (_) => SubmitScreen(
                                   url: url,
-                                  initialCode: _codeController.text,
+                                  initialCode: _currentCode,
                                   initialLanguage: _selectedLanguage,
                                 ),
                               ),
