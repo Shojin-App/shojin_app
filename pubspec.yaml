@@ -38,7 +38,7 @@ dependencies:
   highlight: ^0.7.0
   flutter_highlight: ^0.7.0
   # 設定の保存に必要
-  shared_preferences: ^2.2.3
+  shared_preferences: ^2.5.4
   provider: ^6.1.5
   webview_flutter: ^4.7.0
   favicon: ^1.1.0
