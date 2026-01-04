@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shojin_app/screens/recommend_screen.dart';
+import 'package:shojin_app/screens/atcoder_clans_screen.dart';
 import '../widgets/next_abc_contest_widget.dart';
 import '../widgets/shared/custom_sliver_app_bar.dart';
 import 'reminder_settings_screen.dart'; // Import reminder settings screen
@@ -12,10 +13,7 @@ class NewHomeScreen extends StatelessWidget {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          const CustomSliverAppBar(
-            isMainView: true,
-            title: Text('ホーム'),
-          ),
+          const CustomSliverAppBar(isMainView: true, title: Text('ホーム')),
           SliverPadding(
             padding: const EdgeInsets.all(16.0),
             sliver: SliverToBoxAdapter(
@@ -29,16 +27,14 @@ class NewHomeScreen extends StatelessWidget {
                     label: const Text('リマインダー設定'),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12.0),
-                      textStyle: const TextStyle(
-                        fontSize: 16,
-                      ),
+                      textStyle: const TextStyle(fontSize: 16),
                     ),
                     onPressed: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) =>
-                                const ReminderSettingsScreen()),
+                          builder: (context) => const ReminderSettingsScreen(),
+                        ),
                       );
                     },
                   ),
@@ -48,15 +44,31 @@ class NewHomeScreen extends StatelessWidget {
                     label: const Text('おすすめ問題'),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12.0),
-                      textStyle: const TextStyle(
-                        fontSize: 16,
-                      ),
+                      textStyle: const TextStyle(fontSize: 16),
                     ),
                     onPressed: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => const RecommendScreen()),
+                          builder: (context) => const RecommendScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.web),
+                    label: const Text('AtCoder Clans'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12.0),
+                      textStyle: const TextStyle(fontSize: 16),
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AtCoderClansScreen(),
+                        ),
                       );
                     },
                   ),
