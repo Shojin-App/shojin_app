@@ -151,8 +151,9 @@ class ThemeProvider extends ChangeNotifier {
   // Add a custom code font family
   Future<void> addCustomCodeFont(String fontFamily) async {
     if (fontFamily.trim().isEmpty) return;
-    if (defaultCodeFontFamilies.contains(fontFamily))
+    if (defaultCodeFontFamilies.contains(fontFamily)) {
       return; // already built-in
+    }
     if (_customCodeFonts.contains(fontFamily)) return; // already added
     _customCodeFonts.add(fontFamily);
     await _saveToPrefs();
