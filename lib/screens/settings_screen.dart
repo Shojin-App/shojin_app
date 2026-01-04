@@ -424,7 +424,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Monaco EditorはVS Codeと同じエディタです。Android, iOS, macOS, Windowsで利用可能です。',
+                    'Monaco EditorはVS Codeと同じエディタです。',
                     style: AppFonts.notoSansJp(
                       fontSize: 12,
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
