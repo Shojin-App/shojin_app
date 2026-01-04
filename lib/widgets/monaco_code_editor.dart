@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_monaco/flutter_monaco.dart';
 
 /// Monaco Editor wrapper widget for the editor screen.
@@ -29,6 +30,12 @@ class MonacoCodeEditorState extends State<MonacoCodeEditor> {
   bool _isDisposed = false;
   String _currentValue = '';
 
+  // ソフトキーボード表示用の隠し TextField 用
+  final FocusNode _keyboardFocusNode = FocusNode(
+    debugLabel: 'monaco_keyboard_bridge',
+  );
+  final TextEditingController _keyboardTextController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -56,6 +63,7 @@ class MonacoCodeEditorState extends State<MonacoCodeEditor> {
           bracketPairColorization: true,
           quickSuggestions: true,
           parameterHints: true,
+          readOnly: false,
         ),
       );
 
@@ -66,6 +74,9 @@ class MonacoCodeEditorState extends State<MonacoCodeEditor> {
 
       // Set initial value
       await _controller!.setValue(widget.initialValue);
+
+      // 初期表示時にフォーカスを試みる
+      // await _controller!.focus();
 
       // Listen to content changes
       _controller!.onContentChanged.listen((isFlush) async {
@@ -133,6 +144,8 @@ class MonacoCodeEditorState extends State<MonacoCodeEditor> {
   @override
   void dispose() {
     _isDisposed = true;
+    _keyboardFocusNode.dispose();
+    _keyboardTextController.dispose();
     _controller?.dispose();
     super.dispose();
   }
@@ -189,12 +202,71 @@ class MonacoCodeEditorState extends State<MonacoCodeEditor> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(4.0),
         child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: () async {
-            // Request focus when tapped to ensure keyboard shows
-            await focus();
+            // Monaco にフォーカスを当てる
+            if (_controller != null && _isInitialized) {
+              await _controller!.focus();
+            }
+
+            // モバイルでは TextInput 経由でキーボードを表示させる
+            if (Platform.isAndroid || Platform.isIOS) {
+              // すでにフォーカス済みなら何もしない
+              if (!_keyboardFocusNode.hasFocus) {
+                FocusScope.of(context).requestFocus(_keyboardFocusNode);
+              }
+            }
           },
-          behavior: HitTestBehavior.translucent,
-          child: _controller!.webViewWidget,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              _controller!.webViewWidget,
+
+              // モバイル向け: 画面外に配置した隠し TextField でソフトキーボードを開かせる
+              if (Platform.isAndroid || Platform.isIOS)
+                Positioned(
+                  // 画面外に出す
+                  left: -1000,
+                  top: -1000,
+                  width: 0,
+                  height: 0,
+                  child: EditableText(
+                    controller: _keyboardTextController,
+                    focusNode: _keyboardFocusNode,
+                    style: const TextStyle(fontSize: 1),
+                    cursorColor: Colors.transparent,
+                    backgroundCursorColor: Colors.transparent,
+                    keyboardType: TextInputType.text,
+                    autofocus: false,
+                    inputFormatters: [
+                      // ここで入力を Monaco 側に転送する
+                      TextInputFormatter.withFunction((oldValue, newValue) {
+                        final inserted = newValue.text.replaceFirst(
+                          oldValue.text,
+                          '',
+                        );
+                        if (inserted.isNotEmpty &&
+                            _controller != null &&
+                            _isInitialized) {
+                          // flutter_monaco には直接 type API がないため、
+                          // 現在値に追記して setValue する方式で入力を転送する
+                          _controller!.getValue().then((current) {
+                            if (_isDisposed) return;
+                            _controller!.setValue(current + inserted);
+                          });
+                        }
+                        // TextField 自体には文字を溜めない
+                        return const TextEditingValue();
+                      }),
+                    ],
+                  ),
+                ),
+
+              // Focus guard for desktop platforms to handle focus issues
+              if (Platform.isWindows || Platform.isMacOS || Platform.isLinux)
+                MonacoFocusGuard(controller: _controller!),
+            ],
+          ),
         ),
       ),
     );
