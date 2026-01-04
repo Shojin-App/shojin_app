@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -5,10 +7,17 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Load local.properties for custom NDK version
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { localProperties.load(it) }
+}
+
 android {
     namespace = "io.github.shojinapp.kyopro"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "29.0.14206865"
+    ndkVersion = localProperties.getProperty("ndk.version") ?: flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
