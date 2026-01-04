@@ -422,20 +422,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Monaco EditorはVS Codeと同じエディタです。',
-                    style: AppFonts.notoSansJp(
-                      fontSize: 12,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
                 ],
               ),
             ),
             ...EditorType.values.map(
               (type) => _HapticRadioListTile<EditorType>(
                 title: type.label,
+                subtitle: type == EditorType.monaco
+                    ? 'VS Codeと同じエディタです。キーボードが出てこないなどの問題が発生することがあります。'
+                    : null,
                 value: type,
                 groupValue: themeProvider.editorType,
                 onChanged: (value) {
@@ -1146,6 +1141,7 @@ class _HapticSwitchListTile extends StatelessWidget {
 // ハプティックフィードバック付きRadioListTile
 class _HapticRadioListTile<T> extends StatelessWidget {
   final String title;
+  final String? subtitle;
   final T value;
   final T? groupValue;
   final ValueChanged<T?> onChanged;
@@ -1153,6 +1149,7 @@ class _HapticRadioListTile<T> extends StatelessWidget {
 
   const _HapticRadioListTile({
     required this.title,
+    this.subtitle,
     required this.value,
     required this.groupValue,
     required this.onChanged,
@@ -1170,6 +1167,15 @@ class _HapticRadioListTile<T> extends StatelessWidget {
         title,
         style: AppFonts.notoSansJp(fontSize: 16, fontWeight: FontWeight.w400),
       ),
+      subtitle: subtitle != null
+          ? Text(
+              subtitle!,
+              style: AppFonts.notoSansJp(
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            )
+          : null,
       trailing: Icon(
         isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
         color: isSelected
