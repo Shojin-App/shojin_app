@@ -13,7 +13,7 @@ import 'dart:io';
 class AtCoderService {
   final CacheManager _cacheManager = CacheManager();
   static const String _userAgent =
-      'ShojinApp/1.0 (+https://github.com/yuubinnkyoku/Shojin_App)';
+      'ShojinApp/1.0 (+https://github.com/Shojin-App/Shojin_App)';
   static const _headers = {'User-Agent': _userAgent};
 
   Future<int?> fetchAtCoderRate(String name) async {

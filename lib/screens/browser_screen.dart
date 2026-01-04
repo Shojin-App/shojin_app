@@ -1,4 +1,3 @@
-// filepath: d:\GitHub_yuubinnkyoku\shojin_app\lib\screens\browser_screen.dart
 import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';

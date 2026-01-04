@@ -5,10 +5,10 @@ import '../models/contest.dart';
 
 class ContestService {
   static const String _userAgent =
-      'ShojinApp/1.0 (+https://github.com/yuubinnkyoku/Shojin_App)';
+      'ShojinApp/1.0 (+https://github.com/Shojin-App/Shojin_App)';
   static const _headers = {'User-Agent': _userAgent};
   static const String _contestUrl =
-      'https://github.com/yuubinnkyoku/atcoder-contest-info/raw/refs/heads/main/contests.yaml';
+      'https://github.com/Shojin-App/atcoder-contest-info/raw/refs/heads/main/contests.yaml';
 
   /// すべてのコンテスト情報を取得
   Future<List<Contest>> fetchAllContests() async {

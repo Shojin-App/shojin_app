@@ -770,7 +770,7 @@ class EnhancedUpdateDialog extends StatelessWidget {
           onPressed: () async {
             Navigator.of(context).pop();
             final String releaseUrl =
-                "https://github.com/yuubinnkyoku/Shojin_App/releases/tag/$versionTag";
+                "https://github.com/Shojin-App/Shojin_App/releases/tag/$versionTag";
             // You can use url_launcher here if available
             // await launchUrl(Uri.parse(releaseUrl));
             debugPrint('GitHub URL: $releaseUrl');

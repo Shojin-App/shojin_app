@@ -759,7 +759,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onTap: () {
             launchUrl(
               Uri.parse(
-                'https://github.com/yuubinnkyoku/shojin_app/blob/main/PRIVACY_POLICY.md',
+                'https://github.com/Shojin-App/shojin_app/blob/main/PRIVACY_POLICY.md',
               ),
             );
           },
@@ -770,7 +770,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onTap: () {
             launchUrl(
               Uri.parse(
-                'https://github.com/yuubinnkyoku/shojin_app/blob/main/TERMS_OF_USE.md',
+                'https://github.com/Shojin-App/shojin_app/blob/main/TERMS_OF_USE.md',
               ),
             );
           },

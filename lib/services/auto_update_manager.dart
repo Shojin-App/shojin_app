@@ -77,7 +77,7 @@ class AutoUpdateManager {
   // Perform startup update check
   Future<void> checkForUpdatesOnStartup(
     BuildContext context, {
-    String owner = 'yuubinnkyoku',
+    String owner = 'Shojin-App',
     String repo = 'Shojin_App',
   }) async {
     if (!kEnableSelfUpdate) {
@@ -222,7 +222,7 @@ class AutoUpdateManager {
 
   // Manual update check (for settings screen)
   Future<EnhancedAppUpdateInfo?> checkForUpdatesManually({
-    String owner = 'yuubinnkyoku',
+    String owner = 'Shojin-App',
     String repo = 'Shojin_App',
   }) async {
     if (!kEnableSelfUpdate) {
