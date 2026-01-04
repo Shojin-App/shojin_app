@@ -2,6 +2,7 @@ import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:m3e_collection/m3e_collection.dart';
 import 'package:provider/provider.dart';
 
 import '../models/problem.dart';
@@ -178,7 +179,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('問題詳細')),
+      appBar: AppBarM3E(title: const Text('問題詳細')),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -212,7 +213,8 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    ElevatedButton(
+                    ButtonM3E(
+                      style: ButtonM3EStyle.elevated,
                       // Trigger manual fetch using the current text in the controller
                       onPressed: _isLoading
                           ? null
@@ -224,11 +226,11 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
                                 _fetchProblem();
                               }
                             },
-                      child: _isLoading
+                      label: _isLoading
                           ? const SizedBox(
                               width: 20,
                               height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                              child: LoadingIndicatorM3E(),
                             )
                           : const Text('取得'),
                     ),
@@ -258,7 +260,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
                                 ),
                               ),
                               const Spacer(),
-                              IconButton(
+                              IconButtonM3E(
                                 icon: Icon(Icons.copy, color: Colors.red[700]),
                                 tooltip: 'エラーメッセージをコピー',
                                 onPressed: () {
@@ -310,7 +312,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
               const SizedBox(height: 12),
               Expanded(
                 child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
+                    ? const Center(child: LoadingIndicatorM3E())
                     : (_problem != null
                           ? _buildProblemView(_problem!)
                           : const Center(
@@ -476,7 +478,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const Spacer(),
-            IconButton(
+            IconButtonM3E(
               icon: const Icon(Icons.copy, size: 16),
               tooltip: '入力例をコピー',
               onPressed: () {
@@ -513,7 +515,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const Spacer(),
-            IconButton(
+            IconButtonM3E(
               icon: const Icon(Icons.copy, size: 16),
               tooltip: '出力例をコピー',
               onPressed: () {

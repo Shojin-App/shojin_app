@@ -2,6 +2,7 @@
 import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
+import 'package:m3e_collection/m3e_collection.dart';
 import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -220,11 +221,13 @@ class _BrowserScreenState extends State<BrowserScreen>
               ],
             ),
             actions: [
-              TextButton(
+              ButtonM3E(
+                style: ButtonM3EStyle.text,
                 onPressed: () => Navigator.pop(dialogContext),
-                child: const Text('キャンセル'),
+                label: const Text('キャンセル'),
               ),
-              TextButton(
+              ButtonM3E(
+                style: ButtonM3EStyle.text,
                 onPressed: () async {
                   final title = titleController.text.trim();
                   final url = urlController.text.trim();
@@ -269,7 +272,7 @@ class _BrowserScreenState extends State<BrowserScreen>
                       context: dialogContext,
                       barrierDismissible: false,
                       builder: (context) =>
-                          const Center(child: CircularProgressIndicator()),
+                          const Center(child: LoadingIndicatorM3E()),
                     );
                     try {
                       final newSite = BrowserSite(title: title, url: url);
@@ -315,7 +318,7 @@ class _BrowserScreenState extends State<BrowserScreen>
                     }
                   }
                 },
-                child: const Text('追加'),
+                label: const Text('追加'),
               ),
             ],
           );
@@ -331,13 +334,15 @@ class _BrowserScreenState extends State<BrowserScreen>
         title: const Text('サイトを削除'),
         content: Text('\'${_sites[index].title}\' を削除しますか？'),
         actions: [
-          TextButton(
+          ButtonM3E(
+            style: ButtonM3EStyle.text,
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('キャンセル'),
+            label: const Text('キャンセル'),
           ),
-          TextButton(
+          ButtonM3E(
+            style: ButtonM3EStyle.text,
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('削除'),
+            label: const Text('削除'),
           ),
         ],
       ),
@@ -389,18 +394,21 @@ class _BrowserScreenState extends State<BrowserScreen>
               ],
             ),
             actions: [
-              TextButton(
+              ButtonM3E(
+                style: ButtonM3EStyle.text,
                 onPressed: () async {
                   Navigator.pop(dialogContext);
                   await _removeSite(index);
                 },
-                child: const Text('削除', style: TextStyle(color: Colors.red)),
+                label: const Text('削除', style: TextStyle(color: Colors.red)),
               ),
-              TextButton(
+              ButtonM3E(
+                style: ButtonM3EStyle.text,
                 onPressed: () => Navigator.pop(dialogContext),
-                child: const Text('キャンセル'),
+                label: const Text('キャンセル'),
               ),
-              TextButton(
+              ButtonM3E(
+                style: ButtonM3EStyle.text,
                 onPressed: () async {
                   final newTitle = titleController.text.trim();
                   final newUrl = urlController.text.trim();
@@ -440,7 +448,7 @@ class _BrowserScreenState extends State<BrowserScreen>
                     navigator.pop();
                   }
                 },
-                child: const Text('更新'),
+                label: const Text('更新'),
               ),
             ],
           );
@@ -627,18 +635,10 @@ class _BrowserScreenState extends State<BrowserScreen>
               // Add site button
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                child: ElevatedButton(
+                child: ButtonM3E(
+                  style: ButtonM3EStyle.elevated,
                   onPressed: _addSite,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: const Icon(Icons.add),
+                  label: const Icon(Icons.add),
                 ),
               ),
             ],
@@ -650,7 +650,7 @@ class _BrowserScreenState extends State<BrowserScreen>
               if (_isControllerReady)
                 WebViewWidget(controller: _controller)
               else
-                const Center(child: CircularProgressIndicator()),
+                const Center(child: LoadingIndicatorM3E()),
 
               if (_isControllerReady && _loadFailed)
                 Center(
@@ -670,7 +670,8 @@ class _BrowserScreenState extends State<BrowserScreen>
                           ),
                         ),
                         const SizedBox(height: 16),
-                        ElevatedButton(
+                        ButtonM3E(
+                          style: ButtonM3EStyle.elevated,
                           onPressed: () {
                             if (mounted) {
                               setState(() {
@@ -680,7 +681,7 @@ class _BrowserScreenState extends State<BrowserScreen>
                             }
                             _controller.loadRequest(Uri.parse(_currentUrl));
                           },
-                          child: const Text('再試行'),
+                          label: const Text('再試行'),
                         ),
                       ],
                     ),
@@ -692,7 +693,7 @@ class _BrowserScreenState extends State<BrowserScreen>
                   color: Theme.of(
                     context,
                   ).colorScheme.surface.withValues(alpha: 0.3),
-                  child: const Center(child: CircularProgressIndicator()),
+                  child: const Center(child: LoadingIndicatorM3E()),
                 ),
             ],
           ),

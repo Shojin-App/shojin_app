@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:m3e_collection/m3e_collection.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -61,10 +62,10 @@ class _AtCoderClansScreenState extends State<AtCoderClansScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: AppBarM3E(
         title: const Text('AtCoder Clans'),
         actions: [
-          IconButton(
+          IconButtonM3E(
             icon: const Icon(Icons.refresh),
             onPressed: () {
               _controller.reload();
@@ -75,7 +76,7 @@ class _AtCoderClansScreenState extends State<AtCoderClansScreen> {
       body: Stack(
         children: [
           WebViewWidget(controller: _controller),
-          if (_isLoading) const Center(child: CircularProgressIndicator()),
+          if (_isLoading) const Center(child: LoadingIndicatorM3E()),
         ],
       ),
     );

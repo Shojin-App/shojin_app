@@ -52,6 +52,8 @@ dependencies:
   flutter_math_fork: ^0.7.3
   # Monaco Editor (VS Code's editor) for Flutter
   flutter_monaco: ^1.1.1
+  # Material 3 Expressive collection
+  m3e_collection: ^0.3.7
   # NOTE: The following Git-based dependencies were removed for F-Droid compliance.
   # They previously enabled in-app APK install & package queries:
   #   - android_package_installer (git, pinned commit)

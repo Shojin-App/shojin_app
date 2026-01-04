@@ -4,6 +4,7 @@ import 'dart:developer' as developer; // developerログのために追加
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:m3e_collection/m3e_collection.dart';
 import 'package:flutter/services.dart'; // Clipboardのために追加
 import 'package:flutter_code_editor/flutter_code_editor.dart';
 import 'package:flutter_highlight/themes/github.dart';
@@ -233,6 +234,7 @@ class _EditorScreenState extends State<EditorScreen> {
     try {
       final filePath = await _getFilePath();
       if (filePath.isEmpty) {
+        if (!mounted) return;
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('問題がロードされていないため保存できません')));
@@ -244,10 +246,12 @@ class _EditorScreenState extends State<EditorScreen> {
       // 現在のエディタからコードを取得
       final code = _currentCode;
       await file.writeAsString(code);
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('コードを $filePath に保存しました')));
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('コードの保存に失敗しました: $e')));
@@ -404,6 +408,7 @@ public class Main {
     try {
       final filePath = await _getFilePath();
       if (filePath.isEmpty) {
+        if (!mounted) return;
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('問題がロードされていないため復元できません')));
@@ -423,6 +428,7 @@ public class Main {
         ).showSnackBar(const SnackBar(content: Text('保存されたコードが見つかりません')));
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('コードの復元に失敗しました: $e')));
@@ -841,8 +847,9 @@ public class Main {
           ),
         ),
         actions: [
-          TextButton(
-            child: const Text('コピー (入力)'),
+          ButtonM3E(
+            style: ButtonM3EStyle.text,
+            label: const Text('コピー (入力)'),
             onPressed: () {
               Clipboard.setData(ClipboardData(text: result.input));
               ScaffoldMessenger.of(
@@ -850,9 +857,10 @@ public class Main {
               ).showSnackBar(const SnackBar(content: Text('入力をコピーしました')));
             },
           ),
-          TextButton(
-            child: const Text('閉じる'),
+          ButtonM3E(
             onPressed: () => Navigator.of(context).pop(),
+            label: const Text('閉じる'),
+            style: ButtonM3EStyle.text,
           ),
         ],
       ),
@@ -1034,45 +1042,29 @@ public class Main {
                     children: [
                       // 実行（横幅1/3）
                       Expanded(
-                        child: ElevatedButton.icon(
+                        child: ButtonM3E(
+                          style: ButtonM3EStyle.elevated,
                           icon: _isRunning
-                              ? SizedBox(
+                              ? const SizedBox(
                                   width: 18,
                                   height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onPrimary,
-                                  ),
+                                  child: LoadingIndicatorM3E(),
                                 )
                               : const Icon(Icons.play_arrow),
                           label: const Text('実行'),
                           onPressed: _isRunning ? null : _runCode,
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size.fromHeight(44),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 10,
-                            ),
-                            textStyle: const TextStyle(fontSize: 14),
-                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
                       // サンプル（横幅1/3）
                       Expanded(
-                        child: ElevatedButton.icon(
+                        child: ButtonM3E(
+                          style: ButtonM3EStyle.elevated,
                           icon: _isTesting
-                              ? SizedBox(
+                              ? const SizedBox(
                                   width: 18,
                                   height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onPrimary,
-                                  ),
+                                  child: LoadingIndicatorM3E(),
                                 )
                               : const Icon(Icons.checklist_rtl),
                           label: Text(_isTesting ? 'サンプルテスト中…' : 'サンプル'),
@@ -1082,20 +1074,13 @@ public class Main {
                                   _log('★★★ Test Button Pressed! ★★★');
                                   _runTests();
                                 },
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size.fromHeight(44),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 10,
-                            ),
-                            textStyle: const TextStyle(fontSize: 14),
-                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
                       // 提出（横幅1/3）
                       Expanded(
-                        child: ElevatedButton.icon(
+                        child: ButtonM3E(
+                          style: ButtonM3EStyle.elevated,
                           icon: const Icon(Icons.cloud_upload),
                           label: const Text('提出'),
                           onPressed: () {
@@ -1116,14 +1101,6 @@ public class Main {
                               ),
                             );
                           },
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size.fromHeight(44),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 10,
-                            ),
-                            textStyle: const TextStyle(fontSize: 14),
-                          ),
                         ),
                       ),
                     ],

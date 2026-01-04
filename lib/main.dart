@@ -5,6 +5,7 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart'; // 追加
+import 'package:m3e_collection/m3e_collection.dart'; // Import m3e_collection
 import 'package:provider/provider.dart';
 
 import 'config/build_config.dart'; // Add build configuration
@@ -228,82 +229,92 @@ class MyApp extends StatelessWidget {
           locale: const Locale('ja'),
           onGenerateTitle: (BuildContext context) =>
               AppLocalizations.of(context)!.appTitle, // 修正
-          theme: ThemeData(
-            colorScheme: lightColorScheme,
-            useMaterial3: true,
-            appBarTheme: const AppBarTheme(centerTitle: true, elevation: 2),
-            elevatedButtonTheme: ElevatedButtonThemeData(
-              style: ElevatedButton.styleFrom(elevation: 2),
+          theme: withM3ETheme(
+            ThemeData(
+              colorScheme: lightColorScheme,
+              useMaterial3: true,
+              appBarTheme: const AppBarTheme(centerTitle: true, elevation: 2),
+              elevatedButtonTheme: ElevatedButtonThemeData(
+                style: ElevatedButton.styleFrom(elevation: 2),
+              ),
+              navigationBarTheme: NavigationBarThemeData(
+                backgroundColor: Colors.transparent,
+                surfaceTintColor: Colors.transparent,
+                elevation: 0,
+                indicatorColor: lightColorScheme.primary.withValues(
+                  alpha: 0.20,
+                ),
+                iconTheme: WidgetStateProperty.resolveWith((states) {
+                  final color = states.contains(WidgetState.selected)
+                      ? lightColorScheme.primary
+                      : lightColorScheme.onSurfaceVariant;
+                  return IconThemeData(color: color);
+                }),
+                labelTextStyle: WidgetStateProperty.resolveWith((states) {
+                  final color = states.contains(WidgetState.selected)
+                      ? lightColorScheme.primary
+                      : lightColorScheme.onSurfaceVariant;
+                  return TextStyle(color: color);
+                }),
+              ),
+              cardTheme: CardThemeData(
+                elevation: 2,
+                margin: const EdgeInsets.all(8),
+                // MaterialYou使用時のコントラスト改善
+                surfaceTintColor: themeProvider.useMaterialYou
+                    ? lightColorScheme.primary.withValues(alpha: 0.08)
+                    : null,
+              ),
+              textTheme: textTheme,
+              fontFamily: AppFonts.notoSansJpFontFamily,
             ),
-            navigationBarTheme: NavigationBarThemeData(
-              backgroundColor: Colors.transparent,
-              surfaceTintColor: Colors.transparent,
-              elevation: 0,
-              indicatorColor: lightColorScheme.primary.withValues(alpha: 0.20),
-              iconTheme: WidgetStateProperty.resolveWith((states) {
-                final color = states.contains(WidgetState.selected)
-                    ? lightColorScheme.primary
-                    : lightColorScheme.onSurfaceVariant;
-                return IconThemeData(color: color);
-              }),
-              labelTextStyle: WidgetStateProperty.resolveWith((states) {
-                final color = states.contains(WidgetState.selected)
-                    ? lightColorScheme.primary
-                    : lightColorScheme.onSurfaceVariant;
-                return TextStyle(color: color);
-              }),
-            ),
-            cardTheme: CardThemeData(
-              elevation: 2,
-              margin: const EdgeInsets.all(8),
-              // MaterialYou使用時のコントラスト改善
-              surfaceTintColor: themeProvider.useMaterialYou
-                  ? lightColorScheme.primary.withValues(alpha: 0.08)
-                  : null,
-            ),
-            textTheme: textTheme,
-            fontFamily: AppFonts.notoSansJpFontFamily,
           ),
-          darkTheme: ThemeData(
-            colorScheme: darkColorScheme,
-            useMaterial3: true,
-            appBarTheme: AppBarTheme(
-              centerTitle: true,
-              elevation: 2,
-              backgroundColor: themeProvider.isPureBlack ? Colors.black : null,
-            ),
-            navigationBarTheme: NavigationBarThemeData(
-              backgroundColor: Colors.transparent,
-              surfaceTintColor: Colors.transparent,
-              elevation: 0,
-              indicatorColor: darkColorScheme.primary.withValues(alpha: 0.20),
-              iconTheme: WidgetStateProperty.resolveWith((states) {
-                final color = states.contains(WidgetState.selected)
-                    ? darkColorScheme.primary
-                    : darkColorScheme.onSurfaceVariant;
-                return IconThemeData(color: color);
-              }),
-              labelTextStyle: WidgetStateProperty.resolveWith((states) {
-                final color = states.contains(WidgetState.selected)
-                    ? darkColorScheme.primary
-                    : darkColorScheme.onSurfaceVariant;
-                return TextStyle(color: color);
-              }),
-            ),
-            cardTheme: CardThemeData(
-              elevation: 2,
-              margin: const EdgeInsets.all(8),
-              color: themeProvider.isPureBlack ? const Color(0xFF121212) : null,
-              // MaterialYou使用時のコントラスト改善
-              surfaceTintColor: themeProvider.useMaterialYou
-                  ? darkColorScheme.primary.withValues(alpha: 0.08)
+          darkTheme: withM3ETheme(
+            ThemeData(
+              colorScheme: darkColorScheme,
+              useMaterial3: true,
+              appBarTheme: AppBarTheme(
+                centerTitle: true,
+                elevation: 2,
+                backgroundColor: themeProvider.isPureBlack
+                    ? Colors.black
+                    : null,
+              ),
+              navigationBarTheme: NavigationBarThemeData(
+                backgroundColor: Colors.transparent,
+                surfaceTintColor: Colors.transparent,
+                elevation: 0,
+                indicatorColor: darkColorScheme.primary.withValues(alpha: 0.20),
+                iconTheme: WidgetStateProperty.resolveWith((states) {
+                  final color = states.contains(WidgetState.selected)
+                      ? darkColorScheme.primary
+                      : darkColorScheme.onSurfaceVariant;
+                  return IconThemeData(color: color);
+                }),
+                labelTextStyle: WidgetStateProperty.resolveWith((states) {
+                  final color = states.contains(WidgetState.selected)
+                      ? darkColorScheme.primary
+                      : darkColorScheme.onSurfaceVariant;
+                  return TextStyle(color: color);
+                }),
+              ),
+              cardTheme: CardThemeData(
+                elevation: 2,
+                margin: const EdgeInsets.all(8),
+                color: themeProvider.isPureBlack
+                    ? const Color(0xFF121212)
+                    : null,
+                // MaterialYou使用時のコントラスト改善
+                surfaceTintColor: themeProvider.useMaterialYou
+                    ? darkColorScheme.primary.withValues(alpha: 0.08)
+                    : null,
+              ),
+              scaffoldBackgroundColor: themeProvider.isPureBlack
+                  ? Colors.black
                   : null,
+              textTheme: textTheme,
+              fontFamily: AppFonts.notoSansJpFontFamily,
             ),
-            scaffoldBackgroundColor: themeProvider.isPureBlack
-                ? Colors.black
-                : null,
-            textTheme: textTheme,
-            fontFamily: AppFonts.notoSansJpFontFamily,
           ),
           themeMode: themeProvider.themeModeForFlutter,
           home: const MainScreen(),

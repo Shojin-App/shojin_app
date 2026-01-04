@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart'
     show LicenseRegistry; // for potential custom additions
 import 'package:flutter/material.dart';
 
+import 'package:m3e_collection/m3e_collection.dart';
 import '../generated/manual_licenses.dart';
 import '../generated/oss_licenses.dart';
 
@@ -127,7 +128,7 @@ class _StandardLicensePaneState extends State<_StandardLicensePane> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: LoadingIndicatorM3E());
         }
         if (snapshot.hasError) {
           return Center(child: Text('読み込み失敗: ${snapshot.error}'));

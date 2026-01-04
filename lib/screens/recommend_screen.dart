@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:m3e_collection/m3e_collection.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/problem_difficulty.dart';
@@ -232,7 +233,7 @@ class _RecommendScreenState extends State<RecommendScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('おすすめ問題')),
+      appBar: AppBarM3E(title: const Text('おすすめ問題')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -258,7 +259,7 @@ class _RecommendScreenState extends State<RecommendScreen> {
                     _ratingBadge(_currentRating!),
                     const SizedBox(width: 8),
                   ],
-                  TextButton(
+                  ButtonM3E(
                     onPressed: () async {
                       final prefs = await SharedPreferences.getInstance();
                       await prefs.remove('atcoder_username');
@@ -269,16 +270,18 @@ class _RecommendScreenState extends State<RecommendScreen> {
                         _currentRating = null;
                       });
                     },
-                    child: const Text('変更'),
+                    label: const Text('変更'),
+                    style: ButtonM3EStyle.text,
                   ),
                 ],
               ),
             ],
             const SizedBox(height: 12),
             if (_savedUsername == null)
-              ElevatedButton(
+              ButtonM3E(
                 onPressed: _isLoading ? null : _getRecommendations,
-                child: const Text('おすすめを取得'),
+                label: const Text('おすすめを取得'),
+                style: ButtonM3EStyle.elevated,
               ),
             const SizedBox(height: 8),
             // 推薦条件入力（レートとの差分の下限/上限）
@@ -306,15 +309,16 @@ class _RecommendScreenState extends State<RecommendScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                ElevatedButton(
+                ButtonM3E(
                   onPressed: _isLoading ? null : _getRecommendations,
-                  child: const Text('条件で再取得'),
+                  label: const Text('条件で再取得'),
+                  style: ButtonM3EStyle.elevated,
                 ),
               ],
             ),
             const SizedBox(height: 16),
             if (_isLoading)
-              const CircularProgressIndicator()
+              const LoadingIndicatorM3E()
             else if (_errorMessage != null)
               Text(_errorMessage!, style: const TextStyle(color: Colors.red))
             else

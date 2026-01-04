@@ -17,6 +17,7 @@ import '../utils/text_style_helper.dart';
 import '../widgets/shared/custom_sliver_app_bar.dart'; // Import CustomSliverAppBar
 import 'licenses_screen.dart'; // Third-party licenses screen
 import 'template_edit_screen.dart';
+import 'package:m3e_collection/m3e_collection.dart';
 import 'tex_test_screen.dart'; // TeX表示テスト画面をインポート
 
 class SettingsScreen extends StatefulWidget {
@@ -309,10 +310,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
           child: SizedBox(
             width: double.infinity,
-            child: ElevatedButton.icon(
+            child: ButtonM3E(
               onPressed: _saveAtCoderUsername,
               icon: const Icon(Icons.save_outlined),
               label: const Text('保存'),
+              style: ButtonM3EStyle.elevated,
             ),
           ),
         ),
@@ -381,7 +383,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Slider(
+                  SliderM3E(
                     min: 0.0,
                     max: 1.0,
                     divisions: 20,
@@ -554,21 +556,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton.icon(
+                  child: ButtonM3E(
                     onPressed: _isLoadingUpdate ? null : _checkForUpdates,
                     icon: const Icon(Icons.update),
                     label: const Text('アップデートを手動で確認'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12.0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                    ),
+                    style: ButtonM3EStyle.elevated,
                   ),
                 ),
                 if (_isLoadingUpdate) ...[
                   const SizedBox(height: 16),
-                  const CircularProgressIndicator(),
+                  const LoadingIndicatorM3E(),
                 ],
                 if (_updateCheckResult.isNotEmpty) ...[
                   const SizedBox(height: 16),

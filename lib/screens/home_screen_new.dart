@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:m3e_collection/m3e_collection.dart';
 import 'package:shojin_app/screens/recommend_screen.dart';
 import 'package:shojin_app/screens/atcoder_clans_screen.dart';
 import '../widgets/next_abc_contest_widget.dart';
@@ -22,13 +23,9 @@ class NewHomeScreen extends StatelessWidget {
                 children: [
                   const NextABCContestWidget(),
                   const SizedBox(height: 24),
-                  ElevatedButton.icon(
+                  ButtonM3E(
                     icon: const Icon(Icons.notifications_active_outlined),
                     label: const Text('リマインダー設定'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12.0),
-                      textStyle: const TextStyle(fontSize: 16),
-                    ),
                     onPressed: () {
                       Navigator.push(
                         context,
@@ -37,15 +34,12 @@ class NewHomeScreen extends StatelessWidget {
                         ),
                       );
                     },
+                    style: ButtonM3EStyle.elevated,
                   ),
                   const SizedBox(height: 16),
-                  ElevatedButton.icon(
+                  ButtonM3E(
                     icon: const Icon(Icons.recommend),
                     label: const Text('おすすめ問題'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12.0),
-                      textStyle: const TextStyle(fontSize: 16),
-                    ),
                     onPressed: () {
                       Navigator.push(
                         context,
@@ -54,15 +48,12 @@ class NewHomeScreen extends StatelessWidget {
                         ),
                       );
                     },
+                    style: ButtonM3EStyle.elevated,
                   ),
                   const SizedBox(height: 16),
-                  ElevatedButton.icon(
+                  ButtonM3E(
                     icon: const Icon(Icons.web),
                     label: const Text('AtCoder Clans'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12.0),
-                      textStyle: const TextStyle(fontSize: 16),
-                    ),
                     onPressed: () {
                       Navigator.push(
                         context,
@@ -71,6 +62,7 @@ class NewHomeScreen extends StatelessWidget {
                         ),
                       );
                     },
+                    style: ButtonM3EStyle.elevated,
                   ),
                   const SizedBox(height: 16),
                   // 他のウィジェットをここに追加可能
