@@ -21,7 +21,7 @@ class CustomSliverAppBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return SliverAppBarM3E(
       pinned: true,
-      variant: AppBarM3EVariant.medium,
+      variant: AppBarM3EVariant.small,
       title: title,
       leading: isMainView
           ? null
