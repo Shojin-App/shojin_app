@@ -1278,6 +1278,7 @@ class _EditorAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBarM3E(
+      automaticallyImplyLeading: false,
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
