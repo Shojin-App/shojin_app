@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:m3e_collection/m3e_collection.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../constants/browser_constants.dart';
@@ -36,9 +37,19 @@ class _BrowserScreenState extends State<BrowserScreen>
 
   Future<void> _initialize() async {
     _sites = await BrowserSiteService.loadSites();
+    final prefs = await SharedPreferences.getInstance();
+    final atcoderUsername = prefs.getString('atcoder_username');
 
     // Initialize WebViewController
-    _currentUrl = BrowserConstants.defaultSites.first.url;
+    String initialUrl = BrowserConstants.defaultSites.first.url;
+    // If first site is Problems, append username
+    if (initialUrl == BrowserConstants.defaultSites[1].url &&
+        atcoderUsername != null &&
+        atcoderUsername.isNotEmpty) {
+      initialUrl = '${BrowserConstants.defaultSites[1].url}$atcoderUsername';
+    }
+
+    _currentUrl = initialUrl;
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0x00000000))
@@ -77,7 +88,7 @@ class _BrowserScreenState extends State<BrowserScreen>
           },
         ),
       )
-      ..loadRequest(Uri.parse(BrowserConstants.defaultSites.first.url));
+      ..loadRequest(Uri.parse(initialUrl));
 
     _isControllerReady = true;
     if (mounted) {
@@ -505,16 +516,26 @@ class _BrowserScreenState extends State<BrowserScreen>
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       child: ElevatedButton(
-        onPressed: () {
-          if (_currentUrl != url) {
-            _currentUrl = url;
+        onPressed: () async {
+          String targetUrl = url;
+          // AtCoder Problems の場合はユーザー名を付加する
+          if (url == BrowserConstants.defaultSites[1].url) {
+            final prefs = await SharedPreferences.getInstance();
+            final username = prefs.getString('atcoder_username');
+            if (username != null && username.isNotEmpty) {
+              targetUrl = '$url$username';
+            }
+          }
+
+          if (_currentUrl != targetUrl) {
+            _currentUrl = targetUrl;
             if (mounted) {
               setState(() {
                 _isLoadingWebView = true;
                 _loadFailed = false;
               });
             }
-            _controller.loadRequest(Uri.parse(url));
+            _controller.loadRequest(Uri.parse(targetUrl));
           } else {
             developer.log(
               'Button pressed for already loaded URL: $url',
