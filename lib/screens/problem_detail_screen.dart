@@ -427,7 +427,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: Theme.of(
                     context,
@@ -495,7 +495,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: Theme.of(
                 context,
@@ -532,7 +532,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: Theme.of(
                 context,

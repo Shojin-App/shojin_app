@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:m3e_collection/m3e_collection.dart';
 import 'package:provider/provider.dart';
 
 import '../models/contest.dart';
@@ -27,12 +28,7 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
     return Consumer<ContestProvider>(
       builder: (context, provider, child) {
         if (provider.isLoading) {
-          return const Card(
-            child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-          );
+          return const Center(child: LoadingIndicatorM3E());
         }
 
         if (provider.error != null) {
@@ -48,9 +44,10 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 8),
-                  ElevatedButton(
+                  ButtonM3E(
                     onPressed: () => provider.fetchNextABC(),
-                    child: const Text('再試行'),
+                    label: const Text('再試行'),
+                    style: ButtonM3EStyle.elevated,
                   ),
                 ],
               ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:m3e_collection/m3e_collection.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -46,7 +47,7 @@ class _UpcomingContestsScreenState extends State<UpcomingContestsScreen>
           ],
         ),
         actions: [
-          IconButton(
+          IconButtonM3E(
             icon: const Icon(Icons.refresh),
             onPressed: () => context.read<ContestProvider>().refreshAll(),
           ),
@@ -63,7 +64,7 @@ class _UpcomingContestsScreenState extends State<UpcomingContestsScreen>
     return Consumer<ContestProvider>(
       builder: (context, provider, child) {
         if (provider.isLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: LoadingIndicatorM3E());
         }
 
         if (provider.error != null) {
@@ -105,7 +106,7 @@ class _UpcomingContestsScreenState extends State<UpcomingContestsScreen>
     return Consumer<ContestProvider>(
       builder: (context, provider, child) {
         if (provider.isLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: LoadingIndicatorM3E());
         }
 
         if (provider.error != null) {
@@ -160,7 +161,11 @@ class _UpcomingContestsScreenState extends State<UpcomingContestsScreen>
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            ElevatedButton(onPressed: onRetry, child: const Text('再試行')),
+            ButtonM3E(
+              onPressed: onRetry,
+              label: const Text('再試行'),
+              style: ButtonM3EStyle.elevated,
+            ),
           ],
         ),
       ),

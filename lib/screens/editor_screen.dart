@@ -758,10 +758,7 @@ public class Main {
                             ? const SizedBox(
                                 width: 15,
                                 height: 15,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
+                                child: LoadingIndicatorM3E(),
                               )
                             : Text(
                                 result.index.toString(), // ケース番号
@@ -1190,7 +1187,7 @@ public class Main {
                                           .colorScheme
                                           .surfaceContainerHighest
                                           .withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(4),
+                                      borderRadius: BorderRadius.circular(16),
                                       border: Border.all(
                                         color: Theme.of(
                                           context,
@@ -1280,7 +1277,7 @@ class _EditorAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppBar(
+    return AppBarM3E(
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -1389,7 +1386,7 @@ class _CodeEditor extends StatelessWidget {
       elevation: 2,
       margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(4.0),
+        borderRadius: BorderRadius.circular(16.0),
         child: CodeTheme(
           data: CodeThemeData(
             styles: isDarkMode ? monokaiSublimeTheme : githubTheme,

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:m3e_collection/m3e_collection.dart';
 import 'package:flutter_monaco/flutter_monaco.dart';
 
 /// Monaco Editor wrapper widget for the editor screen.
@@ -184,23 +185,14 @@ class MonacoCodeEditorState extends State<MonacoCodeEditor> {
     }
 
     if (!_isInitialized || _controller == null) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Monaco Editor を初期化中...'),
-          ],
-        ),
-      );
+      return const Center(child: LoadingIndicatorM3E());
     }
 
     return Card(
       elevation: 2,
       margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(4.0),
+        borderRadius: BorderRadius.circular(24.0),
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () async {

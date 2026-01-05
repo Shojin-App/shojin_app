@@ -800,7 +800,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ] else
           const ListTile(
             title: Text('情報の読み込み中...'),
-            leading: CircularProgressIndicator(),
+            leading: LoadingIndicatorM3E(),
           ),
       ],
     );

@@ -234,8 +234,16 @@ class MyApp extends StatelessWidget {
               colorScheme: lightColorScheme,
               useMaterial3: true,
               appBarTheme: const AppBarTheme(centerTitle: true, elevation: 2),
-              elevatedButtonTheme: ElevatedButtonThemeData(
-                style: ElevatedButton.styleFrom(elevation: 2),
+              cardTheme: CardThemeData(
+                elevation: 2,
+                margin: const EdgeInsets.all(8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24.0),
+                ),
+                // MaterialYou使用時のコントラスト改善
+                surfaceTintColor: themeProvider.useMaterialYou
+                    ? lightColorScheme.primary.withValues(alpha: 0.08)
+                    : null,
               ),
               navigationBarTheme: NavigationBarThemeData(
                 backgroundColor: Colors.transparent,
@@ -257,13 +265,13 @@ class MyApp extends StatelessWidget {
                   return TextStyle(color: color);
                 }),
               ),
-              cardTheme: CardThemeData(
-                elevation: 2,
-                margin: const EdgeInsets.all(8),
-                // MaterialYou使用時のコントラスト改善
-                surfaceTintColor: themeProvider.useMaterialYou
-                    ? lightColorScheme.primary.withValues(alpha: 0.08)
-                    : null,
+              elevatedButtonTheme: ElevatedButtonThemeData(
+                style: ElevatedButton.styleFrom(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24.0),
+                  ),
+                ),
               ),
               textTheme: textTheme,
               fontFamily: AppFonts.notoSansJpFontFamily,
@@ -301,6 +309,9 @@ class MyApp extends StatelessWidget {
               cardTheme: CardThemeData(
                 elevation: 2,
                 margin: const EdgeInsets.all(8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24.0),
+                ),
                 color: themeProvider.isPureBlack
                     ? const Color(0xFF121212)
                     : null,
@@ -308,6 +319,14 @@ class MyApp extends StatelessWidget {
                 surfaceTintColor: themeProvider.useMaterialYou
                     ? darkColorScheme.primary.withValues(alpha: 0.08)
                     : null,
+              ),
+              elevatedButtonTheme: ElevatedButtonThemeData(
+                style: ElevatedButton.styleFrom(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24.0),
+                  ),
+                ),
               ),
               scaffoldBackgroundColor: themeProvider.isPureBlack
                   ? Colors.black
@@ -496,36 +515,33 @@ class _MainScreenState extends State<MainScreen> {
               ),
               child: Material(
                 color: Colors.transparent, // Let the translucent container show
-                child: NavigationBar(
+                child: NavigationBarM3E(
                   backgroundColor: Colors.transparent,
-                  surfaceTintColor:
-                      Colors.transparent, // Disable M3 surface tint
-                  shadowColor: Colors.transparent, // Remove shadow
                   elevation: 0,
                   onDestinationSelected: _onItemTapped,
                   selectedIndex: _selectedIndex,
                   destinations: const [
-                    NavigationDestination(
+                    NavigationDestinationM3E(
                       icon: Icon(Icons.home_outlined),
                       selectedIcon: Icon(Icons.home),
                       label: 'ホーム',
                     ),
-                    NavigationDestination(
+                    NavigationDestinationM3E(
                       icon: Icon(Icons.public_outlined),
                       selectedIcon: Icon(Icons.public),
                       label: 'ブラウザ',
                     ),
-                    NavigationDestination(
+                    NavigationDestinationM3E(
                       icon: Icon(Icons.list_alt_outlined),
                       selectedIcon: Icon(Icons.list_alt),
                       label: '問題',
                     ),
-                    NavigationDestination(
+                    NavigationDestinationM3E(
                       icon: Icon(Icons.code_outlined),
                       selectedIcon: Icon(Icons.code),
                       label: 'エディタ',
                     ),
-                    NavigationDestination(
+                    NavigationDestinationM3E(
                       icon: Icon(Icons.settings_outlined),
                       selectedIcon: Icon(Icons.settings),
                       label: '設定',
