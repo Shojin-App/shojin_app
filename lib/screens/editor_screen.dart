@@ -9,7 +9,6 @@ import 'package:flutter/services.dart'; // Clipboardのために追加
 import 'package:flutter_code_editor/flutter_code_editor.dart';
 import 'package:flutter_highlight/themes/github.dart';
 import 'package:flutter_highlight/themes/monokai-sublime.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:highlight/languages/cpp.dart'; // clike.dart から cpp.dart に修正
 import 'package:highlight/languages/dart.dart'; // デフォルト用
 import 'package:highlight/languages/java.dart';
@@ -1135,7 +1134,7 @@ public class Main {
                                           .colorScheme
                                           .surfaceContainerHighest
                                           .withValues(alpha: 0.3),
-                                      borderRadius: BorderRadius.circular(4),
+                                      borderRadius: BorderRadius.circular(16),
                                       border: Border.all(
                                         color: Theme.of(
                                           context,
@@ -1157,7 +1156,8 @@ public class Main {
                                             border: InputBorder.none,
                                             isDense: true,
                                           ),
-                                          style: GoogleFonts.sourceCodePro(
+                                          style: getMonospaceTextStyle(
+                                            codeFontFamily,
                                             fontSize: 13,
                                           ),
                                         ),
@@ -1175,7 +1175,7 @@ public class Main {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '実行結果 (stdout):',
+                                  '実行結果 (stdout)',
                                   style: Theme.of(context).textTheme.titleSmall,
                                 ),
                                 const SizedBox(height: 8),
@@ -1186,7 +1186,7 @@ public class Main {
                                       color: Theme.of(context)
                                           .colorScheme
                                           .surfaceContainerHighest
-                                          .withValues(alpha: 0.15),
+                                          .withValues(alpha: 0.3),
                                       borderRadius: BorderRadius.circular(16),
                                       border: Border.all(
                                         color: Theme.of(
@@ -1221,7 +1221,7 @@ public class Main {
                                                       : 0,
                                                 ),
                                                 child: Text(
-                                                  'エラー出力 (stderr):',
+                                                  'エラー出力 (stderr)',
                                                   style: Theme.of(context)
                                                       .textTheme
                                                       .titleSmall
