@@ -2,11 +2,11 @@
 
 - Monaco Editor の追加 (Experimental)
 - 依存関係の更新
-- Material3 Expressive の部分的な導入
+- Material 3 Expressive の部分的な導入
 - AtCoder Clans ボタンの追加
 - AtCoder ProblemsのURLにユーザー名を自動で付加
 - ボタンと設定タブのデザイン変更
-- HackGenのConsole版フォント2つを消去
+- HackGen の Console 版フォント2つを消去
 - おすすめ問題をホーム画面に直接表示
 
 # Changelog
