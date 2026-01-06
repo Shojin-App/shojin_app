@@ -4,7 +4,7 @@ This application includes the following bundled fonts:
 
 ## HackGen Font Family
 
-The HackGen font family (HackGen, HackGen35, HackGenConsole, HackGen35Console) is used under the following license:
+The HackGen font family (HackGen, HackGen35) is used under the following license:
 
 **Font Name**: HackGen
 **Author**: Yuko Otawara

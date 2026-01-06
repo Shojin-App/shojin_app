@@ -26,12 +26,7 @@ const List<String> defaultCodeFontFamilies = [
 ];
 
 // Add your asset-based font family names here (must match pubspec.yaml fonts.family)
-const List<String> assetCodeFontFamilies = [
-  'HackGen',
-  'HackGen35',
-  'HackGenConsole',
-  'HackGen35Console',
-];
+const List<String> assetCodeFontFamilies = ['HackGen', 'HackGen35'];
 
 // Enum for editor type selection
 enum EditorType {
