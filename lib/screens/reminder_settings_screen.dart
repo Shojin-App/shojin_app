@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // TextInputFormatterのため
+import 'package:m3e_collection/m3e_collection.dart';
 import '../models/reminder_setting.dart';
 import '../services/reminder_storage_service.dart';
 
@@ -40,7 +41,6 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
     _NotificationTimeOption('カスタム...', null), // カスタム入力用
   ];
 
-
   @override
   void initState() {
     super.initState();
@@ -54,16 +54,20 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
     final loadedSettings = await _storageService.loadReminderSettings();
     for (var type in _contestTypeNames.keys) {
       if (!loadedSettings.any((s) => s.contestType == type)) {
-        loadedSettings.add(ReminderSetting(
-          contestType: type,
-          minutesBefore: [15],
-          isEnabled: true,
-        ));
+        loadedSettings.add(
+          ReminderSetting(
+            contestType: type,
+            minutesBefore: [15],
+            isEnabled: true,
+          ),
+        );
       }
     }
-    loadedSettings.sort((a, b) =>
-        _contestTypeNames.keys.toList().indexOf(a.contestType) -
-        _contestTypeNames.keys.toList().indexOf(b.contestType));
+    loadedSettings.sort(
+      (a, b) =>
+          _contestTypeNames.keys.toList().indexOf(a.contestType) -
+          _contestTypeNames.keys.toList().indexOf(b.contestType),
+    );
 
     setState(() {
       _reminderSettings = loadedSettings;
@@ -93,22 +97,25 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
           decoration: const InputDecoration(hintText: '例: 10'),
         ),
         actions: [
-          TextButton(
+          ButtonM3E(
+            style: ButtonM3EStyle.text,
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('キャンセル'),
+            label: const Text('キャンセル'),
           ),
-          TextButton(
+          ButtonM3E(
+            style: ButtonM3EStyle.text,
             onPressed: () {
               final value = int.tryParse(controller.text);
-              if (value != null && value >= 0) { // 0分前も許可
+              if (value != null && value >= 0) {
+                // 0分前も許可
                 Navigator.of(context).pop(value);
               } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('有効な数値を入力してください')),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('有効な数値を入力してください')));
               }
             },
-            child: const Text('決定'),
+            label: const Text('決定'),
           ),
         ],
       ),
@@ -147,12 +154,12 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
       if (selectedOption.value != null) {
         // 事前定義された時間
         setState(() {
-          if (!_reminderSettings[settingIndex]
-              .minutesBefore
-              .contains(selectedOption.value!)) {
-            _reminderSettings[settingIndex]
-                .minutesBefore
-                .add(selectedOption.value!);
+          if (!_reminderSettings[settingIndex].minutesBefore.contains(
+            selectedOption.value!,
+          )) {
+            _reminderSettings[settingIndex].minutesBefore.add(
+              selectedOption.value!,
+            );
             _reminderSettings[settingIndex].minutesBefore.sort();
           }
         });
@@ -174,71 +181,75 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('リマインダー設定'),
-      ),
+      appBar: AppBarM3E(title: const Text('リマインダー設定')),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: LoadingIndicatorM3E())
           : _reminderSettings.isEmpty
-              ? const Center(child: Text('設定項目がありません。'))
-              : ListView.builder(
-                  itemCount: _reminderSettings.length,
-                  itemBuilder: (context, index) {
-                    final setting = _reminderSettings[index];
-                    final contestName = _contestTypeNames[setting.contestType] ?? 'その他';
+          ? const Center(child: Text('設定項目がありません。'))
+          : ListView.builder(
+              itemCount: _reminderSettings.length,
+              itemBuilder: (context, index) {
+                final setting = _reminderSettings[index];
+                final contestName =
+                    _contestTypeNames[setting.contestType] ?? 'その他';
 
-                    return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SwitchListTile(
-                              title: Text(
-                                contestName,
-                                style: Theme.of(context).textTheme.titleLarge,
-                              ),
-                              value: setting.isEnabled,
-                              onChanged: (bool value) {
-                                setState(() {
-                                  setting.isEnabled = value;
-                                });
-                                _saveSettings();
-                              },
-                            ),
-                            const SizedBox(height: 8),
-                            Padding(
-                              padding: const EdgeInsets.only(left: 16.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('通知タイミング (分前):'),
-                                  const SizedBox(height: 8),
-                                  Wrap(
-                                    spacing: 8.0,
-                                    runSpacing: 4.0,
-                                    children: setting.minutesBefore.map((time) {
-                                      return Chip(
-                                        label: Text('$time 分前'),
-                                        onDeleted: () => _removeNotificationTime(index, time),
-                                      );
-                                    }).toList(),
-                                  ),
-                                  TextButton.icon(
-                                    icon: const Icon(Icons.add_alarm_outlined),
-                                    label: const Text('時間を追加'),
-                                    onPressed: () => _addNotificationTime(index),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
+                return Card(
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SwitchListTile(
+                          title: Text(
+                            contestName,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          value: setting.isEnabled,
+                          onChanged: (bool value) {
+                            setState(() {
+                              setting.isEnabled = value;
+                            });
+                            _saveSettings();
+                          },
                         ),
-                      ),
-                    );
-                  },
-                ),
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('通知タイミング (分前):'),
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 8.0,
+                                runSpacing: 4.0,
+                                children: setting.minutesBefore.map((time) {
+                                  return Chip(
+                                    label: Text('$time 分前'),
+                                    onDeleted: () =>
+                                        _removeNotificationTime(index, time),
+                                  );
+                                }).toList(),
+                              ),
+                              ButtonM3E(
+                                style: ButtonM3EStyle.text,
+                                icon: const Icon(Icons.add_alarm_outlined),
+                                label: const Text('時間を追加'),
+                                onPressed: () => _addNotificationTime(index),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
     );
   }
 }

@@ -1,6 +1,5 @@
 {
   "cmake.ignoreCMakeListsMissing": true,
-  "dart.flutterSdkPath": ".fvm/versions/stable",
   "dart.flutterRunAdditionalArgs": [
     "--flavor",
     "oss",
@@ -23,5 +22,12 @@
     {
       "text": "build:、chore:、ci:、docs:、style:、refactor:、perf:、test:なども使用できます。"
     }
-  ]
+  ],
+  "dart.flutterSdkPath": ".fvm/versions/stable",
+  "search.exclude": {
+    "**/.fvm": true
+  },
+  "files.watcherExclude": {
+    "**/.fvm": true
+  }
 }

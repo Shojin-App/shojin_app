@@ -1,5 +1,3 @@
-// filepath: d:\GitHub_yuubinnkyoku\shojin_app\lib\models\browser_site.dart
-
 /// ブラウザで表示するサイトの情報を保持するモデル
 class BrowserSite {
   final String title;

@@ -1,8 +1,9 @@
-// filepath: d:\GitHub_yuubinnkyoku\shojin_app\lib\screens\browser_screen.dart
 import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
+import 'package:m3e_collection/m3e_collection.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../constants/browser_constants.dart';
@@ -36,9 +37,19 @@ class _BrowserScreenState extends State<BrowserScreen>
 
   Future<void> _initialize() async {
     _sites = await BrowserSiteService.loadSites();
+    final prefs = await SharedPreferences.getInstance();
+    final atcoderUsername = prefs.getString('atcoder_username');
 
     // Initialize WebViewController
-    _currentUrl = BrowserConstants.defaultSites.first.url;
+    String initialUrl = BrowserConstants.defaultSites.first.url;
+    // If first site is Problems, append username
+    if (initialUrl == BrowserConstants.defaultSites[1].url &&
+        atcoderUsername != null &&
+        atcoderUsername.isNotEmpty) {
+      initialUrl = '${BrowserConstants.defaultSites[1].url}$atcoderUsername';
+    }
+
+    _currentUrl = initialUrl;
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0x00000000))
@@ -77,7 +88,7 @@ class _BrowserScreenState extends State<BrowserScreen>
           },
         ),
       )
-      ..loadRequest(Uri.parse(BrowserConstants.defaultSites.first.url));
+      ..loadRequest(Uri.parse(initialUrl));
 
     _isControllerReady = true;
     if (mounted) {
@@ -220,11 +231,13 @@ class _BrowserScreenState extends State<BrowserScreen>
               ],
             ),
             actions: [
-              TextButton(
+              ButtonM3E(
+                style: ButtonM3EStyle.text,
                 onPressed: () => Navigator.pop(dialogContext),
-                child: const Text('キャンセル'),
+                label: const Text('キャンセル'),
               ),
-              TextButton(
+              ButtonM3E(
+                style: ButtonM3EStyle.text,
                 onPressed: () async {
                   final title = titleController.text.trim();
                   final url = urlController.text.trim();
@@ -269,7 +282,7 @@ class _BrowserScreenState extends State<BrowserScreen>
                       context: dialogContext,
                       barrierDismissible: false,
                       builder: (context) =>
-                          const Center(child: CircularProgressIndicator()),
+                          const Center(child: LoadingIndicatorM3E()),
                     );
                     try {
                       final newSite = BrowserSite(title: title, url: url);
@@ -315,7 +328,7 @@ class _BrowserScreenState extends State<BrowserScreen>
                     }
                   }
                 },
-                child: const Text('追加'),
+                label: const Text('追加'),
               ),
             ],
           );
@@ -331,13 +344,15 @@ class _BrowserScreenState extends State<BrowserScreen>
         title: const Text('サイトを削除'),
         content: Text('\'${_sites[index].title}\' を削除しますか？'),
         actions: [
-          TextButton(
+          ButtonM3E(
+            style: ButtonM3EStyle.text,
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('キャンセル'),
+            label: const Text('キャンセル'),
           ),
-          TextButton(
+          ButtonM3E(
+            style: ButtonM3EStyle.text,
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('削除'),
+            label: const Text('削除'),
           ),
         ],
       ),
@@ -389,18 +404,21 @@ class _BrowserScreenState extends State<BrowserScreen>
               ],
             ),
             actions: [
-              TextButton(
+              ButtonM3E(
+                style: ButtonM3EStyle.text,
                 onPressed: () async {
                   Navigator.pop(dialogContext);
                   await _removeSite(index);
                 },
-                child: const Text('削除', style: TextStyle(color: Colors.red)),
+                label: const Text('削除', style: TextStyle(color: Colors.red)),
               ),
-              TextButton(
+              ButtonM3E(
+                style: ButtonM3EStyle.text,
                 onPressed: () => Navigator.pop(dialogContext),
-                child: const Text('キャンセル'),
+                label: const Text('キャンセル'),
               ),
-              TextButton(
+              ButtonM3E(
+                style: ButtonM3EStyle.text,
                 onPressed: () async {
                   final newTitle = titleController.text.trim();
                   final newUrl = urlController.text.trim();
@@ -440,7 +458,7 @@ class _BrowserScreenState extends State<BrowserScreen>
                     navigator.pop();
                   }
                 },
-                child: const Text('更新'),
+                label: const Text('更新'),
               ),
             ],
           );
@@ -498,16 +516,26 @@ class _BrowserScreenState extends State<BrowserScreen>
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       child: ElevatedButton(
-        onPressed: () {
-          if (_currentUrl != url) {
-            _currentUrl = url;
+        onPressed: () async {
+          String targetUrl = url;
+          // AtCoder Problems の場合はユーザー名を付加する
+          if (url == BrowserConstants.defaultSites[1].url) {
+            final prefs = await SharedPreferences.getInstance();
+            final username = prefs.getString('atcoder_username');
+            if (username != null && username.isNotEmpty) {
+              targetUrl = '$url$username';
+            }
+          }
+
+          if (_currentUrl != targetUrl) {
+            _currentUrl = targetUrl;
             if (mounted) {
               setState(() {
                 _isLoadingWebView = true;
                 _loadFailed = false;
               });
             }
-            _controller.loadRequest(Uri.parse(url));
+            _controller.loadRequest(Uri.parse(targetUrl));
           } else {
             developer.log(
               'Button pressed for already loaded URL: $url',
@@ -627,18 +655,10 @@ class _BrowserScreenState extends State<BrowserScreen>
               // Add site button
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                child: ElevatedButton(
+                child: ButtonM3E(
+                  style: ButtonM3EStyle.tonal,
                   onPressed: _addSite,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: const Icon(Icons.add),
+                  label: const Icon(Icons.add),
                 ),
               ),
             ],
@@ -650,7 +670,7 @@ class _BrowserScreenState extends State<BrowserScreen>
               if (_isControllerReady)
                 WebViewWidget(controller: _controller)
               else
-                const Center(child: CircularProgressIndicator()),
+                const Center(child: LoadingIndicatorM3E()),
 
               if (_isControllerReady && _loadFailed)
                 Center(
@@ -670,7 +690,8 @@ class _BrowserScreenState extends State<BrowserScreen>
                           ),
                         ),
                         const SizedBox(height: 16),
-                        ElevatedButton(
+                        ButtonM3E(
+                          style: ButtonM3EStyle.filled,
                           onPressed: () {
                             if (mounted) {
                               setState(() {
@@ -680,7 +701,7 @@ class _BrowserScreenState extends State<BrowserScreen>
                             }
                             _controller.loadRequest(Uri.parse(_currentUrl));
                           },
-                          child: const Text('再試行'),
+                          label: const Text('再試行'),
                         ),
                       ],
                     ),
@@ -692,7 +713,7 @@ class _BrowserScreenState extends State<BrowserScreen>
                   color: Theme.of(
                     context,
                   ).colorScheme.surface.withValues(alpha: 0.3),
-                  child: const Center(child: CircularProgressIndicator()),
+                  child: const Center(child: LoadingIndicatorM3E()),
                 ),
             ],
           ),

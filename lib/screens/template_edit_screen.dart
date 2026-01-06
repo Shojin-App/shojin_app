@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:m3e_collection/m3e_collection.dart';
 import 'package:provider/provider.dart';
 import '../providers/template_provider.dart';
 
@@ -23,7 +24,7 @@ class _TemplateEditScreenState extends State<TemplateEditScreen> {
     // 現在のテンプレート（カスタムまたはデフォルト）を取得
     String currentTemplate = _templateProvider.getTemplate(widget.language);
     _controller = TextEditingController(text: currentTemplate);
-    
+
     // テキスト変更を監視
     _controller.addListener(() {
       if (!_isEdited) {
@@ -46,11 +47,11 @@ class _TemplateEditScreenState extends State<TemplateEditScreen> {
     setState(() {
       _isEdited = false;
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${widget.language}のテンプレートを保存しました')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('${widget.language}のテンプレートを保存しました')));
   }
-  
+
   // テンプレートをリセットする
   void _resetTemplate() {
     showDialog(
@@ -59,13 +60,17 @@ class _TemplateEditScreenState extends State<TemplateEditScreen> {
         title: const Text('テンプレートをリセット'),
         content: Text('${widget.language}のテンプレートをデフォルトに戻しますか？'),
         actions: [
-          TextButton(
+          ButtonM3E(
+            style: ButtonM3EStyle.text,
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('キャンセル'),
+            label: const Text('キャンセル'),
           ),
-          TextButton(
+          ButtonM3E(
+            style: ButtonM3EStyle.text,
             onPressed: () {
-              _controller.text = _templateProvider.getDefaultTemplate(widget.language);
+              _controller.text = _templateProvider.getDefaultTemplate(
+                widget.language,
+              );
               _templateProvider.resetTemplate(widget.language);
               Navigator.of(context).pop();
               setState(() {
@@ -75,7 +80,7 @@ class _TemplateEditScreenState extends State<TemplateEditScreen> {
                 SnackBar(content: Text('${widget.language}のテンプレートをリセットしました')),
               );
             },
-            child: const Text('リセット'),
+            label: const Text('リセット'),
           ),
         ],
       ),
@@ -85,17 +90,18 @@ class _TemplateEditScreenState extends State<TemplateEditScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: AppBarM3E(
         title: Text('${widget.language}のテンプレート編集'),
         actions: [
-          IconButton(
+          IconButtonM3E(
             onPressed: _resetTemplate,
             icon: const Icon(Icons.refresh),
-            tooltip: 'デフォルトに戻す',
+            semanticLabel: 'デフォルトに戻す',
           ),
-          TextButton(
+          ButtonM3E(
+            style: ButtonM3EStyle.text,
             onPressed: _isEdited ? _saveTemplate : null,
-            child: const Text('保存'),
+            label: const Text('保存'),
           ),
         ],
       ),
@@ -107,16 +113,13 @@ class _TemplateEditScreenState extends State<TemplateEditScreen> {
               child: Container(
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(4.0),
+                  borderRadius: BorderRadius.circular(16.0),
                 ),
                 child: TextField(
                   controller: _controller,
                   maxLines: null,
                   expands: true,
-                  style: const TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 14,
-                  ),
+                  style: const TextStyle(fontFamily: 'monospace', fontSize: 14),
                   decoration: const InputDecoration(
                     contentPadding: EdgeInsets.all(8.0),
                     border: InputBorder.none,

@@ -20,6 +20,6 @@ class BuildConfig {
       !isFdroidBuild;
 
   /// Repository info for self-updates (only used when enableSelfUpdate is true)
-  static const String defaultOwner = 'yuubinnkyoku';
+  static const String defaultOwner = 'Shojin-App';
   static const String defaultRepo = 'Shojin_App';
 }

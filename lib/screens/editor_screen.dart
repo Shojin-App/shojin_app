@@ -4,11 +4,11 @@ import 'dart:developer' as developer; // developerログのために追加
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:m3e_collection/m3e_collection.dart';
 import 'package:flutter/services.dart'; // Clipboardのために追加
 import 'package:flutter_code_editor/flutter_code_editor.dart';
 import 'package:flutter_highlight/themes/github.dart';
 import 'package:flutter_highlight/themes/monokai-sublime.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:highlight/languages/cpp.dart'; // clike.dart から cpp.dart に修正
 import 'package:highlight/languages/dart.dart'; // デフォルト用
 import 'package:highlight/languages/java.dart';
@@ -26,6 +26,7 @@ import '../providers/theme_provider.dart';
 import '../services/atcoder_service.dart';
 import '../services/code_history_service.dart';
 import '../utils/text_style_helper.dart';
+import '../widgets/monaco_code_editor.dart';
 import 'code_history_screen.dart';
 import 'submit_screen.dart'; // 提出画面を表示するWebViewスクリーン
 
@@ -47,6 +48,9 @@ class EditorScreen extends StatefulWidget {
 class _EditorScreenState extends State<EditorScreen> {
   // コードエディタのコントローラー
   late final CodeController _codeController; // late final のまま
+  // Monaco Editor用のキー
+  final GlobalKey<MonacoCodeEditorState> _monacoEditorKey =
+      GlobalKey<MonacoCodeEditorState>();
   // 標準入力用コントローラー
   final TextEditingController _stdinController = TextEditingController();
   // スクロールコントローラー（PrimaryScrollController競合回避のため個別に用意）
@@ -75,6 +79,7 @@ class _EditorScreenState extends State<EditorScreen> {
   bool get _isDarkMode => Theme.of(context).brightness == Brightness.dark;
 
   bool _isLoadingCode = true; // コード読み込み中フラグ
+  String _monacoCode = ''; // Monaco Editor用のコードキャッシュ
 
   @override
   void initState() {
@@ -109,6 +114,30 @@ class _EditorScreenState extends State<EditorScreen> {
     );
   }
 
+  // 現在のエディタタイプを取得
+  EditorType get _currentEditorType {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    return themeProvider.editorType;
+  }
+
+  // 現在のコードを取得（エディタタイプに応じて）
+  String get _currentCode {
+    if (_currentEditorType == EditorType.monaco) {
+      return _monacoEditorKey.currentState?.currentValue ?? _monacoCode;
+    }
+    return _codeController.text;
+  }
+
+  // コードを設定（エディタタイプに応じて）
+  Future<void> _setCode(String code) async {
+    if (_currentEditorType == EditorType.monaco) {
+      _monacoCode = code;
+      await _monacoEditorKey.currentState?.setValue(code);
+    } else {
+      _codeController.text = code;
+    }
+  }
+
   void _onCodeChanged() {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(seconds: 2), () {
@@ -116,14 +145,17 @@ class _EditorScreenState extends State<EditorScreen> {
     });
   }
 
+  // Monaco Editor用のコード変更ハンドラ
+  void _onMonacoCodeChanged(String code) {
+    _monacoCode = code;
+    _onCodeChanged();
+  }
+
   Future<void> _saveHistory() async {
     if (widget.problemId.isEmpty || widget.problemId == 'default_problem') {
       return;
     }
-    await _codeHistoryService.saveHistory(
-      widget.problemId,
-      _codeController.text,
-    );
+    await _codeHistoryService.saveHistory(widget.problemId, _currentCode);
     // Optional: Show a subtle feedback to the user
     // ScaffoldMessenger.of(context).showSnackBar(
     //   const SnackBar(content: Text('History saved'), duration: Duration(seconds: 1)),
@@ -169,21 +201,26 @@ class _EditorScreenState extends State<EditorScreen> {
     });
     try {
       final filePath = await _getFilePath();
+      String loadedCode;
       if (filePath.isEmpty) {
-        _codeController.text = _getTemplateForLanguage(_selectedLanguage);
-        return;
-      }
-      final file = File(filePath);
-      if (await file.exists()) {
-        final savedCode = await file.readAsString();
-        _codeController.text = savedCode;
+        loadedCode = _getTemplateForLanguage(_selectedLanguage);
       } else {
-        _codeController.text = _getTemplateForLanguage(_selectedLanguage);
+        final file = File(filePath);
+        if (await file.exists()) {
+          loadedCode = await file.readAsString();
+        } else {
+          loadedCode = _getTemplateForLanguage(_selectedLanguage);
+        }
       }
+      // 両方のエディタに設定
+      _codeController.text = loadedCode;
+      _monacoCode = loadedCode;
     } catch (e, stackTrace) {
       _log('コードの読み込みに失敗しました', error: e, stackTrace: stackTrace);
       // エラー時もテンプレートを設定
-      _codeController.text = _getTemplateForLanguage(_selectedLanguage);
+      final template = _getTemplateForLanguage(_selectedLanguage);
+      _codeController.text = template;
+      _monacoCode = template;
     } finally {
       setState(() {
         _isLoadingCode = false;
@@ -196,6 +233,7 @@ class _EditorScreenState extends State<EditorScreen> {
     try {
       final filePath = await _getFilePath();
       if (filePath.isEmpty) {
+        if (!mounted) return;
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('問題がロードされていないため保存できません')));
@@ -204,11 +242,15 @@ class _EditorScreenState extends State<EditorScreen> {
       final file = File(filePath);
       // ディレクトリが存在しない場合は作成
       await file.parent.create(recursive: true);
-      await file.writeAsString(_codeController.text);
+      // 現在のエディタからコードを取得
+      final code = _currentCode;
+      await file.writeAsString(code);
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('コードを $filePath に保存しました')));
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('コードの保存に失敗しました: $e')));
@@ -314,7 +356,7 @@ public class Main {
 
     final url = Uri.parse('https://wandbox.org/api/compile.json');
     final wandboxLanguage = _getWandboxLanguageName(_selectedLanguage);
-    final code = _codeController.text;
+    final code = _currentCode;
     final stdin = _stdinController.text;
 
     try {
@@ -365,6 +407,7 @@ public class Main {
     try {
       final filePath = await _getFilePath();
       if (filePath.isEmpty) {
+        if (!mounted) return;
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('問題がロードされていないため復元できません')));
@@ -373,9 +416,8 @@ public class Main {
       final file = File(filePath);
       if (await file.exists()) {
         final savedCode = await file.readAsString();
-        setState(() {
-          _codeController.text = savedCode;
-        });
+        await _setCode(savedCode);
+        setState(() {});
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('$_selectedLanguage のコードを復元しました')),
         );
@@ -385,6 +427,7 @@ public class Main {
         ).showSnackBar(const SnackBar(content: Text('保存されたコードが見つかりません')));
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('コードの復元に失敗しました: $e')));
@@ -597,7 +640,7 @@ public class Main {
       name: 'EditorScreen',
     );
 
-    final code = _codeController.text;
+    final code = _currentCode;
     final wandboxLanguage = _getWandboxLanguageName(_selectedLanguage);
     developer.log(
       'Code length: ${code.length}, Wandbox language: $wandboxLanguage',
@@ -714,10 +757,7 @@ public class Main {
                             ? const SizedBox(
                                 width: 15,
                                 height: 15,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
+                                child: LoadingIndicatorM3E(),
                               )
                             : Text(
                                 result.index.toString(), // ケース番号
@@ -803,8 +843,9 @@ public class Main {
           ),
         ),
         actions: [
-          TextButton(
-            child: const Text('コピー (入力)'),
+          ButtonM3E(
+            style: ButtonM3EStyle.text,
+            label: const Text('コピー (入力)'),
             onPressed: () {
               Clipboard.setData(ClipboardData(text: result.input));
               ScaffoldMessenger.of(
@@ -812,9 +853,10 @@ public class Main {
               ).showSnackBar(const SnackBar(content: Text('入力をコピーしました')));
             },
           ),
-          TextButton(
-            child: const Text('閉じる'),
+          ButtonM3E(
             onPressed: () => Navigator.of(context).pop(),
+            label: const Text('閉じる'),
+            style: ButtonM3EStyle.text,
           ),
         ],
       ),
@@ -918,9 +960,8 @@ public class Main {
                 ),
               );
               if (restoredCode != null && restoredCode is String) {
-                setState(() {
-                  _codeController.text = restoredCode;
-                });
+                _setCode(restoredCode);
+                setState(() {});
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Code restored from history.')),
                 );
@@ -930,7 +971,8 @@ public class Main {
               _restoreCode();
               break;
             case _ToolbarAction.reset:
-              _codeController.text = _getTemplateForLanguage(_selectedLanguage);
+              final template = _getTemplateForLanguage(_selectedLanguage);
+              _setCode(template);
               _stdinController.clear();
               setState(() {
                 _output = '';
@@ -938,7 +980,7 @@ public class Main {
               });
               break;
             case _ToolbarAction.share:
-              final code = _codeController.text;
+              final code = _currentCode;
               if (code.isEmpty) {
                 ScaffoldMessenger.of(
                   context,
@@ -967,11 +1009,21 @@ public class Main {
               else
                 Expanded(
                   flex: 3,
-                  child: _CodeEditor(
-                    codeController: _codeController,
-                    isDarkMode: _isDarkMode,
-                    codeFontFamily: codeFontFamily,
-                  ),
+                  child: themeProvider.editorType == EditorType.monaco
+                      ? MonacoCodeEditor(
+                          key: _monacoEditorKey,
+                          initialValue: _monacoCode.isNotEmpty
+                              ? _monacoCode
+                              : _codeController.text,
+                          language: _selectedLanguage,
+                          isDarkMode: _isDarkMode,
+                          onChanged: _onMonacoCodeChanged,
+                        )
+                      : _CodeEditor(
+                          codeController: _codeController,
+                          isDarkMode: _isDarkMode,
+                          codeFontFamily: codeFontFamily,
+                        ),
                 ),
 
               // 入出力エリア: ボタン行 + 左右分割 (stdin | stdout/stderr)
@@ -986,44 +1038,40 @@ public class Main {
                     children: [
                       // 実行（横幅1/3）
                       Expanded(
-                        child: ElevatedButton.icon(
+                        child: ButtonM3E(
+                          style: ButtonM3EStyle.filled,
                           icon: _isRunning
                               ? SizedBox(
                                   width: 18,
                                   height: 18,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onPrimary,
+                                    valueColor: AlwaysStoppedAnimation(
+                                      Theme.of(context).colorScheme.onPrimary,
+                                    ),
                                   ),
                                 )
                               : const Icon(Icons.play_arrow),
                           label: const Text('実行'),
                           onPressed: _isRunning ? null : _runCode,
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size.fromHeight(44),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 10,
-                            ),
-                            textStyle: const TextStyle(fontSize: 14),
-                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
                       // サンプル（横幅1/3）
                       Expanded(
-                        child: ElevatedButton.icon(
+                        child: ButtonM3E(
+                          style: ButtonM3EStyle.tonal,
                           icon: _isTesting
                               ? SizedBox(
                                   width: 18,
                                   height: 18,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onPrimary,
+                                    valueColor: AlwaysStoppedAnimation(
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.onSecondaryContainer,
+                                    ),
                                   ),
                                 )
                               : const Icon(Icons.checklist_rtl),
@@ -1034,20 +1082,13 @@ public class Main {
                                   _log('★★★ Test Button Pressed! ★★★');
                                   _runTests();
                                 },
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size.fromHeight(44),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 10,
-                            ),
-                            textStyle: const TextStyle(fontSize: 14),
-                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
                       // 提出（横幅1/3）
                       Expanded(
-                        child: ElevatedButton.icon(
+                        child: ButtonM3E(
+                          style: ButtonM3EStyle.filled,
                           icon: const Icon(Icons.cloud_upload),
                           label: const Text('提出'),
                           onPressed: () {
@@ -1062,20 +1103,12 @@ public class Main {
                               MaterialPageRoute(
                                 builder: (_) => SubmitScreen(
                                   url: url,
-                                  initialCode: _codeController.text,
+                                  initialCode: _currentCode,
                                   initialLanguage: _selectedLanguage,
                                 ),
                               ),
                             );
                           },
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size.fromHeight(44),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 10,
-                            ),
-                            textStyle: const TextStyle(fontSize: 14),
-                          ),
                         ),
                       ),
                     ],
@@ -1113,7 +1146,7 @@ public class Main {
                                           .colorScheme
                                           .surfaceContainerHighest
                                           .withValues(alpha: 0.3),
-                                      borderRadius: BorderRadius.circular(4),
+                                      borderRadius: BorderRadius.circular(16),
                                       border: Border.all(
                                         color: Theme.of(
                                           context,
@@ -1135,7 +1168,8 @@ public class Main {
                                             border: InputBorder.none,
                                             isDense: true,
                                           ),
-                                          style: GoogleFonts.sourceCodePro(
+                                          style: getMonospaceTextStyle(
+                                            codeFontFamily,
                                             fontSize: 13,
                                           ),
                                         ),
@@ -1153,7 +1187,7 @@ public class Main {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '実行結果 (stdout):',
+                                  '実行結果 (stdout)',
                                   style: Theme.of(context).textTheme.titleSmall,
                                 ),
                                 const SizedBox(height: 8),
@@ -1164,8 +1198,8 @@ public class Main {
                                       color: Theme.of(context)
                                           .colorScheme
                                           .surfaceContainerHighest
-                                          .withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(4),
+                                          .withValues(alpha: 0.3),
+                                      borderRadius: BorderRadius.circular(16),
                                       border: Border.all(
                                         color: Theme.of(
                                           context,
@@ -1199,7 +1233,7 @@ public class Main {
                                                       : 0,
                                                 ),
                                                 child: Text(
-                                                  'エラー出力 (stderr):',
+                                                  'エラー出力 (stderr)',
                                                   style: Theme.of(context)
                                                       .textTheme
                                                       .titleSmall
@@ -1255,7 +1289,8 @@ class _EditorAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppBar(
+    return AppBarM3E(
+      automaticallyImplyLeading: false,
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -1364,7 +1399,7 @@ class _CodeEditor extends StatelessWidget {
       elevation: 2,
       margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(4.0),
+        borderRadius: BorderRadius.circular(16.0),
         child: CodeTheme(
           data: CodeThemeData(
             styles: isDarkMode ? monokaiSublimeTheme : githubTheme,

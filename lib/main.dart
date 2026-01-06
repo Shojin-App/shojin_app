@@ -5,6 +5,7 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart'; // 追加
+import 'package:m3e_collection/m3e_collection.dart'; // Import m3e_collection
 import 'package:provider/provider.dart';
 
 import 'config/build_config.dart'; // Add build configuration
@@ -24,6 +25,8 @@ import 'utils/app_fonts.dart'; // Import app fonts helper
 void main() async {
   // Flutter Engineの初期化を保証
   WidgetsFlutterBinding.ensureInitialized();
+
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
   // F-Droid ビルド安全性アサート: 自己アップデートが無効であること
   assert(() {
@@ -65,6 +68,10 @@ void main() async {
   developer.log('App started successfully');
 }
 
+Color _onColorFor(Color color) {
+  return color.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+}
+
 // デフォルトのカラースキーム（MaterialYou ON時）
 const _defaultLightColorScheme = ColorScheme.light(
   primary: Colors.blue,
@@ -74,20 +81,32 @@ const _defaultLightColorScheme = ColorScheme.light(
 
 const _defaultDarkColorScheme = ColorScheme.dark(
   primary: Colors.blue,
-  onPrimary: Colors.black,
+  onPrimary: Colors.white,
   secondary: Colors.blueAccent,
 );
 
 // カスタムテーマ（MaterialYou OFF時）
-final _lightCustomTheme = ColorScheme.fromSeed(
-  seedColor: Colors.purple,
-  brightness: Brightness.light,
-).copyWith(primary: const Color(0xFF4C51C0));
+const _lightPrimaryColor = Color(0xFF4C51C0);
+const _darkPrimaryColor = Color(0xFFBFC1FF);
 
-final _darkCustomTheme = ColorScheme.fromSeed(
-  seedColor: Colors.purple,
-  brightness: Brightness.dark,
-).copyWith(primary: const Color(0xFFBFC1FF), surface: const Color(0xFF131316));
+final _lightCustomTheme =
+    ColorScheme.fromSeed(
+      seedColor: Colors.purple,
+      brightness: Brightness.light,
+    ).copyWith(
+      primary: _lightPrimaryColor,
+      onPrimary: _onColorFor(_lightPrimaryColor),
+    );
+
+final _darkCustomTheme =
+    ColorScheme.fromSeed(
+      seedColor: Colors.purple,
+      brightness: Brightness.dark,
+    ).copyWith(
+      primary: _darkPrimaryColor,
+      onPrimary: _onColorFor(_darkPrimaryColor),
+      surface: const Color(0xFF131316),
+    );
 
 // ピュアブラックモードのカラースキーム（カスタムテーマベース）
 final _pureBlackColorScheme =
@@ -95,7 +114,8 @@ final _pureBlackColorScheme =
       seedColor: Colors.purple,
       brightness: Brightness.dark,
     ).copyWith(
-      primary: const Color(0xFFBFC1FF),
+      primary: _darkPrimaryColor,
+      onPrimary: _onColorFor(_darkPrimaryColor),
       surface: Colors.black,
       surfaceContainerHighest: Colors.black,
       onSurface: Colors.white,
@@ -228,82 +248,111 @@ class MyApp extends StatelessWidget {
           locale: const Locale('ja'),
           onGenerateTitle: (BuildContext context) =>
               AppLocalizations.of(context)!.appTitle, // 修正
-          theme: ThemeData(
-            colorScheme: lightColorScheme,
-            useMaterial3: true,
-            appBarTheme: const AppBarTheme(centerTitle: true, elevation: 2),
-            elevatedButtonTheme: ElevatedButtonThemeData(
-              style: ElevatedButton.styleFrom(elevation: 2),
+          theme: withM3ETheme(
+            ThemeData(
+              colorScheme: lightColorScheme,
+              useMaterial3: true,
+              appBarTheme: const AppBarTheme(centerTitle: true, elevation: 2),
+              cardTheme: CardThemeData(
+                elevation: 2,
+                margin: const EdgeInsets.all(8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24.0),
+                ),
+                // MaterialYou使用時のコントラスト改善
+                surfaceTintColor: themeProvider.useMaterialYou
+                    ? lightColorScheme.primary.withValues(alpha: 0.08)
+                    : null,
+              ),
+              navigationBarTheme: NavigationBarThemeData(
+                backgroundColor: Colors.transparent,
+                surfaceTintColor: Colors.transparent,
+                elevation: 0,
+                indicatorColor: lightColorScheme.primary.withValues(
+                  alpha: 0.20,
+                ),
+                iconTheme: WidgetStateProperty.resolveWith((states) {
+                  final color = states.contains(WidgetState.selected)
+                      ? lightColorScheme.primary
+                      : lightColorScheme.onSurfaceVariant;
+                  return IconThemeData(color: color);
+                }),
+                labelTextStyle: WidgetStateProperty.resolveWith((states) {
+                  final color = states.contains(WidgetState.selected)
+                      ? lightColorScheme.primary
+                      : lightColorScheme.onSurfaceVariant;
+                  return TextStyle(color: color);
+                }),
+              ),
+              elevatedButtonTheme: ElevatedButtonThemeData(
+                style: ElevatedButton.styleFrom(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24.0),
+                  ),
+                ),
+              ),
+              textTheme: textTheme,
+              fontFamily: AppFonts.notoSansJpFontFamily,
             ),
-            navigationBarTheme: NavigationBarThemeData(
-              backgroundColor: Colors.transparent,
-              surfaceTintColor: Colors.transparent,
-              elevation: 0,
-              indicatorColor: lightColorScheme.primary.withValues(alpha: 0.20),
-              iconTheme: WidgetStateProperty.resolveWith((states) {
-                final color = states.contains(WidgetState.selected)
-                    ? lightColorScheme.primary
-                    : lightColorScheme.onSurfaceVariant;
-                return IconThemeData(color: color);
-              }),
-              labelTextStyle: WidgetStateProperty.resolveWith((states) {
-                final color = states.contains(WidgetState.selected)
-                    ? lightColorScheme.primary
-                    : lightColorScheme.onSurfaceVariant;
-                return TextStyle(color: color);
-              }),
-            ),
-            cardTheme: CardThemeData(
-              elevation: 2,
-              margin: const EdgeInsets.all(8),
-              // MaterialYou使用時のコントラスト改善
-              surfaceTintColor: themeProvider.useMaterialYou
-                  ? lightColorScheme.primary.withValues(alpha: 0.08)
-                  : null,
-            ),
-            textTheme: textTheme,
-            fontFamily: AppFonts.notoSansJpFontFamily,
           ),
-          darkTheme: ThemeData(
-            colorScheme: darkColorScheme,
-            useMaterial3: true,
-            appBarTheme: AppBarTheme(
-              centerTitle: true,
-              elevation: 2,
-              backgroundColor: themeProvider.isPureBlack ? Colors.black : null,
-            ),
-            navigationBarTheme: NavigationBarThemeData(
-              backgroundColor: Colors.transparent,
-              surfaceTintColor: Colors.transparent,
-              elevation: 0,
-              indicatorColor: darkColorScheme.primary.withValues(alpha: 0.20),
-              iconTheme: WidgetStateProperty.resolveWith((states) {
-                final color = states.contains(WidgetState.selected)
-                    ? darkColorScheme.primary
-                    : darkColorScheme.onSurfaceVariant;
-                return IconThemeData(color: color);
-              }),
-              labelTextStyle: WidgetStateProperty.resolveWith((states) {
-                final color = states.contains(WidgetState.selected)
-                    ? darkColorScheme.primary
-                    : darkColorScheme.onSurfaceVariant;
-                return TextStyle(color: color);
-              }),
-            ),
-            cardTheme: CardThemeData(
-              elevation: 2,
-              margin: const EdgeInsets.all(8),
-              color: themeProvider.isPureBlack ? const Color(0xFF121212) : null,
-              // MaterialYou使用時のコントラスト改善
-              surfaceTintColor: themeProvider.useMaterialYou
-                  ? darkColorScheme.primary.withValues(alpha: 0.08)
+          darkTheme: withM3ETheme(
+            ThemeData(
+              colorScheme: darkColorScheme,
+              useMaterial3: true,
+              appBarTheme: AppBarTheme(
+                centerTitle: true,
+                elevation: 2,
+                backgroundColor: themeProvider.isPureBlack
+                    ? Colors.black
+                    : null,
+              ),
+              navigationBarTheme: NavigationBarThemeData(
+                backgroundColor: Colors.transparent,
+                surfaceTintColor: Colors.transparent,
+                elevation: 0,
+                indicatorColor: darkColorScheme.primary.withValues(alpha: 0.20),
+                iconTheme: WidgetStateProperty.resolveWith((states) {
+                  final color = states.contains(WidgetState.selected)
+                      ? darkColorScheme.primary
+                      : darkColorScheme.onSurfaceVariant;
+                  return IconThemeData(color: color);
+                }),
+                labelTextStyle: WidgetStateProperty.resolveWith((states) {
+                  final color = states.contains(WidgetState.selected)
+                      ? darkColorScheme.primary
+                      : darkColorScheme.onSurfaceVariant;
+                  return TextStyle(color: color);
+                }),
+              ),
+              cardTheme: CardThemeData(
+                elevation: 2,
+                margin: const EdgeInsets.all(8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24.0),
+                ),
+                color: themeProvider.isPureBlack
+                    ? const Color(0xFF121212)
+                    : null,
+                // MaterialYou使用時のコントラスト改善
+                surfaceTintColor: themeProvider.useMaterialYou
+                    ? darkColorScheme.primary.withValues(alpha: 0.08)
+                    : null,
+              ),
+              elevatedButtonTheme: ElevatedButtonThemeData(
+                style: ElevatedButton.styleFrom(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24.0),
+                  ),
+                ),
+              ),
+              scaffoldBackgroundColor: themeProvider.isPureBlack
+                  ? Colors.black
                   : null,
+              textTheme: textTheme,
+              fontFamily: AppFonts.notoSansJpFontFamily,
             ),
-            scaffoldBackgroundColor: themeProvider.isPureBlack
-                ? Colors.black
-                : null,
-            textTheme: textTheme,
-            fontFamily: AppFonts.notoSansJpFontFamily,
           ),
           themeMode: themeProvider.themeModeForFlutter,
           home: const MainScreen(),
@@ -461,65 +510,76 @@ class _MainScreenState extends State<MainScreen> {
     // Now _buildScreens is a class method and uses the state variable _problemIdFromWebView
     final screens = _buildScreens();
 
+    final brightness = Theme.of(context).brightness;
+    final overlayStyle = SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: brightness == Brightness.dark
+          ? Brightness.light
+          : Brightness.dark,
+      statusBarBrightness: brightness,
+    );
+
     return GestureDetector(
       onTap: () {
         // Hide the keyboard on tap outside of the keyboard
         // キーボードの外側のタップでキーボードを隠す
         _hideKeyboard(context);
       },
-      child: Scaffold(
-        extendBody:
-            true, // Allow body to extend behind BottomNavigationBar for backdrop blur
-        body: SafeArea(
-          bottom:
-              false, // allow content under BottomNavigationBar for BackdropFilter
-          child: IndexedStack(index: _selectedIndex, children: screens),
-        ),
-        bottomNavigationBar: ClipRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
-            child: Container(
-              // Adjust opacity from settings
-              color: Theme.of(context).colorScheme.surface.withValues(
-                alpha: Provider.of<ThemeProvider>(context).navBarOpacity,
-              ),
-              child: Material(
-                color: Colors.transparent, // Let the translucent container show
-                child: NavigationBar(
-                  backgroundColor: Colors.transparent,
-                  surfaceTintColor:
-                      Colors.transparent, // Disable M3 surface tint
-                  shadowColor: Colors.transparent, // Remove shadow
-                  elevation: 0,
-                  onDestinationSelected: _onItemTapped,
-                  selectedIndex: _selectedIndex,
-                  destinations: const [
-                    NavigationDestination(
-                      icon: Icon(Icons.home_outlined),
-                      selectedIcon: Icon(Icons.home),
-                      label: 'ホーム',
-                    ),
-                    NavigationDestination(
-                      icon: Icon(Icons.public_outlined),
-                      selectedIcon: Icon(Icons.public),
-                      label: 'ブラウザ',
-                    ),
-                    NavigationDestination(
-                      icon: Icon(Icons.list_alt_outlined),
-                      selectedIcon: Icon(Icons.list_alt),
-                      label: '問題',
-                    ),
-                    NavigationDestination(
-                      icon: Icon(Icons.code_outlined),
-                      selectedIcon: Icon(Icons.code),
-                      label: 'エディタ',
-                    ),
-                    NavigationDestination(
-                      icon: Icon(Icons.settings_outlined),
-                      selectedIcon: Icon(Icons.settings),
-                      label: '設定',
-                    ),
-                  ],
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: overlayStyle,
+        child: Scaffold(
+          extendBody:
+              true, // Allow body to extend behind BottomNavigationBar for backdrop blur
+          body: SafeArea(
+            top: _selectedIndex != 4,
+            bottom:
+                false, // allow content under BottomNavigationBar for BackdropFilter
+            child: IndexedStack(index: _selectedIndex, children: screens),
+          ),
+          bottomNavigationBar: ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+              child: Container(
+                // Adjust opacity from settings
+                color: Theme.of(context).colorScheme.surface.withValues(
+                  alpha: Provider.of<ThemeProvider>(context).navBarOpacity,
+                ),
+                child: Material(
+                  color:
+                      Colors.transparent, // Let the translucent container show
+                  child: NavigationBarM3E(
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
+                    onDestinationSelected: _onItemTapped,
+                    selectedIndex: _selectedIndex,
+                    destinations: const [
+                      NavigationDestinationM3E(
+                        icon: Icon(Icons.home_outlined),
+                        selectedIcon: Icon(Icons.home),
+                        label: 'ホーム',
+                      ),
+                      NavigationDestinationM3E(
+                        icon: Icon(Icons.public_outlined),
+                        selectedIcon: Icon(Icons.public),
+                        label: 'ブラウザ',
+                      ),
+                      NavigationDestinationM3E(
+                        icon: Icon(Icons.list_alt_outlined),
+                        selectedIcon: Icon(Icons.list_alt),
+                        label: '問題',
+                      ),
+                      NavigationDestinationM3E(
+                        icon: Icon(Icons.code_outlined),
+                        selectedIcon: Icon(Icons.code),
+                        label: 'エディタ',
+                      ),
+                      NavigationDestinationM3E(
+                        icon: Icon(Icons.settings_outlined),
+                        selectedIcon: Icon(Icons.settings),
+                        label: '設定',
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

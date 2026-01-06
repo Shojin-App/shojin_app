@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:m3e_collection/m3e_collection.dart';
 import 'package:intl/intl.dart';
 
 import '../models/code_history.dart';
@@ -26,12 +27,12 @@ class _CodeHistoryScreenState extends State<CodeHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Code History')),
+      appBar: AppBarM3E(title: const Text('Code History')),
       body: FutureBuilder<List<CodeHistory>>(
         future: _historyFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: LoadingIndicatorM3E());
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -68,18 +69,20 @@ class _CodeHistoryScreenState extends State<CodeHistoryScreen> {
         title: Text(DateFormat.yMMMd().add_jms().format(history.timestamp)),
         content: SingleChildScrollView(child: SelectableText(history.content)),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
+          ButtonM3E(
+            onPressed: () => Navigator.pop(context),
+            label: const Text('キャンセル'),
+            style: ButtonM3EStyle.text,
           ),
-          TextButton(
+          ButtonM3E(
             onPressed: () {
               Navigator.of(context).pop(); // Close the dialog
               Navigator.of(
                 context,
               ).pop(history.content); // Pop the screen and return the code
             },
-            child: const Text('Restore'),
+            label: const Text('Restore'),
+            style: ButtonM3EStyle.text,
           ),
         ],
       ),

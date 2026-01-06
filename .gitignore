@@ -49,3 +49,7 @@ app.*.map.json
 flutter-sdk/
 .gemini/
 gha-creds-*.json
+
+/android/.kotlin
+
+*.kotlin

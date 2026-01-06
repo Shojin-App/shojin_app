@@ -7,13 +7,12 @@ import 'oss_licenses.dart';
 /// (e.g. bundled font files) but whose licenses must be disclosed.
 const extraPackages = <Package>[_hackgenFontFamily];
 
-/// HackGen font family (HackGen, HackGen35, HackGenConsole, HackGen35Console)
+/// HackGen font family (HackGen, HackGen35)
 /// License: SIL Open Font License 1.1
 /// Source: https://github.com/yuru7/HackGen
 const _hackgenFontFamily = Package(
   name: 'HackGen Font Family',
-  description:
-      'Bundled programming fonts: HackGen / HackGen35 / HackGenConsole / HackGen35Console',
+  description: 'Bundled programming fonts: HackGen / HackGen35',
   authors: ['Yuko Otawara'],
   isMarkdown: false,
   isSdk: false,

@@ -32,7 +32,7 @@ void main() {
     });
 
     test('should provide repository configuration', () {
-      expect(BuildConfig.defaultOwner, 'yuubinnkyoku');
+      expect(BuildConfig.defaultOwner, 'Shojin-App');
       expect(BuildConfig.defaultRepo, 'Shojin_App');
     });
 

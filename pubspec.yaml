@@ -4,7 +4,7 @@ homepage: https://github.com/Shojin-App/shojin_app
 
 publish_to: "none"
 
-version: 1.2.0
+version: 1.3.0
 
 environment:
   sdk: ^3.8.1
@@ -15,7 +15,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   package_info_plus: ^9.0.0
-  device_info_plus: ^12.2.0
+  device_info_plus: ^12.3.0
   path_provider: ^2.1.3
   pub_semver: ^2.1.4
   url_launcher: ^6.3.2
@@ -24,7 +24,7 @@ dependencies:
   crypto: ^3.0.7
   cupertino_icons: ^1.0.8
   dynamic_color: ^1.8.1
-  google_fonts: ^6.3.2
+  google_fonts: ^6.3.3
   flutter_svg: ^2.2.2
   flutter_local_notifications: ^19.5.0
   timezone: ^0.10.0 # flutter_local_notifications の依存関係に合わせて修正
@@ -50,6 +50,10 @@ dependencies:
   yaml: ^3.1.2
   # LaTeX/TeX数式レンダリング用
   flutter_math_fork: ^0.7.3
+  # Monaco Editor (VS Code's editor) for Flutter
+  flutter_monaco: ^1.1.1
+  # Material 3 Expressive collection
+  m3e_collection: ^0.3.7
   # NOTE: The following Git-based dependencies were removed for F-Droid compliance.
   # They previously enabled in-app APK install & package queries:
   #   - android_package_installer (git, pinned commit)
@@ -87,18 +91,6 @@ flutter:
         - asset: assets/fonts/HackGen35-Regular.ttf
           weight: 400
         - asset: assets/fonts/HackGen35-Bold.ttf
-          weight: 700
-    - family: HackGenConsole
-      fonts:
-        - asset: assets/fonts/HackGenConsole-Regular.ttf
-          weight: 400
-        - asset: assets/fonts/HackGenConsole-Bold.ttf
-          weight: 700
-    - family: HackGen35Console
-      fonts:
-        - asset: assets/fonts/HackGen35Console-Regular.ttf
-          weight: 400
-        - asset: assets/fonts/HackGen35Console-Bold.ttf
           weight: 700
 
 flutter_launcher_icons:

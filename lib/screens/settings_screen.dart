@@ -17,6 +17,7 @@ import '../utils/text_style_helper.dart';
 import '../widgets/shared/custom_sliver_app_bar.dart'; // Import CustomSliverAppBar
 import 'licenses_screen.dart'; // Third-party licenses screen
 import 'template_edit_screen.dart';
+import 'package:m3e_collection/m3e_collection.dart';
 import 'tex_test_screen.dart'; // TeX表示テスト画面をインポート
 
 class SettingsScreen extends StatefulWidget {
@@ -257,6 +258,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildThemeSection(),
             const SizedBox(height: 16),
 
+            // エディタ設定セクション
+            _buildEditorSection(),
+            const SizedBox(height: 16),
+
             // 言語設定セクション
             _buildLanguageSection(),
             const SizedBox(height: 16),
@@ -305,10 +310,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
           child: SizedBox(
             width: double.infinity,
-            child: ElevatedButton.icon(
+            child: ButtonM3E(
               onPressed: _saveAtCoderUsername,
               icon: const Icon(Icons.save_outlined),
               label: const Text('保存'),
+              style: ButtonM3EStyle.filled,
             ),
           ),
         ),
@@ -360,6 +366,84 @@ class _SettingsScreenState extends State<SettingsScreen> {
               icon: Icons.emoji_events_outlined,
             ),
             const Divider(),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20.0,
+                vertical: 16.0,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'ナビゲーションバーの透明度',
+                    style: AppFonts.notoSansJp(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SliderM3E(
+                    min: 0.0,
+                    max: 1.0,
+                    divisions: 20,
+                    label: themeProvider.navBarOpacity.toStringAsFixed(2),
+                    value: themeProvider.navBarOpacity,
+                    onChanged: (value) {
+                      HapticFeedback.lightImpact();
+                      themeProvider.setNavBarOpacity(value);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildEditorSection() {
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return _SettingsSection(
+          title: 'エディタ設定',
+          icon: Icons.code,
+          children: [
+            // Editor type selection
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20.0, 16.0, 20.0, 8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'エディタタイプ',
+                    style: AppFonts.notoSansJp(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ...EditorType.values.map(
+              (type) => _HapticRadioListTile<EditorType>(
+                title: type.label,
+                subtitle: type == EditorType.monaco
+                    ? 'VS Codeと同じエディタです。キーボードが出てこないなどの問題が発生することがあります。'
+                    : null,
+                value: type,
+                groupValue: themeProvider.editorType,
+                onChanged: (value) {
+                  if (value != null) {
+                    themeProvider.setEditorType(value);
+                  }
+                },
+                secondary: _getEditorTypeIcon(type),
+              ),
+            ),
+            const Divider(),
             // Font Family Selector
             Padding(
               padding: const EdgeInsets.fromLTRB(20.0, 16.0, 20.0, 8.0),
@@ -393,42 +477,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 },
               ),
             ),
-            const Divider(),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20.0,
-                vertical: 16.0,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'ナビゲーションバーの透明度',
-                    style: AppFonts.notoSansJp(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Slider(
-                    min: 0.0,
-                    max: 1.0,
-                    divisions: 20,
-                    label: themeProvider.navBarOpacity.toStringAsFixed(2),
-                    value: themeProvider.navBarOpacity,
-                    onChanged: (value) {
-                      HapticFeedback.lightImpact();
-                      themeProvider.setNavBarOpacity(value);
-                    },
-                  ),
-                ],
-              ),
-            ),
           ],
         );
       },
     );
+  }
+
+  Widget _getEditorTypeIcon(EditorType type) {
+    switch (type) {
+      case EditorType.classic:
+        return const Icon(Icons.text_fields);
+      case EditorType.monaco:
+        return const Icon(Icons.integration_instructions);
+    }
   }
 
   Widget _buildTemplateSection() {
@@ -495,21 +556,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton.icon(
+                  child: ButtonM3E(
                     onPressed: _isLoadingUpdate ? null : _checkForUpdates,
                     icon: const Icon(Icons.update),
                     label: const Text('アップデートを手動で確認'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12.0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                    ),
+                    style: ButtonM3EStyle.filled,
                   ),
                 ),
                 if (_isLoadingUpdate) ...[
                   const SizedBox(height: 16),
-                  const CircularProgressIndicator(),
+                  const LoadingIndicatorM3E(),
                 ],
                 if (_updateCheckResult.isNotEmpty) ...[
                   const SizedBox(height: 16),
@@ -703,7 +759,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onTap: () {
             launchUrl(
               Uri.parse(
-                'https://github.com/yuubinnkyoku/shojin_app/blob/main/PRIVACY_POLICY.md',
+                'https://github.com/Shojin-App/shojin_app/blob/main/PRIVACY_POLICY.md',
               ),
             );
           },
@@ -714,7 +770,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onTap: () {
             launchUrl(
               Uri.parse(
-                'https://github.com/yuubinnkyoku/shojin_app/blob/main/TERMS_OF_USE.md',
+                'https://github.com/Shojin-App/shojin_app/blob/main/TERMS_OF_USE.md',
               ),
             );
           },
@@ -744,7 +800,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ] else
           const ListTile(
             title: Text('情報の読み込み中...'),
-            leading: CircularProgressIndicator(),
+            leading: LoadingIndicatorM3E(),
           ),
       ],
     );
@@ -999,11 +1055,17 @@ class _SettingsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
       elevation: 0,
-      color: Theme.of(context).colorScheme.surfaceContainer,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+      color: colorScheme.surfaceContainerLow,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16.0),
+        side: BorderSide(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.6),
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1082,6 +1144,7 @@ class _HapticSwitchListTile extends StatelessWidget {
 // ハプティックフィードバック付きRadioListTile
 class _HapticRadioListTile<T> extends StatelessWidget {
   final String title;
+  final String? subtitle;
   final T value;
   final T? groupValue;
   final ValueChanged<T?> onChanged;
@@ -1089,6 +1152,7 @@ class _HapticRadioListTile<T> extends StatelessWidget {
 
   const _HapticRadioListTile({
     required this.title,
+    this.subtitle,
     required this.value,
     required this.groupValue,
     required this.onChanged,
@@ -1106,6 +1170,15 @@ class _HapticRadioListTile<T> extends StatelessWidget {
         title,
         style: AppFonts.notoSansJp(fontSize: 16, fontWeight: FontWeight.w400),
       ),
+      subtitle: subtitle != null
+          ? Text(
+              subtitle!,
+              style: AppFonts.notoSansJp(
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            )
+          : null,
       trailing: Icon(
         isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
         color: isSelected
