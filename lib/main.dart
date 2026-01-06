@@ -26,6 +26,8 @@ void main() async {
   // Flutter Engineの初期化を保証
   WidgetsFlutterBinding.ensureInitialized();
 
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
   // F-Droid ビルド安全性アサート: 自己アップデートが無効であること
   assert(() {
     if (BuildConfig.isFdroidBuild && BuildConfig.enableSelfUpdate) {
@@ -508,62 +510,76 @@ class _MainScreenState extends State<MainScreen> {
     // Now _buildScreens is a class method and uses the state variable _problemIdFromWebView
     final screens = _buildScreens();
 
+    final brightness = Theme.of(context).brightness;
+    final overlayStyle = SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: brightness == Brightness.dark
+          ? Brightness.light
+          : Brightness.dark,
+      statusBarBrightness: brightness,
+    );
+
     return GestureDetector(
       onTap: () {
         // Hide the keyboard on tap outside of the keyboard
         // キーボードの外側のタップでキーボードを隠す
         _hideKeyboard(context);
       },
-      child: Scaffold(
-        extendBody:
-            true, // Allow body to extend behind BottomNavigationBar for backdrop blur
-        body: SafeArea(
-          bottom:
-              false, // allow content under BottomNavigationBar for BackdropFilter
-          child: IndexedStack(index: _selectedIndex, children: screens),
-        ),
-        bottomNavigationBar: ClipRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
-            child: Container(
-              // Adjust opacity from settings
-              color: Theme.of(context).colorScheme.surface.withValues(
-                alpha: Provider.of<ThemeProvider>(context).navBarOpacity,
-              ),
-              child: Material(
-                color: Colors.transparent, // Let the translucent container show
-                child: NavigationBarM3E(
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  onDestinationSelected: _onItemTapped,
-                  selectedIndex: _selectedIndex,
-                  destinations: const [
-                    NavigationDestinationM3E(
-                      icon: Icon(Icons.home_outlined),
-                      selectedIcon: Icon(Icons.home),
-                      label: 'ホーム',
-                    ),
-                    NavigationDestinationM3E(
-                      icon: Icon(Icons.public_outlined),
-                      selectedIcon: Icon(Icons.public),
-                      label: 'ブラウザ',
-                    ),
-                    NavigationDestinationM3E(
-                      icon: Icon(Icons.list_alt_outlined),
-                      selectedIcon: Icon(Icons.list_alt),
-                      label: '問題',
-                    ),
-                    NavigationDestinationM3E(
-                      icon: Icon(Icons.code_outlined),
-                      selectedIcon: Icon(Icons.code),
-                      label: 'エディタ',
-                    ),
-                    NavigationDestinationM3E(
-                      icon: Icon(Icons.settings_outlined),
-                      selectedIcon: Icon(Icons.settings),
-                      label: '設定',
-                    ),
-                  ],
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: overlayStyle,
+        child: Scaffold(
+          extendBody:
+              true, // Allow body to extend behind BottomNavigationBar for backdrop blur
+          body: SafeArea(
+            top: _selectedIndex != 4,
+            bottom:
+                false, // allow content under BottomNavigationBar for BackdropFilter
+            child: IndexedStack(index: _selectedIndex, children: screens),
+          ),
+          bottomNavigationBar: ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+              child: Container(
+                // Adjust opacity from settings
+                color: Theme.of(context).colorScheme.surface.withValues(
+                  alpha: Provider.of<ThemeProvider>(context).navBarOpacity,
+                ),
+                child: Material(
+                  color:
+                      Colors.transparent, // Let the translucent container show
+                  child: NavigationBarM3E(
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
+                    onDestinationSelected: _onItemTapped,
+                    selectedIndex: _selectedIndex,
+                    destinations: const [
+                      NavigationDestinationM3E(
+                        icon: Icon(Icons.home_outlined),
+                        selectedIcon: Icon(Icons.home),
+                        label: 'ホーム',
+                      ),
+                      NavigationDestinationM3E(
+                        icon: Icon(Icons.public_outlined),
+                        selectedIcon: Icon(Icons.public),
+                        label: 'ブラウザ',
+                      ),
+                      NavigationDestinationM3E(
+                        icon: Icon(Icons.list_alt_outlined),
+                        selectedIcon: Icon(Icons.list_alt),
+                        label: '問題',
+                      ),
+                      NavigationDestinationM3E(
+                        icon: Icon(Icons.code_outlined),
+                        selectedIcon: Icon(Icons.code),
+                        label: 'エディタ',
+                      ),
+                      NavigationDestinationM3E(
+                        icon: Icon(Icons.settings_outlined),
+                        selectedIcon: Icon(Icons.settings),
+                        label: '設定',
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
