@@ -164,7 +164,12 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
   }
 
   Widget _recommendationSection(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -172,15 +177,21 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
           children: [
             Row(
               children: [
-                const Expanded(
-                  child: Text(
-                    'おすすめ問題',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                Text(
+                  'おすすめ問題',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                ButtonM3E(
-                  icon: const Icon(Icons.chevron_right),
-                  label: const Text('その他'),
+                const Spacer(),
+                const SizedBox(width: 8),
+                IconButtonM3E(
+                  icon: Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -189,13 +200,12 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                       ),
                     );
                   },
-                  style: ButtonM3EStyle.text,
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             if (_savedUsername == null) ...[
-              const Text('AtCoderユーザー名が未設定です'),
+              Text('AtCoderユーザー名が未設定です', style: theme.textTheme.bodyMedium),
               const SizedBox(height: 12),
               ButtonM3E(
                 icon: const Icon(Icons.recommend),
@@ -221,16 +231,25 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                 style: const TextStyle(color: Colors.red),
               ),
             ] else if (_topRecommendation == null) ...[
-              const Text('おすすめ問題が見つかりませんでした'),
+              Text('おすすめ問題が見つかりませんでした', style: theme.textTheme.bodyMedium),
             ] else ...[
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(
                   _topRecommendation!.key,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 subtitle: _currentRating != null
-                    ? Text('あなたのレート: $_currentRating')
+                    ? Text(
+                        'あなたのレート: $_currentRating',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      )
                     : null,
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
