@@ -1,3 +1,12 @@
+## [Unreleased]
+
+## [1.3.0] - 2026-01-06
+
+__AUTO_CHANGELOG_PLACEHOLDER__
+
+
+# Changelog
+
 ## [1.2.0] - 2025-11-22
 
 #### ✨ Features
