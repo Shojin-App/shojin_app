@@ -1041,10 +1041,15 @@ public class Main {
                         child: ButtonM3E(
                           style: ButtonM3EStyle.filled,
                           icon: _isRunning
-                              ? const SizedBox(
+                              ? SizedBox(
                                   width: 18,
                                   height: 18,
-                                  child: LoadingIndicatorM3E(),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation(
+                                      Theme.of(context).colorScheme.onPrimary,
+                                    ),
+                                  ),
                                 )
                               : const Icon(Icons.play_arrow),
                           label: const Text('実行'),
@@ -1057,10 +1062,17 @@ public class Main {
                         child: ButtonM3E(
                           style: ButtonM3EStyle.tonal,
                           icon: _isTesting
-                              ? const SizedBox(
+                              ? SizedBox(
                                   width: 18,
                                   height: 18,
-                                  child: LoadingIndicatorM3E(),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation(
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.onSecondaryContainer,
+                                    ),
+                                  ),
                                 )
                               : const Icon(Icons.checklist_rtl),
                           label: Text(_isTesting ? 'サンプルテスト中…' : 'サンプル'),

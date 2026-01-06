@@ -66,6 +66,10 @@ void main() async {
   developer.log('App started successfully');
 }
 
+Color _onColorFor(Color color) {
+  return color.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+}
+
 // デフォルトのカラースキーム（MaterialYou ON時）
 const _defaultLightColorScheme = ColorScheme.light(
   primary: Colors.blue,
@@ -80,15 +84,27 @@ const _defaultDarkColorScheme = ColorScheme.dark(
 );
 
 // カスタムテーマ（MaterialYou OFF時）
-final _lightCustomTheme = ColorScheme.fromSeed(
-  seedColor: Colors.purple,
-  brightness: Brightness.light,
-).copyWith(primary: const Color(0xFF4C51C0));
+const _lightPrimaryColor = Color(0xFF4C51C0);
+const _darkPrimaryColor = Color(0xFFBFC1FF);
 
-final _darkCustomTheme = ColorScheme.fromSeed(
-  seedColor: Colors.purple,
-  brightness: Brightness.dark,
-).copyWith(primary: const Color(0xFFBFC1FF), surface: const Color(0xFF131316));
+final _lightCustomTheme =
+    ColorScheme.fromSeed(
+      seedColor: Colors.purple,
+      brightness: Brightness.light,
+    ).copyWith(
+      primary: _lightPrimaryColor,
+      onPrimary: _onColorFor(_lightPrimaryColor),
+    );
+
+final _darkCustomTheme =
+    ColorScheme.fromSeed(
+      seedColor: Colors.purple,
+      brightness: Brightness.dark,
+    ).copyWith(
+      primary: _darkPrimaryColor,
+      onPrimary: _onColorFor(_darkPrimaryColor),
+      surface: const Color(0xFF131316),
+    );
 
 // ピュアブラックモードのカラースキーム（カスタムテーマベース）
 final _pureBlackColorScheme =
@@ -96,7 +112,8 @@ final _pureBlackColorScheme =
       seedColor: Colors.purple,
       brightness: Brightness.dark,
     ).copyWith(
-      primary: const Color(0xFFBFC1FF),
+      primary: _darkPrimaryColor,
+      onPrimary: _onColorFor(_darkPrimaryColor),
       surface: Colors.black,
       surfaceContainerHighest: Colors.black,
       onSurface: Colors.white,

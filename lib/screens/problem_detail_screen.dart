@@ -227,10 +227,15 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
                               }
                             },
                       label: _isLoading
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 20,
                               height: 20,
-                              child: LoadingIndicatorM3E(),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation(
+                                  Theme.of(context).colorScheme.onPrimary,
+                                ),
+                              ),
                             )
                           : const Text('取得'),
                     ),
