@@ -47,7 +47,7 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
                   ButtonM3E(
                     onPressed: () => provider.fetchNextABC(),
                     label: const Text('再試行'),
-                    style: ButtonM3EStyle.elevated,
+                    style: ButtonM3EStyle.filled,
                   ),
                 ],
               ),

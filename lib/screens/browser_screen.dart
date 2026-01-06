@@ -656,7 +656,7 @@ class _BrowserScreenState extends State<BrowserScreen>
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                 child: ButtonM3E(
-                  style: ButtonM3EStyle.elevated,
+                  style: ButtonM3EStyle.tonal,
                   onPressed: _addSite,
                   label: const Icon(Icons.add),
                 ),
@@ -691,7 +691,7 @@ class _BrowserScreenState extends State<BrowserScreen>
                         ),
                         const SizedBox(height: 16),
                         ButtonM3E(
-                          style: ButtonM3EStyle.elevated,
+                          style: ButtonM3EStyle.filled,
                           onPressed: () {
                             if (mounted) {
                               setState(() {

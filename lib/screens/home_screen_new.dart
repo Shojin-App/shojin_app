@@ -34,7 +34,7 @@ class NewHomeScreen extends StatelessWidget {
                         ),
                       );
                     },
-                    style: ButtonM3EStyle.elevated,
+                    style: ButtonM3EStyle.filled,
                   ),
                   const SizedBox(height: 16),
                   ButtonM3E(
@@ -48,7 +48,7 @@ class NewHomeScreen extends StatelessWidget {
                         ),
                       );
                     },
-                    style: ButtonM3EStyle.elevated,
+                    style: ButtonM3EStyle.filled,
                   ),
                   const SizedBox(height: 16),
                   ButtonM3E(
@@ -62,7 +62,7 @@ class NewHomeScreen extends StatelessWidget {
                         ),
                       );
                     },
-                    style: ButtonM3EStyle.elevated,
+                    style: ButtonM3EStyle.filled,
                   ),
                   const SizedBox(height: 16),
                   // 他のウィジェットをここに追加可能

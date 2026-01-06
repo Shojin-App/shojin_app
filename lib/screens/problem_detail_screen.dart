@@ -214,7 +214,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
                     ),
                     const SizedBox(width: 8),
                     ButtonM3E(
-                      style: ButtonM3EStyle.elevated,
+                      style: ButtonM3EStyle.filled,
                       // Trigger manual fetch using the current text in the controller
                       onPressed: _isLoading
                           ? null

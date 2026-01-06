@@ -1039,7 +1039,7 @@ public class Main {
                       // 実行（横幅1/3）
                       Expanded(
                         child: ButtonM3E(
-                          style: ButtonM3EStyle.elevated,
+                          style: ButtonM3EStyle.filled,
                           icon: _isRunning
                               ? const SizedBox(
                                   width: 18,
@@ -1055,7 +1055,7 @@ public class Main {
                       // サンプル（横幅1/3）
                       Expanded(
                         child: ButtonM3E(
-                          style: ButtonM3EStyle.elevated,
+                          style: ButtonM3EStyle.tonal,
                           icon: _isTesting
                               ? const SizedBox(
                                   width: 18,
@@ -1076,7 +1076,7 @@ public class Main {
                       // 提出（横幅1/3）
                       Expanded(
                         child: ButtonM3E(
-                          style: ButtonM3EStyle.elevated,
+                          style: ButtonM3EStyle.filled,
                           icon: const Icon(Icons.cloud_upload),
                           label: const Text('提出'),
                           onPressed: () {

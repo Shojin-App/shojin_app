@@ -75,7 +75,7 @@ const _defaultLightColorScheme = ColorScheme.light(
 
 const _defaultDarkColorScheme = ColorScheme.dark(
   primary: Colors.blue,
-  onPrimary: Colors.black,
+  onPrimary: Colors.white,
   secondary: Colors.blueAccent,
 );
 

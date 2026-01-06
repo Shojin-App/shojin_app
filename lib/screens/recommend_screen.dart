@@ -281,7 +281,7 @@ class _RecommendScreenState extends State<RecommendScreen> {
               ButtonM3E(
                 onPressed: _isLoading ? null : _getRecommendations,
                 label: const Text('おすすめを取得'),
-                style: ButtonM3EStyle.elevated,
+                style: ButtonM3EStyle.filled,
               ),
             const SizedBox(height: 8),
             // 推薦条件入力（レートとの差分の下限/上限）
@@ -312,7 +312,7 @@ class _RecommendScreenState extends State<RecommendScreen> {
                 ButtonM3E(
                   onPressed: _isLoading ? null : _getRecommendations,
                   label: const Text('条件で再取得'),
-                  style: ButtonM3EStyle.elevated,
+                  style: ButtonM3EStyle.filled,
                 ),
               ],
             ),

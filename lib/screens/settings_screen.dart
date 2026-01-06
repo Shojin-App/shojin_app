@@ -314,7 +314,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onPressed: _saveAtCoderUsername,
               icon: const Icon(Icons.save_outlined),
               label: const Text('保存'),
-              style: ButtonM3EStyle.elevated,
+              style: ButtonM3EStyle.filled,
             ),
           ),
         ),
@@ -560,7 +560,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     onPressed: _isLoadingUpdate ? null : _checkForUpdates,
                     icon: const Icon(Icons.update),
                     label: const Text('アップデートを手動で確認'),
-                    style: ButtonM3EStyle.elevated,
+                    style: ButtonM3EStyle.filled,
                   ),
                 ),
                 if (_isLoadingUpdate) ...[
@@ -1055,11 +1055,17 @@ class _SettingsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
       elevation: 0,
-      color: Theme.of(context).colorScheme.surfaceContainer,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+      color: colorScheme.surfaceContainerLow,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16.0),
+        side: BorderSide(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.6),
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

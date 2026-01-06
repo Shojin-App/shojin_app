@@ -164,7 +164,7 @@ class _UpcomingContestsScreenState extends State<UpcomingContestsScreen>
             ButtonM3E(
               onPressed: onRetry,
               label: const Text('再試行'),
-              style: ButtonM3EStyle.elevated,
+              style: ButtonM3EStyle.filled,
             ),
           ],
         ),
