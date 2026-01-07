@@ -4,9 +4,22 @@ name: Flutter CI
 on:
   push:
     branches:
-      - "**"
+      - main
+      - dev
     paths:
       # このファイル名に合わせてパスを更新
+      - ".github/workflows/build.yaml"
+      - "android/**"
+      - "test/**"
+      - "ios/**"
+      - "*.yaml"
+      - "*.lock"
+      - "lib/**"
+
+  pull_request:
+    branches:
+      - "**"
+    paths:
       - ".github/workflows/build.yaml"
       - "android/**"
       - "test/**"
