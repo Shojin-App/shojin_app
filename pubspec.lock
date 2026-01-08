@@ -431,10 +431,10 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_monaco
-      sha256: "3f49e457632267655fc3d3e2e75263d93fcd7d47bfff150020e44230fc34e1eb"
+      sha256: "1922db0d930dde0c8733a2aa49dbbd8136300c111a5d3aa8cd0cd758120ebda1"
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.1"
+    version: "1.2.1"
   flutter_oss_licenses:
     dependency: "direct dev"
     description:
