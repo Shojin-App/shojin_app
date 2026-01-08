@@ -40,7 +40,7 @@ dependencies:
   # 設定の保存に必要
   shared_preferences: ^2.2.3
   provider: ^6.1.5
-  webview_flutter: ^4.7.0
+  webview_flutter: ^4.13.1
   favicon: ^1.1.0
   share_plus: ^12.0.1
   file_picker: ^10.3.6
