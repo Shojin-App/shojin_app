@@ -1,7 +1,7 @@
 source "https://rubygems.org"
 
 # fastlane 本体（Windows でも Android 用 lane は動作可能）
-gem "fastlane", "~> 2.228"
+gem "fastlane", "~> 2.236"
 
 # Ruby 3.4+ で標準から外れたライブラリを補う
 gem "abbrev", "~> 0.1"
