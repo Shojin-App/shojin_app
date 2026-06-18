@@ -36,6 +36,16 @@
 
 開発予定は[プロジェクトボード](https://github.com/orgs/Shojin-App/projects/1)で管理しています。
 
+## Star History
+
+<a href="https://www.star-history.com/?repos=shojin-app%2Fshojin_app&type=date&legend=top-left">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=shojin-app/shojin_app&type=date&theme=dark&legend=top-left">
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=shojin-app/shojin_app&type=date&legend=top-left">
+    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=shojin-app/shojin_app&type=date&legend=top-left">
+  </picture>
+</a>
+
 ## インストール
 
 ビルド済みAPKは[GitHub Releases](https://github.com/Shojin-App/shojin_app/releases)から入手できます。

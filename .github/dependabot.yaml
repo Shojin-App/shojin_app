@@ -10,3 +10,25 @@ updates:
     open-pull-requests-limit: 10
     target-branch: dev
     versioning-strategy: increase
+    labels:
+      - "dependencies"
+      - "automated"
+    groups:
+      pub-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "bundler"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      timezone: Asia/Tokyo
+      time: "06:00"
+    open-pull-requests-limit: 5
+    target-branch: dev
+    labels:
+      - "dependencies"
+      - "automated"
