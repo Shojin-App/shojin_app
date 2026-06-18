@@ -4199,13 +4199,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// google_fonts 6.3.3
+/// google_fonts 8.1.0
 const _google_fonts = Package(
     name: 'google_fonts',
     description: 'A Flutter package to use fonts from fonts.google.com. Supports HTTP fetching, caching, and asset bundling.',
     repository: 'https://github.com/flutter/packages/tree/main/packages/google_fonts',
     authors: [],
-    version: '6.3.3',
+    version: '8.1.0',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
