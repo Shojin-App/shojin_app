@@ -1,8 +1,12 @@
-<div align="center">
-  <img src="https://github.com/Shojin-App/shojin_app/blob/main/assets%2Ficon%2Fadaptive_foreground.png" alt="Shojin App logo" height="80">
-  <h1>Shojin App</h1>
-  <p>AtCoderの精進をスマホでも。</p>
+<div align="center"><img src="https://github.com/Shojin-App/shojin_app/blob/main/assets%2Ficon%2Fadaptive_foreground.png" alt="logo" height="80"></div>
+<h1 align="center">Shojin_App</h1>
 
+
+<p align="center">
+  AtCoderの精進をスマホでも。
+</p>
+<br>
+<div align="center">
   <a href="https://github.com/Shojin-App/shojin_app/releases">
     <img src="assets/badge_github.png" alt="Get it on GitHub" height="60">
   </a>
@@ -12,29 +16,59 @@
   </a>
 </div>
 
-<p align="center">
-  <a href="https://github.com/Shojin-App/shojin_app/releases"><img src="https://img.shields.io/github/v/release/Shojin-App/shojin_app?include_prereleases" alt="Latest release"></a>
-  <a href="https://github.com/Shojin-App/shojin_app/releases"><img src="https://img.shields.io/github/downloads/Shojin-App/shojin_app/total" alt="Downloads"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/Shojin-App/shojin_app" alt="License"></a>
-  <a href="https://github.com/Shojin-App/shojin_app/actions/workflows/build.yaml"><img src="https://github.com/Shojin-App/shojin_app/actions/workflows/build.yaml/badge.svg" alt="Android Build"></a>
-  <a href="https://github.com/Shojin-App/shojin_app/stargazers"><img src="https://img.shields.io/github/stars/Shojin-App/shojin_app" alt="GitHub Stars"></a>
-  <a href="https://github.com/Shojin-App/shojin_app/issues"><img src="https://img.shields.io/github/issues/Shojin-App/shojin_app" alt="Issues"></a>
-  <a href="https://deepwiki.com/Shojin-App/shojin_app"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
-</p>
+<table>
+  <tr>
+    <td>
+      <a href="https://github.com/Shojin-App/shojin_app/releases"><img src="https://img.shields.io/github/v/release/Shojin-App/shojin_app?include_prereleases" alt="Latest release"></a>
+      <a href="https://github.com/Shojin-App/shojin_app/releases"><img src="https://img.shields.io/github/downloads/Shojin-App/shojin_app/total" alt="Downloads"></a>
+    </td>
+    <td>
+      <a href="https://github.com/Shojin-App/shojin_app/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Shojin-App/shojin_app" alt="License"></a>
+      <a href="https://github.com/Shojin-App/shojin_app"><img src="https://img.shields.io/github/repo-size/Shojin-App/shojin_app" alt="Repo Size"></a>
+      <a href="https://github.com/Shojin-App/shojin_app"><img src="https://img.shields.io/github/languages/code-size/Shojin-App/shojin_app" alt="Code Size"></a>
+      <a href="https://github.com/Shojin-App/shojin_app/actions/workflows/build.yaml"><img src="https://github.com/Shojin-App/shojin_app/actions/workflows/build.yaml/badge.svg" alt="Android Build"></a>
+    </td>
+    <td>
+      <a href="https://github.com/Shojin-App/shojin_app/stargazers"><img src="https://img.shields.io/github/stars/Shojin-App/shojin_app" alt="GitHub Stars"></a>
+      <a href="https://github.com/Shojin-App/shojin_app/network/members"><img src="https://img.shields.io/github/forks/Shojin-App/shojin_app" alt="Forks"></a>
+      <a href="https://github.com/Shojin-App/shojin_app/issues"><img src="https://img.shields.io/github/issues/Shojin-App/shojin_app" alt="Issues"></a>
+      <a href="https://deepwiki.com/Shojin-App/shojin_app"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
+    </td>
+  </tr>
+</table>
 
-> [!IMPORTANT]
-> `v1.1.0`でパッケージ名が変更されました。`v1.0.0`以前から更新する場合は別のアプリとしてインストールされ、設定は自動では引き継がれません。設定のエクスポート機能は`v1.2.0`以降で利用できます。
 
-## 主な機能
+## 機能
 
-- **統合ブラウザ**: NoviStepsやProblemsなどを閲覧し、AtCoderの問題からエディタへ移動
-- **コードエディタ**: Python、C++、Rust、Javaのハイライト、テンプレート、自動保存
-- **コード実行・テスト**: Wandbox APIによる実行とサンプルケースの自動判定
-- **問題管理**: AtCoder URLの解析、問題文・制約・数式の表示
-- **カスタマイズ**: ライト、ダーク、ピュアブラック、Material You対応
-- **提出**: AtCoderの提出ページをアプリ内WebViewで表示
+### 🌐 ブラウザ機能
+- **問題を探す**: NoviSteps、Problemsなどの精進に役立つサイトを統合ブラウザで閲覧
+- **問題へのスムーズな遷移**: AtCoder問題ページから直接エディタ画面に移動
 
-開発予定は[プロジェクトボード](https://github.com/orgs/Shojin-App/projects/1)で管理しています。
+### 📝 コードエディタ
+- **シンタックスハイライト**: Python、C++、Rust、Javaに対応した見やすいハイラ
+イト
+- **テンプレート機能**: 言語別のコードテンプレートを設定可能
+- **コード自動保存**: 問題ごと・言語ごとにコードを自動保存
+- **リアルタイム実行**: Wandbox APIを使用してコードをその場で実行・テスト
+
+### 🧪 テスト機能
+- **サンプルケース一括テスト**: AtCoderのサンプル入出力でコードをテスト
+- **結果表示**: AC/WA/RE/TLE/MLE/CEなど、ジャッジ結果を表示
+- **デバッグしやすい**: 入力・期待される出力・実際の出力を比較表示
+
+### 📋 問題管理
+- **問題表示**: 問題文、制約、入出力形式を見やすく表示
+- **LaTeX表示対応**: 数式を含む問題文もいい感じに表示
+
+### 🎨 カスタマイズ
+- **テーマ選択**: ライト/ダーク/ピュアブラック/システムの4つのテーマ
+- **Material Design 3 対応**: 壁紙に連動したカラーテーマ
+- **色に応じたテーマ**: AtCoder のレーティングに応じたカラーテーマ
+
+### 🚀 提出機能
+- **WebViewで提出**: AtCoderの提出ページをアプリ内で開いて提出
+
+
 
 ## Star History
 
@@ -62,8 +96,11 @@ F-Droid向けビルドやソースからのビルドについては、[インス
 
 バグ報告や機能要望は[Issues](https://github.com/Shojin-App/shojin_app/issues)へお願いします。プルリクエストは`dev`ブランチを対象にしてください。
 
+開発予定→[プロジェクトボード](https://github.com/orgs/Shojin-App/projects/1)
+
 ## ライセンス
 
 GNU General Public License v3.0のもとで公開しています。詳細は[LICENSE](LICENSE)をご覧ください。
 
 本プロジェクトはAtCoder株式会社およびその関連会社とは関係ありません。詳細は[免責事項・商標について](docs/LEGAL.md)をご覧ください。
+
