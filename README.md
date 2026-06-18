@@ -26,12 +26,18 @@
       <a href="https://github.com/Shojin-App/shojin_app/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Shojin-App/shojin_app" alt="License"></a>
       <a href="https://github.com/Shojin-App/shojin_app"><img src="https://img.shields.io/github/repo-size/Shojin-App/shojin_app" alt="Repo Size"></a>
       <a href="https://github.com/Shojin-App/shojin_app"><img src="https://img.shields.io/github/languages/code-size/Shojin-App/shojin_app" alt="Code Size"></a>
+      <a href="https://github.com/Shojin-App/shojin_app"><img src="https://img.shields.io/github/languages/top/Shojin-App/shojin_app?logo=devbox" alt="Top Language"></a>
+      <a href="https://github.com/Shojin-App/shojin_app"><img src="https://img.shields.io/github/last-commit/Shojin-App/shojin_app?logo=github&amp;label=updated" alt="Last Commit"></a>
       <a href="https://github.com/Shojin-App/shojin_app/actions/workflows/build.yaml"><img src="https://github.com/Shojin-App/shojin_app/actions/workflows/build.yaml/badge.svg" alt="Android Build"></a>
+      <a href="https://github.com/Shojin-App/shojin_app/actions/workflows/release.yaml"><img src="https://img.shields.io/github/actions/workflow/status/Shojin-App/shojin_app/release.yaml?logo=githubactions&amp;logoColor=white&amp;label=release" alt="Release Workflow"></a>
     </td>
     <td>
       <a href="https://github.com/Shojin-App/shojin_app/stargazers"><img src="https://img.shields.io/github/stars/Shojin-App/shojin_app" alt="GitHub Stars"></a>
+      <a href="https://github.com/Shojin-App"><img src="https://img.shields.io/github/stars/Shojin-App?logo=github&amp;label=org%20stars" alt="Organization Stars"></a>
       <a href="https://github.com/Shojin-App/shojin_app/network/members"><img src="https://img.shields.io/github/forks/Shojin-App/shojin_app" alt="Forks"></a>
       <a href="https://github.com/Shojin-App/shojin_app/issues"><img src="https://img.shields.io/github/issues/Shojin-App/shojin_app" alt="Issues"></a>
+      <a href="https://github.com/Shojin-App/shojin_app/graphs/contributors"><img src="https://img.shields.io/github/contributors-anon/Shojin-App/shojin_app?logo=github" alt="Contributors"></a>
+      <a href="https://github.com/Shojin-App/shojin_app/discussions"><img src="https://img.shields.io/github/discussions/Shojin-App/shojin_app?logo=github" alt="Discussions"></a>
       <a href="https://deepwiki.com/Shojin-App/shojin_app"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
     </td>
   </tr>
@@ -103,4 +109,3 @@ F-Droid向けビルドやソースからのビルドについては、[インス
 GNU General Public License v3.0のもとで公開しています。詳細は[LICENSE](LICENSE)をご覧ください。
 
 本プロジェクトはAtCoder株式会社およびその関連会社とは関係ありません。詳細は[免責事項・商標について](docs/LEGAL.md)をご覧ください。
-
