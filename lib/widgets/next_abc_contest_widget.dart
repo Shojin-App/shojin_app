@@ -3,8 +3,11 @@ import 'package:m3e_collection/m3e_collection.dart';
 import 'package:provider/provider.dart';
 
 import '../models/contest.dart';
+import '../models/reminder_setting.dart';
 import '../providers/contest_provider.dart';
+import '../screens/reminder_settings_screen.dart';
 import '../screens/upcoming_contests_screen.dart';
+import '../services/reminder_storage_service.dart';
 
 class NextABCContestWidget extends StatefulWidget {
   const NextABCContestWidget({super.key});
@@ -14,13 +17,26 @@ class NextABCContestWidget extends StatefulWidget {
 }
 
 class _NextABCContestWidgetState extends State<NextABCContestWidget> {
+  ReminderSetting? _abcReminderSetting;
+  final _reminderStorage = ReminderStorageService();
+
   @override
   void initState() {
     super.initState();
+    _loadReminderSetting();
     // 初期化時に次回のABCを取得
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ContestProvider>().fetchNextABC();
     });
+  }
+
+  Future<void> _loadReminderSetting() async {
+    final setting = await _reminderStorage.getReminderSetting(ContestType.abc);
+    if (mounted) {
+      setState(() {
+        _abcReminderSetting = setting;
+      });
+    }
   }
 
   @override
@@ -85,6 +101,7 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
 
     return Card(
       elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: () {
           Navigator.push(
@@ -166,24 +183,66 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
                 ),
               ],
               const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  'タップして今後のコンテストを見る',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onPrimaryContainer,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
+              const Divider(),
+              const SizedBox(height: 8),
+              _buildReminderRow(context),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildReminderRow(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    final isEnabled = _abcReminderSetting?.isEnabled ?? true;
+    final minutes = _abcReminderSetting?.minutesBefore ?? [15];
+
+    String reminderText;
+    IconData reminderIcon;
+    Color reminderColor;
+
+    if (!isEnabled) {
+      reminderText = 'リマインダー: OFF';
+      reminderIcon = Icons.notifications_off_outlined;
+      reminderColor = colorScheme.onSurfaceVariant;
+    } else {
+      if (minutes.isEmpty) {
+        reminderText = 'リマインダー: ON (時間未定)';
+      } else {
+        reminderText = 'リマインダー: ${minutes.map((m) => '$m分前').join(', ')}';
+      }
+      reminderIcon = Icons.notifications_active;
+      reminderColor = colorScheme.primary;
+    }
+
+    return Row(
+      children: [
+        Icon(reminderIcon, size: 20, color: reminderColor),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            reminderText,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: reminderColor,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        IconButtonM3E(
+          icon: Icon(Icons.settings, color: colorScheme.onSurfaceVariant),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ReminderSettingsScreen(),
+              ),
+            ).then((_) => _loadReminderSetting());
+          },
+        ),
+      ],
     );
   }
 
@@ -223,7 +282,6 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
     String type = 'その他';
     Color color = theme.colorScheme.outline;
 
-    // より確実な文字列マッチング
     final nameJa = contest.nameJa;
     final nameEn = contest.nameEn;
 

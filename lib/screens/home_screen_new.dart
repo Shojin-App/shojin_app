@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:m3e_collection/m3e_collection.dart';
-import 'package:shojin_app/screens/recommend_screen.dart';
-import 'package:shojin_app/screens/atcoder_clans_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shojin_app/screens/atcoder_clans_screen.dart';
+import 'package:shojin_app/screens/recommend_screen.dart';
 
 import '../models/problem_difficulty.dart';
 import '../screens/problem_detail_screen.dart';
@@ -11,7 +11,6 @@ import '../utils/atcoder_colors.dart';
 import '../utils/rating_utils.dart';
 import '../widgets/next_abc_contest_widget.dart';
 import '../widgets/shared/custom_sliver_app_bar.dart';
-import 'reminder_settings_screen.dart'; // Import reminder settings screen
 
 class NewHomeScreen extends StatefulWidget {
   const NewHomeScreen({super.key});
@@ -293,20 +292,6 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                   const NextABCContestWidget(),
                   const SizedBox(height: 24),
                   _recommendationSection(context),
-                  const SizedBox(height: 16),
-                  ButtonM3E(
-                    icon: const Icon(Icons.notifications_active_outlined),
-                    label: const Text('リマインダー設定'),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ReminderSettingsScreen(),
-                        ),
-                      );
-                    },
-                    style: ButtonM3EStyle.filled,
-                  ),
                   const SizedBox(height: 16),
                   ButtonM3E(
                     icon: const Icon(Icons.web),
