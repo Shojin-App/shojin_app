@@ -8,25 +8,29 @@ class NotificationService {
 
   Future<void> initialize() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher'); // TODO: アプリアイコンを確認・設定
+        AndroidInitializationSettings(
+          '@mipmap/ic_launcher',
+        ); // TODO: アプリアイコンを確認・設定
 
     // iOS の初期化設定 (macOS も同様)
-    const DarwinInitializationSettings initializationSettingsIOS =
-        DarwinInitializationSettings(
+    const DarwinInitializationSettings
+    initializationSettingsIOS = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
       // onDidReceiveLocalNotification: onDidReceiveLocalNotification, // 古いiOSバージョン用
     );
 
-    const InitializationSettings initializationSettings = InitializationSettings(
+    const InitializationSettings
+    initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
       iOS: initializationSettingsIOS,
-      macOS: initializationSettingsIOS, // macOS も DarwinInitializationSettings を使用
+      macOS:
+          initializationSettingsIOS, // macOS も DarwinInitializationSettings を使用
     );
 
     await flutterLocalNotificationsPlugin.initialize(
-      initializationSettings,
+      settings: initializationSettings,
       // onDidReceiveNotificationResponse: onDidReceiveNotificationResponse, // 通知タップ時の処理
     );
 
@@ -52,28 +56,25 @@ class NotificationService {
 
   Future<void> requestPermissions() async {
     final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-        flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
-    await androidImplementation?.requestNotificationsPermission(); // requestPermission から requestNotificationsPermission に修正
+        flutterLocalNotificationsPlugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
+    await androidImplementation
+        ?.requestNotificationsPermission(); // requestPermission から requestNotificationsPermission に修正
 
     // iOS の通知許可
     await flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin>()
-        ?.requestPermissions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
+          IOSFlutterLocalNotificationsPlugin
+        >()
+        ?.requestPermissions(alert: true, badge: true, sound: true);
     // macOS の通知許可
     await flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
-            MacOSFlutterLocalNotificationsPlugin>()
-        ?.requestPermissions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
+          MacOSFlutterLocalNotificationsPlugin
+        >()
+        ?.requestPermissions(alert: true, badge: true, sound: true);
   }
 
   Future<void> scheduleNotification({
@@ -84,11 +85,11 @@ class NotificationService {
     String? payload,
   }) async {
     await flutterLocalNotificationsPlugin.zonedSchedule(
-      id,
-      title,
-      body,
-      tz.TZDateTime.from(scheduledTime, tz.local),
-      NotificationDetails(
+      id: id,
+      title: title,
+      body: body,
+      scheduledDate: tz.TZDateTime.from(scheduledTime, tz.local),
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           'shojin_app_channel_id',
           'Shojin App Notifications',
@@ -113,7 +114,7 @@ class NotificationService {
   }
 
   Future<void> cancelNotification(int id) async {
-    await flutterLocalNotificationsPlugin.cancel(id);
+    await flutterLocalNotificationsPlugin.cancel(id: id);
   }
 
   Future<void> cancelAllNotifications() async {
