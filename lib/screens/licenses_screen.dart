@@ -47,7 +47,7 @@ class _LicenseList extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.separated(
       itemCount: packages.length,
-      separatorBuilder: (_, __) => const Divider(height: 0),
+      separatorBuilder: (_, _) => const Divider(height: 0),
       itemBuilder: (context, index) {
         final p = packages[index];
         return ExpansionTile(
