@@ -97,6 +97,7 @@ F-Droid向けビルドやソースからのビルドについては、[インス
 - [インストール・ビルドガイド](docs/INSTALLATION.md)
 - [開発・コントリビューションガイド](docs/DEVELOPMENT.md)
 - [リリース運用](docs/RELEASE_PROCESS.md)
+- [UI・機能改善計画](docs/IMPLEMENTATION_PLAN.md)
 - [コードフォントの追加方法](docs/ADDING_CODE_FONTS.md)
 - [免責事項・商標について](docs/LEGAL.md)
 
