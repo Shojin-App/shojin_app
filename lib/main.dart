@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:ui';
 
@@ -19,6 +20,7 @@ import 'screens/home_screen_new.dart'; // Import new home screen
 import 'screens/problem_detail_screen.dart';
 import 'screens/settings_screen.dart';
 import 'services/auto_update_manager.dart'; // Add auto update manager
+import 'services/contest_reminder_service.dart';
 import 'services/notification_service.dart'; // Import NotificationService
 import 'utils/app_fonts.dart'; // Import app fonts helper
 
@@ -65,6 +67,7 @@ void main() async {
       child: const MyApp(),
     ),
   );
+  unawaited(ContestReminderService().synchronize());
   developer.log('App started successfully');
 }
 

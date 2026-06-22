@@ -88,7 +88,7 @@ class NotificationService {
       id: id,
       title: title,
       body: body,
-      scheduledDate: tz.TZDateTime.from(scheduledTime, tz.local),
+      scheduledDate: tz.TZDateTime.from(scheduledTime.toUtc(), tz.UTC),
       notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           'shojin_app_channel_id',
@@ -108,9 +108,13 @@ class NotificationService {
           presentSound: true,
         ),
       ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       payload: payload,
     );
+  }
+
+  Future<List<PendingNotificationRequest>> pendingRequests() {
+    return flutterLocalNotificationsPlugin.pendingNotificationRequests();
   }
 
   Future<void> cancelNotification(int id) async {

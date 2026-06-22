@@ -3,6 +3,7 @@ import 'package:flutter/services.dart'; // TextInputFormatterのため
 import 'package:m3e_collection/m3e_collection.dart';
 import '../models/reminder_setting.dart';
 import '../services/reminder_storage_service.dart';
+import '../services/contest_reminder_service.dart';
 
 class ReminderSettingsScreen extends StatefulWidget {
   const ReminderSettingsScreen({super.key});
@@ -82,6 +83,7 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
       }
     }
     await _storageService.saveReminderSettings(_reminderSettings);
+    await ContestReminderService().synchronize();
   }
 
   Future<void> _showCustomTimeInputDialog(int settingIndex) async {
