@@ -27,6 +27,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
   bool _isLoadingRecommendation = false;
   String? _recommendationErrorMessage;
   MapEntry<String, ProblemDifficulty>? _topRecommendation;
+  String? _topRecommendationTitle;
 
   @override
   void initState() {
@@ -61,6 +62,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
       _isLoadingRecommendation = true;
       _recommendationErrorMessage = null;
       _topRecommendation = null;
+      _topRecommendationTitle = null;
       _currentRating = null;
     });
 
@@ -79,7 +81,12 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
         });
       }
 
-      final allProblems = await _atcoderService.fetchProblemDifficulties();
+      final results = await Future.wait([
+        _atcoderService.fetchProblemDifficulties(),
+        _atcoderService.fetchProblemTitles(),
+      ]);
+      final allProblems = results[0] as Map<String, ProblemDifficulty>;
+      final problemTitles = results[1] as Map<String, String>;
       final trueRating = RatingUtils.trueRating(
         rating: ratingInfo.latestRating,
         contests: ratingInfo.contestCount,
@@ -110,6 +117,9 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
       if (!mounted) return;
       setState(() {
         _topRecommendation = recommended.isNotEmpty ? recommended.first : null;
+        _topRecommendationTitle = _topRecommendation == null
+            ? null
+            : problemTitles[_topRecommendation!.key];
       });
     } catch (e) {
       if (mounted) {
@@ -235,7 +245,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(
-                  _topRecommendation!.key,
+                  _topRecommendationTitle ?? _topRecommendation!.key,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -244,7 +254,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                 ),
                 subtitle: _currentRating != null
                     ? Text(
-                        'あなたのレート: $_currentRating',
+                        '${_topRecommendation!.key} · あなたのレート: $_currentRating',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),

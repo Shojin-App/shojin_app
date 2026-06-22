@@ -59,6 +59,29 @@ class AtCoderService {
     }
   }
 
+  Future<Map<String, String>> fetchProblemTitles() async {
+    final url = Uri.parse(
+      'https://kenkoooo.com/atcoder/resources/problems.json',
+    );
+    final response = await http.get(url);
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load problem titles: ${response.statusCode}');
+    }
+
+    final data = jsonDecode(response.body);
+    if (data is! List) {
+      throw const FormatException('Invalid problems.json response');
+    }
+
+    return {
+      for (final item in data)
+        if (item is Map<String, dynamic> &&
+            item['id'] is String &&
+            item['title'] is String)
+          item['id'] as String: item['title'] as String,
+    };
+  }
+
   /// AtCoderの問題ページをスクレイピングして問題データを取得する
   Future<Problem> fetchProblem(String url) async {
     try {

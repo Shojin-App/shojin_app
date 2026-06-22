@@ -25,6 +25,7 @@ class _RecommendScreenState extends State<RecommendScreen> {
   String? _errorMessage;
   String? _savedUsername; // 設定済みユーザー名
   int? _currentRating; // 取得したレート（表示用: 最新レート）
+  Map<String, String> _problemTitles = {};
 
   // AtCoder カラー判定
   Color _ratingColor(int rating) {
@@ -151,6 +152,7 @@ class _RecommendScreenState extends State<RecommendScreen> {
       _errorMessage = null;
       _recommendedProblems = [];
       _currentRating = null;
+      _problemTitles = {};
     });
 
     try {
@@ -184,7 +186,12 @@ class _RecommendScreenState extends State<RecommendScreen> {
         });
       }
 
-      final allProblems = await _atcoderService.fetchProblemDifficulties();
+      final results = await Future.wait([
+        _atcoderService.fetchProblemDifficulties(),
+        _atcoderService.fetchProblemTitles(),
+      ]);
+      final allProblems = results[0] as Map<String, ProblemDifficulty>;
+      final problemTitles = results[1] as Map<String, String>;
       // TrueRating を計算（数式(10)）
       final trueRating = RatingUtils.trueRating(
         rating: ratingInfo.latestRating,
@@ -218,6 +225,7 @@ class _RecommendScreenState extends State<RecommendScreen> {
 
       setState(() {
         _recommendedProblems = recommended;
+        _problemTitles = problemTitles;
       });
     } catch (e) {
       setState(() {
@@ -329,7 +337,8 @@ class _RecommendScreenState extends State<RecommendScreen> {
                     final problem = _recommendedProblems[index];
                     final diff = problem.value.difficulty;
                     return ListTile(
-                      title: Text(problem.key),
+                      title: Text(_problemTitles[problem.key] ?? problem.key),
+                      subtitle: Text(problem.key),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
