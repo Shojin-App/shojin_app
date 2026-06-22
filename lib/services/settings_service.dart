@@ -29,7 +29,9 @@ class SettingsService {
       final file = File('${directory.path}/shojin_settings.json');
       await file.writeAsString(jsonString);
 
-      await Share.shareXFiles([XFile(file.path)], text: 'Shojin App Settings');
+      await SharePlus.instance.share(
+        ShareParams(files: [XFile(file.path)], text: 'Shojin App Settings'),
+      );
       _showSnackBar('Settings exported successfully.');
     } catch (e) {
       _showSnackBar('Failed to export settings: $e', isError: true);
@@ -38,7 +40,7 @@ class SettingsService {
 
   Future<void> importSettings() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['json'],
       );

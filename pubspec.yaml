@@ -14,8 +14,16 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  package_info_plus: ^9.0.0
-  device_info_plus: ^12.3.0
+  package_info_plus:
+    git:
+      url: https://github.com/fluttercommunity/plus_plugins.git
+      ref: 952753a7840f3e6529ac216867c86d70bb457024
+      path: packages/package_info_plus/package_info_plus
+  device_info_plus:
+    git:
+      url: https://github.com/fluttercommunity/plus_plugins.git
+      ref: 396b362e42622f10f3e7361f7d2853675d0bd0a4
+      path: packages/device_info_plus/device_info_plus
   path_provider: ^2.1.6
   pub_semver: ^2.1.4
   url_launcher: ^6.3.2
@@ -42,8 +50,12 @@ dependencies:
   provider: ^6.1.5
   webview_flutter: ^4.7.0
   favicon: ^1.1.0
-  share_plus: ^12.0.1
-  file_picker: ^10.3.6
+  share_plus:
+    git:
+      url: https://github.com/fluttercommunity/plus_plugins.git
+      ref: 5926e8e7bc56b8577900c0cc0d41c44e7947f6dc
+      path: packages/share_plus/share_plus
+  file_picker: 12.0.0-beta.7
   open_file: ^3.5.10
   intl: ^0.20.2
   animations: ^2.2.0
@@ -70,6 +82,10 @@ dev_dependencies:
   change_app_package_name: ^1.5.0
   # Automatically aggregate and generate third-party license list
   flutter_oss_licenses: ^3.2.0
+
+dependency_overrides:
+  dynamic_color:
+    path: third_party/dynamic_color
 
 flutter:
   generate: true
