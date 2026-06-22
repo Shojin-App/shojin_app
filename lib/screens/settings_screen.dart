@@ -15,6 +15,7 @@ import '../services/settings_service.dart';
 import '../utils/app_fonts.dart'; // Import app fonts helper
 import '../utils/text_style_helper.dart';
 import '../widgets/shared/custom_sliver_app_bar.dart'; // Import CustomSliverAppBar
+import '../widgets/programming_language_icon.dart';
 import 'licenses_screen.dart'; // Third-party licenses screen
 import 'template_edit_screen.dart';
 import 'package:m3e_collection/m3e_collection.dart';
@@ -36,6 +37,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _autoUpdateCheckEnabled = true;
   bool _showUpdateDialog = true; // アップデート通知の表示設定
   Map<String, dynamic>? _aboutInfo;
+  bool _developerModeEnabled = false;
+  int _buildNumberTapCount = 0;
   // AtCoder ユーザー名設定
   final TextEditingController _atcoderUsernameController =
       TextEditingController();
@@ -47,6 +50,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _loadShowUpdateDialogPreference(); // Load show update dialog preference
     _loadAboutInfo(); // Load about info
     _loadAtCoderUsername(); // Load AtCoder username
+    _loadDeveloperMode();
+  }
+
+  Future<void> _loadDeveloperMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _developerModeEnabled = prefs.getBool('developer_mode_enabled') ?? false;
+    });
+  }
+
+  Future<void> _handleBuildNumberTap() async {
+    if (_developerModeEnabled) return;
+    _buildNumberTapCount++;
+    final remaining = 5 - _buildNumberTapCount;
+    if (_buildNumberTapCount >= 5) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('developer_mode_enabled', true);
+      if (!mounted) return;
+      setState(() {
+        _developerModeEnabled = true;
+        _buildNumberTapCount = 0;
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('開発者モードを有効にしました')));
+    } else if (remaining <= 3 && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('開発者モードまであと$remaining回'),
+          duration: const Duration(milliseconds: 700),
+        ),
+      );
+    }
   }
 
   Future<void> _loadCurrentVersion() async {
@@ -500,6 +537,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: Icons.code,
           children: templateProvider.supportedLanguages.map((language) {
             return ListTile(
+              leading: ProgrammingLanguageIcon(language: language),
               title: Text(
                 language,
                 style: AppFonts.notoSansJp(
@@ -775,18 +813,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
             );
           },
         ),
-        const Divider(),
-        ListTile(
-          leading: const Icon(Icons.functions),
-          title: const Text('TeX表示テスト'),
-          subtitle: const Text('LaTeX数式レンダリングの動作確認'),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const TexTestScreen()),
-            );
-          },
-        ),
+        if (_developerModeEnabled) ...[
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.developer_mode),
+            title: const Text('開発者向け機能'),
+            subtitle: const Text('内部機能の動作確認'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.functions),
+            title: const Text('TeX表示テスト'),
+            subtitle: const Text('LaTeX数式レンダリングの動作確認'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const TexTestScreen()),
+              );
+            },
+          ),
+        ],
         if (_aboutInfo != null) ...[
           const Divider(),
           if (_aboutInfo!['error'] != null)
@@ -820,11 +865,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         icon: Icons.inventory,
         onCopy: _copyAllAppInfo,
       ),
-      _CopyableListTile(
-        title: 'ビルド番号',
-        subtitle: _aboutInfo!['buildNumber'] ?? '不明',
-        icon: Icons.build,
-        onCopy: _copyAllAppInfo,
+      ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+        leading: const Icon(Icons.build),
+        title: const Text('ビルド番号'),
+        subtitle: Text(_aboutInfo!['buildNumber'] ?? '不明'),
+        onTap: _handleBuildNumberTap,
+        onLongPress: () => _copyAllAppInfo(context),
       ),
       _CopyableListTile(
         title: 'プラットフォーム',

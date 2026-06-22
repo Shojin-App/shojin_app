@@ -528,8 +528,7 @@ class _MainScreenState extends State<MainScreen> {
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: overlayStyle,
         child: Scaffold(
-          extendBody:
-              true, // Allow body to extend behind BottomNavigationBar for backdrop blur
+          extendBody: false,
           body: SafeArea(
             top: _selectedIndex != 4,
             bottom:

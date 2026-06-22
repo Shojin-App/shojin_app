@@ -26,7 +26,7 @@ const List<String> defaultCodeFontFamilies = [
 ];
 
 // Add your asset-based font family names here (must match pubspec.yaml fonts.family)
-const List<String> assetCodeFontFamilies = ['HackGen', 'HackGen35'];
+const List<String> assetCodeFontFamilies = ['HackGen35'];
 
 // Enum for editor type selection
 enum EditorType {
@@ -201,6 +201,8 @@ class ThemeProvider extends ChangeNotifier {
           ..._customCodeFonts,
         ]).contains(savedFontFamily)) {
       _codeFontFamily = savedFontFamily;
+    } else if (savedFontFamily == 'HackGen') {
+      _codeFontFamily = 'HackGen35';
     }
 
     // Load editor type if exists

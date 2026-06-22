@@ -27,6 +27,7 @@ import '../services/atcoder_service.dart';
 import '../services/code_history_service.dart';
 import '../utils/text_style_helper.dart';
 import '../widgets/monaco_code_editor.dart';
+import '../widgets/programming_language_icon.dart';
 import 'code_history_screen.dart';
 import 'submit_screen.dart'; // 提出画面を表示するWebViewスクリーン
 
@@ -1056,61 +1057,61 @@ public class Main {
                           onPressed: _isRunning ? null : _runCode,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      // サンプル（横幅1/3）
-                      Expanded(
-                        child: ButtonM3E(
-                          style: ButtonM3EStyle.tonal,
-                          icon: _isTesting
-                              ? SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation(
-                                      Theme.of(
-                                        context,
-                                      ).colorScheme.onSecondaryContainer,
+                      if (_currentProblem != null) ...[
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ButtonM3E(
+                            style: ButtonM3EStyle.tonal,
+                            icon: _isTesting
+                                ? SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation(
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.onSecondaryContainer,
+                                      ),
                                     ),
+                                  )
+                                : const Icon(Icons.checklist_rtl),
+                            label: Text(_isTesting ? 'サンプルテスト中…' : 'サンプル'),
+                            onPressed: isButtonDisabled
+                                ? null
+                                : () {
+                                    _log('★★★ Test Button Pressed! ★★★');
+                                    _runTests();
+                                  },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ButtonM3E(
+                            style: ButtonM3EStyle.filled,
+                            icon: const Icon(Icons.cloud_upload),
+                            label: const Text('提出'),
+                            onPressed: () {
+                              final parts = widget.problemId.split('_');
+                              final contestId = parts.isNotEmpty
+                                  ? parts[0]
+                                  : widget.problemId;
+                              final url =
+                                  'https://atcoder.jp/contests/$contestId/submit?taskScreenName=${widget.problemId}';
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => SubmitScreen(
+                                    url: url,
+                                    initialCode: _currentCode,
+                                    initialLanguage: _selectedLanguage,
                                   ),
-                                )
-                              : const Icon(Icons.checklist_rtl),
-                          label: Text(_isTesting ? 'サンプルテスト中…' : 'サンプル'),
-                          onPressed: isButtonDisabled
-                              ? null
-                              : () {
-                                  _log('★★★ Test Button Pressed! ★★★');
-                                  _runTests();
-                                },
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      // 提出（横幅1/3）
-                      Expanded(
-                        child: ButtonM3E(
-                          style: ButtonM3EStyle.filled,
-                          icon: const Icon(Icons.cloud_upload),
-                          label: const Text('提出'),
-                          onPressed: () {
-                            final parts = widget.problemId.split('_');
-                            final contestId = parts.isNotEmpty
-                                ? parts[0]
-                                : widget.problemId;
-                            final url =
-                                'https://atcoder.jp/contests/$contestId/submit?taskScreenName=${widget.problemId}';
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => SubmitScreen(
-                                  url: url,
-                                  initialCode: _currentCode,
-                                  initialLanguage: _selectedLanguage,
                                 ),
-                              ),
-                            );
-                          },
+                              );
+                            },
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),
@@ -1306,7 +1307,14 @@ class _EditorAppBar extends StatelessWidget implements PreferredSizeWidget {
                 items: languages.map<DropdownMenuItem<String>>((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
-                    child: Text(value, style: const TextStyle(fontSize: 14)),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ProgrammingLanguageIcon(language: value, size: 26),
+                        const SizedBox(width: 8),
+                        Text(value, style: const TextStyle(fontSize: 14)),
+                      ],
+                    ),
                   );
                 }).toList(),
               ),

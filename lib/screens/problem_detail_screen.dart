@@ -177,6 +177,31 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
     }
   }
 
+  Future<void> _pasteUrlFromClipboard() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text?.trim();
+    if (!mounted) return;
+    if (text == null || text.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('クリップボードにURLがありません')));
+      return;
+    }
+    _urlController.text = text;
+    setState(() {
+      _errorMessage = null;
+    });
+  }
+
+  void _clearUrl() {
+    _urlController.clear();
+    setState(() {
+      _problem = null;
+      _errorMessage = null;
+      _lastLoadedProblemId = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -195,12 +220,25 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
                       child: TextFormField(
                         controller:
                             _urlController, // Controller is updated automatically now
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'AtCoder 問題URL',
                           hintText:
                               'https://atcoder.jp/contests/コンテスト名/tasks/問題名',
-                          border: OutlineInputBorder(),
+                          border: const OutlineInputBorder(),
+                          prefixIcon: IconButton(
+                            tooltip: 'クリップボードから貼り付け',
+                            icon: const Icon(Icons.content_paste),
+                            onPressed: _pasteUrlFromClipboard,
+                          ),
+                          suffixIcon: IconButton(
+                            tooltip: 'URLをクリア',
+                            icon: const Icon(Icons.clear),
+                            onPressed: _urlController.text.isEmpty
+                                ? null
+                                : _clearUrl,
+                          ),
                         ),
+                        onChanged: (_) => setState(() {}),
                         validator: (value) {
                           // Validator for manual input
                           if (value == null || value.isEmpty) {

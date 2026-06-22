@@ -96,12 +96,6 @@ flutter:
     - assets/icon/youtube_logo.svg
     - assets/icon/github_logo.svg
   fonts:
-    - family: HackGen
-      fonts:
-        - asset: assets/fonts/HackGen-Regular.ttf
-          weight: 400
-        - asset: assets/fonts/HackGen-Bold.ttf
-          weight: 700
     - family: HackGen35
       fonts:
         - asset: assets/fonts/HackGen35-Regular.ttf
