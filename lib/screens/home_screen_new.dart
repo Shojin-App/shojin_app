@@ -20,6 +20,10 @@ class NewHomeScreen extends StatefulWidget {
 }
 
 class _NewHomeScreenState extends State<NewHomeScreen> {
+  static const _widgetOrderKey = 'home_widget_order';
+  static const _hiddenWidgetsKey = 'home_hidden_widgets';
+  static const _defaultWidgetOrder = ['next_abc', 'recommendation', 'clans'];
+
   final _atcoderService = AtCoderService();
 
   String? _savedUsername;
@@ -28,11 +32,170 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
   String? _recommendationErrorMessage;
   MapEntry<String, ProblemDifficulty>? _topRecommendation;
   String? _topRecommendationTitle;
+  List<String> _widgetOrder = [..._defaultWidgetOrder];
+  Set<String> _hiddenWidgets = {};
 
   @override
   void initState() {
     super.initState();
     _loadSavedUsernameAndFetchRecommendation();
+    _loadWidgetPreferences();
+  }
+
+  Future<void> _loadWidgetPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedOrder = prefs.getStringList(_widgetOrderKey) ?? const [];
+    final normalizedOrder = [
+      ...savedOrder.where(_defaultWidgetOrder.contains),
+      ..._defaultWidgetOrder.where((id) => !savedOrder.contains(id)),
+    ];
+    if (!mounted) return;
+    setState(() {
+      _widgetOrder = normalizedOrder;
+      _hiddenWidgets = (prefs.getStringList(_hiddenWidgetsKey) ?? const [])
+          .where(_defaultWidgetOrder.contains)
+          .toSet();
+    });
+  }
+
+  Future<void> _saveWidgetPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_widgetOrderKey, _widgetOrder);
+    await prefs.setStringList(_hiddenWidgetsKey, _hiddenWidgets.toList());
+  }
+
+  String _widgetLabel(String id) {
+    switch (id) {
+      case 'next_abc':
+        return '次回のABC';
+      case 'recommendation':
+        return 'おすすめ問題';
+      case 'clans':
+        return 'AtCoder Clans';
+      default:
+        return id;
+    }
+  }
+
+  IconData _widgetIcon(String id) {
+    switch (id) {
+      case 'next_abc':
+        return Icons.event_available;
+      case 'recommendation':
+        return Icons.recommend;
+      case 'clans':
+        return Icons.web;
+      default:
+        return Icons.widgets;
+    }
+  }
+
+  Future<void> _showWidgetManager() async {
+    var draftOrder = [..._widgetOrder];
+    var draftHidden = {..._hiddenWidgets};
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'ホームをカスタマイズ',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'ドラッグで並べ替え、スイッチで表示を切り替えます。',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 12),
+                  Flexible(
+                    child: ReorderableListView.builder(
+                      shrinkWrap: true,
+                      itemCount: draftOrder.length,
+                      onReorderItem: (oldIndex, newIndex) {
+                        setSheetState(() {
+                          final item = draftOrder.removeAt(oldIndex);
+                          draftOrder.insert(newIndex, item);
+                        });
+                      },
+                      itemBuilder: (context, index) {
+                        final id = draftOrder[index];
+                        return SwitchListTile(
+                          key: ValueKey(id),
+                          secondary: Icon(_widgetIcon(id)),
+                          title: Text(_widgetLabel(id)),
+                          value: !draftHidden.contains(id),
+                          onChanged: (visible) {
+                            setSheetState(() {
+                              visible
+                                  ? draftHidden.remove(id)
+                                  : draftHidden.add(id);
+                            });
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ButtonM3E(
+                      style: ButtonM3EStyle.filled,
+                      label: const Text('保存'),
+                      onPressed: () {
+                        setState(() {
+                          _widgetOrder = draftOrder;
+                          _hiddenWidgets = draftHidden;
+                        });
+                        _saveWidgetPreferences();
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildHomeWidget(String id) {
+    switch (id) {
+      case 'next_abc':
+        return const NextABCContestWidget(key: ValueKey('next_abc'));
+      case 'recommendation':
+        return KeyedSubtree(
+          key: const ValueKey('recommendation'),
+          child: _recommendationSection(context),
+        );
+      case 'clans':
+        return ButtonM3E(
+          key: const ValueKey('clans'),
+          icon: const Icon(Icons.web),
+          label: const Text('AtCoder Clans'),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AtCoderClansScreen(),
+              ),
+            );
+          },
+          style: ButtonM3EStyle.filled,
+        );
+      default:
+        return const SizedBox.shrink();
+    }
   }
 
   Future<void> _loadSavedUsernameAndFetchRecommendation() async {
@@ -292,33 +455,31 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          const CustomSliverAppBar(isMainView: true, title: Text('ホーム')),
+          CustomSliverAppBar(
+            isMainView: true,
+            title: const Text('ホーム'),
+            actions: [
+              IconButtonM3E(
+                tooltip: 'ホームをカスタマイズ',
+                icon: const Icon(Icons.dashboard_customize_outlined),
+                onPressed: _showWidgetManager,
+              ),
+            ],
+          ),
           SliverPadding(
             padding: const EdgeInsets.all(16.0),
             sliver: SliverToBoxAdapter(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const NextABCContestWidget(),
-                  const SizedBox(height: 24),
-                  _recommendationSection(context),
-                  const SizedBox(height: 16),
-                  ButtonM3E(
-                    icon: const Icon(Icons.web),
-                    label: const Text('AtCoder Clans'),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const AtCoderClansScreen(),
-                        ),
-                      );
-                    },
-                    style: ButtonM3EStyle.filled,
-                  ),
-                  const SizedBox(height: 16),
-                  // 他のウィジェットをここに追加可能
-                ],
+                children: _widgetOrder
+                    .where((id) => !_hiddenWidgets.contains(id))
+                    .expand(
+                      (id) => [
+                        _buildHomeWidget(id),
+                        const SizedBox(height: 16),
+                      ],
+                    )
+                    .toList(),
               ),
             ),
           ),
