@@ -27,6 +27,7 @@ const List<String> defaultCodeFontFamilies = [
 
 // Add your asset-based font family names here (must match pubspec.yaml fonts.family)
 const List<String> assetCodeFontFamilies = ['HackGen35'];
+const String defaultCodeFontFamily = 'HackGen35';
 
 // Enum for editor type selection
 enum EditorType {
@@ -42,7 +43,7 @@ class ThemeProvider extends ChangeNotifier {
   double _navBarOpacity = 0.5; // Default bottom nav opacity
   ThemeModeOption _themeMode = ThemeModeOption.system;
   bool _useMaterialYou = true; // Default to true
-  String _codeFontFamily = defaultCodeFontFamilies.first; // Default font
+  String _codeFontFamily = defaultCodeFontFamily;
   final List<String> _customCodeFonts =
       []; // User-added font family names (must be declared in pubspec)
   bool _isLoading = true;
@@ -160,7 +161,7 @@ class ThemeProvider extends ChangeNotifier {
     if (_customCodeFonts.remove(fontFamily)) {
       // If current selection was removed, fallback to default first
       if (_codeFontFamily == fontFamily) {
-        _codeFontFamily = defaultCodeFontFamilies.first;
+        _codeFontFamily = defaultCodeFontFamily;
       }
       await _saveToPrefs();
       notifyListeners();
