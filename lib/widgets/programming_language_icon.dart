@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:simple_icons/simple_icons.dart';
 
 class ProgrammingLanguageIcon extends StatelessWidget {
   const ProgrammingLanguageIcon({
@@ -13,23 +14,27 @@ class ProgrammingLanguageIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final spec = _specFor(language);
+    final brightness = Theme.of(context).brightness;
+    final iconColor = spec.useAdaptiveMonochrome
+        ? (brightness == Brightness.dark
+              ? Colors.white
+              : const Color(0xFF171717))
+        : spec.color;
+
     return Container(
       width: size,
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: spec.color.withValues(alpha: 0.14),
+        color: iconColor.withValues(alpha: 0.11),
         borderRadius: BorderRadius.circular(size * 0.28),
-        border: Border.all(color: spec.color.withValues(alpha: 0.55)),
+        border: Border.all(color: iconColor.withValues(alpha: 0.28)),
       ),
-      child: Text(
-        spec.label,
-        style: TextStyle(
-          color: spec.color,
-          fontSize: size * 0.34,
-          fontWeight: FontWeight.w800,
-          height: 1,
-        ),
+      child: Icon(
+        spec.icon,
+        color: iconColor,
+        size: size * 0.62,
+        semanticLabel: '$language logo',
       ),
     );
   }
@@ -37,26 +42,42 @@ class ProgrammingLanguageIcon extends StatelessWidget {
   _LanguageIconSpec _specFor(String value) {
     switch (value.toLowerCase()) {
       case 'python':
-        return const _LanguageIconSpec('Py', Color(0xFF3776AB));
+        return const _LanguageIconSpec(
+          SimpleIcons.python,
+          SimpleIconColors.python,
+        );
       case 'c++':
       case 'cpp':
-        return const _LanguageIconSpec('C++', Color(0xFF00599C));
-      case 'rust':
-        return const _LanguageIconSpec('Rs', Color(0xFFCE422B));
-      case 'java':
-        return const _LanguageIconSpec('J', Color(0xFFEA2D2E));
-      default:
-        return _LanguageIconSpec(
-          value.isEmpty ? '?' : value.substring(0, 1).toUpperCase(),
-          const Color(0xFF6B7280),
+        return const _LanguageIconSpec(
+          SimpleIcons.cplusplus,
+          SimpleIconColors.cplusplus,
         );
+      case 'rust':
+        return const _LanguageIconSpec(
+          SimpleIcons.rust,
+          SimpleIconColors.rust,
+          useAdaptiveMonochrome: true,
+        );
+      case 'java':
+        return const _LanguageIconSpec(
+          SimpleIcons.openjdk,
+          SimpleIconColors.openjdk,
+          useAdaptiveMonochrome: true,
+        );
+      default:
+        return const _LanguageIconSpec(Icons.code, Color(0xFF6B7280));
     }
   }
 }
 
 class _LanguageIconSpec {
-  const _LanguageIconSpec(this.label, this.color);
+  const _LanguageIconSpec(
+    this.icon,
+    this.color, {
+    this.useAdaptiveMonochrome = false,
+  });
 
-  final String label;
+  final IconData icon;
   final Color color;
+  final bool useAdaptiveMonochrome;
 }
