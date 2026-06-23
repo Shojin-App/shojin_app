@@ -22,6 +22,8 @@ import 'package:share_plus/share_plus.dart'; // コード共有用
 
 import '../models/problem.dart';
 import '../models/test_result.dart';
+import '../constants/programming_languages.dart';
+import '../providers/template_provider.dart';
 import '../providers/theme_provider.dart';
 import '../services/atcoder_service.dart';
 import '../services/code_history_service.dart';
@@ -73,8 +75,7 @@ class _EditorScreenState extends State<EditorScreen> {
 
   // 言語選択用
   String _selectedLanguage = 'Python';
-  // C#をリストから削除
-  final List<String> _languages = ['Python', 'C++', 'Rust', 'Java'];
+  final List<String> _languages = supportedProgrammingLanguages;
 
   // ダークモードか確認するための変数
   bool get _isDarkMode => Theme.of(context).brightness == Brightness.dark;
@@ -293,39 +294,7 @@ class _EditorScreenState extends State<EditorScreen> {
 
   // 選択した言語に基づいてコードのテンプレートを取得
   String _getTemplateForLanguage(String language) {
-    switch (language) {
-      case 'C++':
-        return '''#include <iostream>
-using namespace std;
-
-int main() {
-    int n;
-    cin >> n;
-    cout << "Hello World!" << endl;
-    return 0;
-}''';
-      case 'Python':
-        return '''n = int(input())
-print("Hello World!")''';
-      case 'Rust':
-        return '''use std::io;
-fn main() {
-   let mut input = String::new();
-   io::stdin().read_line(&mut input).expect("Failed to read line");
-   println!("Hello World!");
-}''';
-      case 'Java':
-        return '''import java.util.Scanner;
-public class Main {
-   public static void main(String[] args) {
-       Scanner sc = new Scanner(System.in);
-       int n = sc.nextInt();
-       System.out.println("Hello World!");
-   }
-}''';
-      default:
-        return '// ここにコードを書いてください';
-    }
+    return context.read<TemplateProvider>().getTemplate(language);
   }
 
   // Wandbox APIが要求する言語名を取得
