@@ -147,6 +147,8 @@ class _RecommendScreenState extends State<RecommendScreen> {
   }
 
   Future<void> _getRecommendations() async {
+    if (_isLoading) return;
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -223,19 +225,88 @@ class _RecommendScreenState extends State<RecommendScreen> {
         return a.value.difficulty!.compareTo(b.value.difficulty!);
       });
 
+      if (!mounted) return;
       setState(() {
         _recommendedProblems = recommended;
         _problemTitles = problemTitles;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
-        _errorMessage = e.toString();
+        _errorMessage = e.toString().replaceFirst('Exception: ', '');
       });
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
+  }
+
+  Widget _buildRecommendationControls(BuildContext context) {
+    final lowerField = TextField(
+      controller: _lowerDeltaController,
+      keyboardType: const TextInputType.numberWithOptions(signed: true),
+      textInputAction: TextInputAction.next,
+      decoration: const InputDecoration(
+        labelText: '下限差',
+        hintText: '-100',
+        prefixIcon: Icon(Icons.arrow_downward),
+        border: OutlineInputBorder(),
+      ),
+    );
+    final upperField = TextField(
+      controller: _upperDeltaController,
+      keyboardType: const TextInputType.numberWithOptions(signed: true),
+      textInputAction: TextInputAction.done,
+      onSubmitted: (_) {
+        if (!_isLoading) _getRecommendations();
+      },
+      decoration: const InputDecoration(
+        labelText: '上限差',
+        hintText: '100',
+        prefixIcon: Icon(Icons.arrow_upward),
+        border: OutlineInputBorder(),
+      ),
+    );
+    final submitButton = ButtonM3E(
+      onPressed: _isLoading ? null : _getRecommendations,
+      icon: const Icon(Icons.tune),
+      label: const Text('条件を適用'),
+      style: ButtonM3EStyle.filled,
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 560) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(child: lowerField),
+                  const SizedBox(width: 12),
+                  Expanded(child: upperField),
+                ],
+              ),
+              const SizedBox(height: 12),
+              submitButton,
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            Expanded(child: lowerField),
+            const SizedBox(width: 12),
+            Expanded(child: upperField),
+            const SizedBox(width: 12),
+            submitButton,
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -292,43 +363,54 @@ class _RecommendScreenState extends State<RecommendScreen> {
                 style: ButtonM3EStyle.filled,
               ),
             const SizedBox(height: 8),
-            // 推薦条件入力（レートとの差分の下限/上限）
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _lowerDeltaController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: '下限差 (例: -100)',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    controller: _upperDeltaController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: '上限差 (例: 100)',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                ButtonM3E(
-                  onPressed: _isLoading ? null : _getRecommendations,
-                  label: const Text('条件で再取得'),
-                  style: ButtonM3EStyle.filled,
-                ),
-              ],
-            ),
+            _buildRecommendationControls(context),
             const SizedBox(height: 16),
             if (_isLoading)
               const LoadingIndicatorM3E()
             else if (_errorMessage != null)
-              Text(_errorMessage!, style: const TextStyle(color: Colors.red))
+              Card(
+                color: Theme.of(context).colorScheme.errorContainer,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        color: Theme.of(context).colorScheme.onErrorContainer,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _errorMessage!,
+                          style: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onErrorContainer,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else if (_recommendedProblems.isEmpty)
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.search_off,
+                        size: 48,
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                      const SizedBox(height: 12),
+                      const Text('条件に合う問題はまだ表示されていません'),
+                    ],
+                  ),
+                ),
+              )
             else
               Expanded(
                 child: ListView.builder(

@@ -24,7 +24,7 @@ class RatingUtils {
 
   /// Computes F(n) using closed-form geometric sums.
   /// sum_{i=1..n} a^i = a * (1 - a^n) / (1 - a)
-  static double _F(int n) {
+  static double _fFactor(int n) {
     if (n <= 0) return 0.0;
     const a1 = 0.81; // 0.9^2
     const a2 = 0.9;
@@ -34,7 +34,7 @@ class RatingUtils {
   }
 
   /// F(infty) using closed-form limits of geometric sums.
-  static double _FInf() {
+  static double _fFactorInfinity() {
     const a1 = 0.81;
     const a2 = 0.9;
     final sum1Inf = a1 / (1 - a1);
@@ -45,9 +45,9 @@ class RatingUtils {
   /// f(n) per the provided formula.
   static double f(int n) {
     if (n <= 0) return 1200.0; // safe fallback; not expected in practice
-    final fn = _F(n);
-    final finf = _FInf();
-    final f1 = _F(1);
+    final fn = _fFactor(n);
+    final finf = _fFactorInfinity();
+    final f1 = _fFactor(1);
     // Avoid division by a tiny number; clamp if needed
     final denom = (f1 - finf).abs() < 1e-12 ? 1e-12 : (f1 - finf);
     return ((fn - finf) / denom) * 1200.0;

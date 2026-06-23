@@ -387,11 +387,13 @@ class _EditorScreenState extends State<EditorScreen> {
       if (await file.exists()) {
         final savedCode = await file.readAsString();
         await _setCode(savedCode);
+        if (!mounted) return;
         setState(() {});
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('$_selectedLanguage のコードを復元しました')),
         );
       } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('保存されたコードが見つかりません')));
@@ -930,7 +932,8 @@ class _EditorScreenState extends State<EditorScreen> {
                 ),
               );
               if (restoredCode != null && restoredCode is String) {
-                _setCode(restoredCode);
+                await _setCode(restoredCode);
+                if (!context.mounted) return;
                 setState(() {});
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Code restored from history.')),

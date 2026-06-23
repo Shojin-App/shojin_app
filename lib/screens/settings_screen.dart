@@ -120,6 +120,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _saveAtCoderUsername() async {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(
@@ -128,10 +129,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
       // If theme uses AtCoder accent, refresh it
       try {
-        final themeProvider = Provider.of<ThemeProvider>(
-          context,
-          listen: false,
-        );
         if (themeProvider.useAtcoderRatingColor) {
           await themeProvider.refreshAtcoderAccentColor();
         }
@@ -1319,6 +1316,7 @@ class _SocialMediaItem extends StatelessWidget {
         await launchUrl(Uri.parse(url), mode: LaunchMode.platformDefault);
         HapticFeedback.lightImpact();
       } catch (fallbackError) {
+        if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('URLを開けませんでした: $url'),

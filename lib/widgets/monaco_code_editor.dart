@@ -200,6 +200,7 @@ class MonacoCodeEditorState extends State<MonacoCodeEditor> {
             if (_controller != null && _isInitialized) {
               await _controller!.focus();
             }
+            if (!context.mounted) return;
 
             // モバイルでは TextInput 経由でキーボードを表示させる
             if (Platform.isAndroid || Platform.isIOS) {
