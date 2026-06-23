@@ -404,17 +404,6 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton.icon(
-                    onPressed: () => launchUrl(
-                      Uri.parse(problem.url),
-                      mode: LaunchMode.externalApplication,
-                    ),
-                    icon: const Icon(Icons.open_in_new, size: 16),
-                    label: const Text('出典: AtCoderの元ページを開く'),
-                  ),
-                ),
                 const Divider(),
                 _buildSection('問題文', problem.statement, codeFontFamily),
                 _buildSection('制約', problem.constraints, codeFontFamily),
@@ -422,6 +411,33 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
                 _buildSection('出力', problem.outputFormat, codeFontFamily),
                 ...problem.samples.map(
                   (sample) => _buildSampleIO(sample, codeFontFamily),
+                ),
+                const SizedBox(height: 16),
+                const Divider(),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '出典: AtCoder',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const Spacer(),
+                    TextButton.icon(
+                      onPressed: () => launchUrl(
+                        Uri.parse(problem.url),
+                        mode: LaunchMode.externalApplication,
+                      ),
+                      icon: const Icon(Icons.open_in_new, size: 16),
+                      label: const Text('元ページを開く'),
+                    ),
+                  ],
                 ),
               ],
             ),
