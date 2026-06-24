@@ -490,6 +490,10 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   void _onItemTapped(int index) {
+    if (index == _selectedIndex) {
+      return;
+    }
+
     // 触覚フィードバックを追加
     HapticFeedback.lightImpact();
     _hideKeyboard(context);
@@ -536,7 +540,7 @@ class _MainScreenState extends State<MainScreen> {
             top: _selectedIndex != 4,
             bottom:
                 false, // allow content under BottomNavigationBar for BackdropFilter
-            child: IndexedStack(index: _selectedIndex, children: screens),
+            child: AnimatedTabStack(index: _selectedIndex, children: screens),
           ),
           bottomNavigationBar: ClipRect(
             child: BackdropFilter(
@@ -584,6 +588,119 @@ class _MainScreenState extends State<MainScreen> {
                   ),
                 ),
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class AnimatedTabStack extends StatefulWidget {
+  final int index;
+  final List<Widget> children;
+
+  const AnimatedTabStack({
+    super.key,
+    required this.index,
+    required this.children,
+  });
+
+  @override
+  State<AnimatedTabStack> createState() => _AnimatedTabStackState();
+}
+
+class _AnimatedTabStackState extends State<AnimatedTabStack>
+    with SingleTickerProviderStateMixin {
+  static const _duration = Duration(milliseconds: 280);
+  static const _curve = Curves.easeOutCubic;
+
+  late final AnimationController _controller;
+  late Animation<double> _animation;
+  int? _previousIndex;
+  int _transitionDirection = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: _duration)
+      ..value = 1
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed && _previousIndex != null) {
+          setState(() {
+            _previousIndex = null;
+          });
+        }
+      });
+    _animation = CurvedAnimation(parent: _controller, curve: _curve);
+  }
+
+  @override
+  void didUpdateWidget(covariant AnimatedTabStack oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.index != oldWidget.index) {
+      _previousIndex = oldWidget.index;
+      _transitionDirection = widget.index > oldWidget.index ? 1 : -1;
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, _) {
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            for (var i = 0; i < widget.children.length; i++)
+              _buildAnimatedChild(context, i),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildAnimatedChild(BuildContext context, int childIndex) {
+    final isSelected = childIndex == widget.index;
+    final isPrevious = childIndex == _previousIndex && _controller.isAnimating;
+    final isVisible = isSelected || isPrevious;
+    final progress = _animation.value;
+    final textDirection = Directionality.of(context);
+    final horizontalDirection = textDirection == TextDirection.rtl
+        ? -_transitionDirection
+        : _transitionDirection;
+
+    double opacity;
+    double slideOffset;
+    if (isSelected) {
+      opacity = progress;
+      slideOffset = (1 - progress) * 0.06 * horizontalDirection;
+    } else if (isPrevious) {
+      opacity = 1 - progress;
+      slideOffset = -progress * 0.06 * horizontalDirection;
+    } else {
+      opacity = 0;
+      slideOffset = 0;
+    }
+
+    return Offstage(
+      offstage: !isVisible,
+      child: TickerMode(
+        enabled: isVisible,
+        child: IgnorePointer(
+          ignoring: !isSelected,
+          child: FractionalTranslation(
+            translation: Offset(slideOffset, 0),
+            child: Opacity(
+              opacity: opacity.clamp(0, 1),
+              child: widget.children[childIndex],
             ),
           ),
         ),
