@@ -185,14 +185,24 @@ class MonacoCodeEditorState extends State<MonacoCodeEditor> {
     }
 
     if (!_isInitialized || _controller == null) {
-      return const Center(child: LoadingIndicatorM3E());
+      return _buildStateCard(
+        icon: Icons.integration_instructions,
+        title: 'Monaco Editorを起動中',
+        message: 'エディタの初期化が完了するまでお待ちください。',
+        child: const Padding(
+          padding: EdgeInsets.only(top: 16),
+          child: Center(child: LoadingIndicatorM3E()),
+        ),
+      );
     }
 
     return Card(
       elevation: 2,
       margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(24.0),
+        borderRadius: BorderRadius.circular(16.0),
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () async {
@@ -275,34 +285,82 @@ class MonacoCodeEditorState extends State<MonacoCodeEditor> {
   }
 
   Widget _buildUnsupportedPlatformMessage() {
+    return _buildStateCard(
+      icon: Icons.warning_amber_rounded,
+      title: 'Monaco Editorはこのプラットフォームで使用できません',
+      message: '設定から「従来のエディタ」を選択してください。',
+      isError: true,
+    );
+  }
+
+  Widget _buildStateCard({
+    required IconData icon,
+    required String title,
+    required String message,
+    bool isError = false,
+    Widget? child,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final foregroundColor = isError
+        ? colorScheme.onErrorContainer
+        : colorScheme.onSurfaceVariant;
+    final iconBackground = isError
+        ? colorScheme.errorContainer
+        : colorScheme.primaryContainer;
+    final iconColor = isError
+        ? colorScheme.onErrorContainer
+        : colorScheme.onPrimaryContainer;
+
     return Card(
       elevation: 2,
       margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Icon(
-                Icons.warning_amber_rounded,
-                size: 48,
-                color: Theme.of(context).colorScheme.error,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: iconBackground,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(icon, color: iconColor),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: isError ? foregroundColor : null,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          message,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: foregroundColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              Text(
-                'Monaco Editor はこのプラットフォームでサポートされていません',
-                style: Theme.of(context).textTheme.titleMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '設定から「従来のエディタ」を選択してください',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
-              ),
+              if (child != null) child,
             ],
           ),
         ),

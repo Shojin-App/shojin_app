@@ -709,60 +709,164 @@ class _EditorScreenState extends State<EditorScreen> {
             }
 
             // --- ダイアログUIの構築 ---
+            final theme = Theme.of(context);
+            final colorScheme = theme.colorScheme;
+
             return AlertDialog(
-              title: Text('テスト実行結果 (${_currentProblem?.title ?? ""})'),
+              title: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.fact_check_outlined,
+                      color: colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'テスト実行結果',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               content: SizedBox(
                 width: double.maxFinite, // 横幅を最大に
-                child: ListView.builder(
-                  shrinkWrap: true, // 内容に合わせて高さを調整
-                  itemCount: _testResults.length,
-                  itemBuilder: (context, index) {
-                    final result = _testResults[index];
-                    // 各テストケースの結果を表示する ListTile
-                    return ListTile(
-                      leading: CircleAvatar(
-                        radius: 15,
-                        backgroundColor: _getStatusColor(result.status),
-                        child:
-                            result.status == JudgeStatus.running ||
-                                result.status == JudgeStatus.pending
-                            ? const SizedBox(
-                                width: 15,
-                                height: 15,
-                                child: LoadingIndicatorM3E(),
-                              )
-                            : Text(
-                                result.index.toString(), // ケース番号
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest.withValues(
+                          alpha: 0.45,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: colorScheme.outlineVariant.withValues(
+                            alpha: 0.7,
+                          ),
+                        ),
+                      ),
+                      child: Text(
+                        _currentProblem?.title ?? 'サンプルケース',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Flexible(
+                      child: ListView.separated(
+                        shrinkWrap: true, // 内容に合わせて高さを調整
+                        itemCount: _testResults.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          final result = _testResults[index];
+                          final statusColor = _getStatusColor(
+                            context,
+                            result.status,
+                          );
+                          final canOpenDetail =
+                              result.status != JudgeStatus.running &&
+                              result.status != JudgeStatus.pending;
+
+                          return Material(
+                            color: colorScheme.surfaceContainerHighest
+                                .withValues(alpha: 0.35),
+                            borderRadius: BorderRadius.circular(12),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(12),
+                              onTap: canOpenDetail
+                                  ? () => _showResultDetailDialog(result)
+                                  : null,
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 32,
+                                      height: 32,
+                                      decoration: BoxDecoration(
+                                        color: statusColor.withValues(
+                                          alpha: 0.16,
+                                        ),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child:
+                                          result.status ==
+                                                  JudgeStatus.running ||
+                                              result.status ==
+                                                  JudgeStatus.pending
+                                          ? const Padding(
+                                              padding: EdgeInsets.all(8),
+                                              child: LoadingIndicatorM3E(),
+                                            )
+                                          : Center(
+                                              child: Text(
+                                                result.index.toString(),
+                                                style: theme
+                                                    .textTheme
+                                                    .labelMedium
+                                                    ?.copyWith(
+                                                      color: statusColor,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                              ),
+                                            ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'ケース ${result.index}',
+                                            style: theme.textTheme.bodyMedium
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            result.statusLabel,
+                                            style: theme.textTheme.bodySmall
+                                                ?.copyWith(color: statusColor),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (canOpenDetail)
+                                      Icon(
+                                        Icons.chevron_right,
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                  ],
                                 ),
                               ),
+                            ),
+                          );
+                        },
                       ),
-                      title: Text('ケース ${result.index}'), // タイトル
-                      subtitle: Text(
-                        result.statusLabel,
-                      ), // サブタイトル (AC, WA, TLE...)
-                      trailing:
-                          result.status != JudgeStatus.running &&
-                              result.status != JudgeStatus.pending
-                          ? const Icon(Icons.chevron_right) // 完了後は詳細表示アイコン
-                          : null, // 実行中はなし
-                      onTap:
-                          result.status == JudgeStatus.running ||
-                              result.status == JudgeStatus.pending
-                          ? null // 実行中・待機中はタップ無効
-                          : () {
-                              // タップで詳細表示ダイアログを開く
-                              _showResultDetailDialog(result);
-                            },
-                    );
-                  },
+                    ),
+                  ],
                 ),
               ),
               actions: <Widget>[
                 // 閉じるボタン
-                TextButton(
+                TextButton.icon(
                   onPressed: _isTesting
                       ? null
                       : () {
@@ -772,7 +876,8 @@ class _EditorScreenState extends State<EditorScreen> {
                           );
                           Navigator.of(context).pop(); // ダイアログを閉じる
                         },
-                  child: const Text('閉じる'),
+                  icon: const Icon(Icons.close),
+                  label: const Text('閉じる'),
                 ),
               ],
             );
@@ -793,45 +898,90 @@ class _EditorScreenState extends State<EditorScreen> {
   void _showResultDetailDialog(TestResult result) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('ケース ${result.index} - ${result.statusLabel}'),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+      builder: (context) {
+        final theme = Theme.of(context);
+        final statusColor = _getStatusColor(context, result.status);
+
+        return AlertDialog(
+          title: Row(
             children: [
-              _buildDetailSection('入力 (stdin)', result.input),
-              _buildDetailSection('期待される出力 (Expected)', result.expectedOutput),
-              _buildDetailSection('実際の出力 (stdout)', result.actualOutput),
-              if (result.errorOutput.isNotEmpty)
-                _buildDetailSection(
-                  'エラー出力 (stderr)',
-                  result.errorOutput,
-                  isError: true,
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              if (result.exitCode != null) Text('終了コード: ${result.exitCode}'),
-              if (result.signal != null) Text('シグナル: ${result.signal}'),
+                child: Icon(Icons.terminal, color: statusColor),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'ケース ${result.index}',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
             ],
           ),
-        ),
-        actions: [
-          ButtonM3E(
-            style: ButtonM3EStyle.text,
-            label: const Text('コピー (入力)'),
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: result.input));
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('入力をコピーしました')));
-            },
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    result.statusLabel,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: statusColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _buildDetailSection('入力 (stdin)', result.input),
+                _buildDetailSection(
+                  '期待される出力 (Expected)',
+                  result.expectedOutput,
+                ),
+                _buildDetailSection('実際の出力 (stdout)', result.actualOutput),
+                if (result.errorOutput.isNotEmpty)
+                  _buildDetailSection(
+                    'エラー出力 (stderr)',
+                    result.errorOutput,
+                    isError: true,
+                  ),
+                if (result.exitCode != null) Text('終了コード: ${result.exitCode}'),
+                if (result.signal != null) Text('シグナル: ${result.signal}'),
+              ],
+            ),
           ),
-          ButtonM3E(
-            onPressed: () => Navigator.of(context).pop(),
-            label: const Text('閉じる'),
-            style: ButtonM3EStyle.text,
-          ),
-        ],
-      ),
+          actions: [
+            ButtonM3E(
+              style: ButtonM3EStyle.text,
+              label: const Text('コピー (入力)'),
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: result.input));
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('入力をコピーしました')));
+              },
+            ),
+            ButtonM3E(
+              onPressed: () => Navigator.of(context).pop(),
+              label: const Text('閉じる'),
+              style: ButtonM3EStyle.text,
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -841,22 +991,35 @@ class _EditorScreenState extends State<EditorScreen> {
     bool isError = false,
   }) {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final theme = Theme.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: Theme.of(context).textTheme.titleSmall),
+          Text(
+            title,
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: isError ? colorScheme.onErrorContainer : null,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           const SizedBox(height: 4),
           Container(
             padding: const EdgeInsets.all(8),
             width: double.infinity,
             constraints: const BoxConstraints(maxHeight: 150), // 高さに制限
             decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(4),
+              color: isError
+                  ? colorScheme.errorContainer.withValues(alpha: 0.55)
+                  : colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isError
+                    ? colorScheme.error.withValues(alpha: 0.25)
+                    : colorScheme.outlineVariant.withValues(alpha: 0.7),
+              ),
             ),
             child: SingleChildScrollView(
               // 内容が長い場合にスクロール可能に
@@ -865,7 +1028,7 @@ class _EditorScreenState extends State<EditorScreen> {
                 style: getMonospaceTextStyle(
                   themeProvider.codeFontFamily,
                   fontSize: 13,
-                  color: isError ? Colors.red : null,
+                  color: isError ? colorScheme.onErrorContainer : null,
                 ),
               ),
             ),
@@ -875,22 +1038,341 @@ class _EditorScreenState extends State<EditorScreen> {
     );
   }
 
-  Color _getStatusColor(JudgeStatus status) {
+  Color _getStatusColor(BuildContext context, JudgeStatus status) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     switch (status) {
       case JudgeStatus.ac:
-        return Colors.green.shade600;
+        return colorScheme.primary;
       case JudgeStatus.wa:
-        return Colors.orange.shade700;
+        return colorScheme.tertiary;
       case JudgeStatus.re:
       case JudgeStatus.tle:
       case JudgeStatus.ce:
       case JudgeStatus.ie:
-        return Colors.red.shade600;
+        return colorScheme.error;
       case JudgeStatus.running:
-        return Colors.blue.shade600;
+        return colorScheme.secondary;
       case JudgeStatus.pending:
-        return Colors.grey.shade600;
+        return colorScheme.onSurfaceVariant;
     }
+  }
+
+  void _openSubmitScreen() {
+    final parts = widget.problemId.split('_');
+    final contestId = parts.isNotEmpty ? parts[0] : widget.problemId;
+    final url =
+        'https://atcoder.jp/contests/$contestId/submit?taskScreenName=${widget.problemId}';
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SubmitScreen(
+          url: url,
+          initialCode: _currentCode,
+          initialLanguage: _selectedLanguage,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExecutionControls(bool isButtonDisabled) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    Widget runButton = ButtonM3E(
+      style: ButtonM3EStyle.filled,
+      icon: _isRunning
+          ? SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation(colorScheme.onPrimary),
+              ),
+            )
+          : const Icon(Icons.play_arrow),
+      label: const Text('実行'),
+      onPressed: _isRunning ? null : _runCode,
+    );
+
+    final buttons = <Widget>[
+      Expanded(child: runButton),
+      if (_currentProblem != null) ...[
+        const SizedBox(width: 8),
+        Expanded(
+          child: ButtonM3E(
+            style: ButtonM3EStyle.tonal,
+            icon: _isTesting
+                ? SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation(
+                        colorScheme.onSecondaryContainer,
+                      ),
+                    ),
+                  )
+                : const Icon(Icons.checklist_rtl),
+            label: Text(_isTesting ? 'サンプルテスト中…' : 'サンプル'),
+            onPressed: isButtonDisabled
+                ? null
+                : () {
+                    _log('★★★ Test Button Pressed! ★★★');
+                    _runTests();
+                  },
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: ButtonM3E(
+            style: ButtonM3EStyle.filled,
+            icon: const Icon(Icons.cloud_upload),
+            label: const Text('提出'),
+            onPressed: _openSubmitScreen,
+          ),
+        ),
+      ],
+    ];
+
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.fromLTRB(4, 6, 4, 4),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.terminal,
+                    size: 20,
+                    color: colorScheme.onPrimaryContainer,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '実行と提出',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        _currentProblem == null
+                            ? 'コードを実行できます'
+                            : 'サンプルテストと提出をここから実行',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(children: buttons),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIoPanel(String codeFontFamily) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.fromLTRB(4, 4, 4, 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Expanded(
+              child: _buildTextPanel(
+                title: '標準入力',
+                subtitle: 'stdin',
+                icon: Icons.keyboard_alt_outlined,
+                child: TextField(
+                  controller: _stdinController,
+                  maxLines: null,
+                  decoration: InputDecoration(
+                    hintText: 'プログラムへの入力をここに入力します',
+                    hintStyle: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    border: InputBorder.none,
+                    isDense: true,
+                  ),
+                  style: getMonospaceTextStyle(codeFontFamily, fontSize: 13),
+                ),
+                scrollController: _stdinScrollController,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildTextPanel(
+                title: '実行結果',
+                subtitle: 'stdout / stderr',
+                icon: Icons.output_outlined,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_output.isEmpty && _error.isEmpty)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHigh.withValues(
+                            alpha: 0.6,
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: colorScheme.outlineVariant.withValues(
+                              alpha: 0.65,
+                            ),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.play_circle_outline,
+                              size: 18,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'まだ実行結果はありません',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (_output.isNotEmpty)
+                      SelectableText(
+                        _output,
+                        style: getMonospaceTextStyle(
+                          codeFontFamily,
+                          fontSize: 13,
+                        ),
+                      ),
+                    if (_error.isNotEmpty) ...[
+                      Padding(
+                        padding: EdgeInsets.only(
+                          top: _output.isNotEmpty ? 8.0 : 0,
+                        ),
+                        child: Text(
+                          'エラー出力',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            color: colorScheme.error,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      SelectableText(
+                        _error,
+                        style: getMonospaceTextStyle(
+                          codeFontFamily,
+                          fontSize: 13,
+                          color: colorScheme.error,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                scrollController: _ioScrollController,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextPanel({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Widget child,
+    required ScrollController scrollController,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 18, color: colorScheme.onSurfaceVariant),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              subtitle,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Expanded(
+          child: Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.45,
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+              ),
+            ),
+            padding: const EdgeInsets.all(10),
+            child: Scrollbar(
+              controller: scrollController,
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                controller: scrollController,
+                primary: false,
+                child: child,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -1001,243 +1483,8 @@ class _EditorScreenState extends State<EditorScreen> {
 
               // 入出力エリア: ボタン行 + 左右分割 (stdin | stdout/stderr)
               if (!isLoadingProblem) ...[
-                // ボタンを一列に配置（実行、サンプル、提出）
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4.0,
-                    vertical: 4.0,
-                  ),
-                  child: Row(
-                    children: [
-                      // 実行（横幅1/3）
-                      Expanded(
-                        child: ButtonM3E(
-                          style: ButtonM3EStyle.filled,
-                          icon: _isRunning
-                              ? SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation(
-                                      Theme.of(context).colorScheme.onPrimary,
-                                    ),
-                                  ),
-                                )
-                              : const Icon(Icons.play_arrow),
-                          label: const Text('実行'),
-                          onPressed: _isRunning ? null : _runCode,
-                        ),
-                      ),
-                      if (_currentProblem != null) ...[
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: ButtonM3E(
-                            style: ButtonM3EStyle.tonal,
-                            icon: _isTesting
-                                ? SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation(
-                                        Theme.of(
-                                          context,
-                                        ).colorScheme.onSecondaryContainer,
-                                      ),
-                                    ),
-                                  )
-                                : const Icon(Icons.checklist_rtl),
-                            label: Text(_isTesting ? 'サンプルテスト中…' : 'サンプル'),
-                            onPressed: isButtonDisabled
-                                ? null
-                                : () {
-                                    _log('★★★ Test Button Pressed! ★★★');
-                                    _runTests();
-                                  },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: ButtonM3E(
-                            style: ButtonM3EStyle.filled,
-                            icon: const Icon(Icons.cloud_upload),
-                            label: const Text('提出'),
-                            onPressed: () {
-                              final parts = widget.problemId.split('_');
-                              final contestId = parts.isNotEmpty
-                                  ? parts[0]
-                                  : widget.problemId;
-                              final url =
-                                  'https://atcoder.jp/contests/$contestId/submit?taskScreenName=${widget.problemId}';
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => SubmitScreen(
-                                    url: url,
-                                    initialCode: _currentCode,
-                                    initialLanguage: _selectedLanguage,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-
-                // 左右分割の入出力パネル
-                Expanded(
-                  flex: 2,
-                  child: Card(
-                    elevation: 1,
-                    margin: const EdgeInsets.symmetric(
-                      vertical: 4.0,
-                      horizontal: 2.0,
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Row(
-                        children: [
-                          // 左: 標準入力 (stdin)
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '標準入力 (stdin)',
-                                  style: Theme.of(context).textTheme.titleSmall,
-                                ),
-                                const SizedBox(height: 8),
-                                Expanded(
-                                  child: Container(
-                                    width: double.infinity,
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .surfaceContainerHighest
-                                          .withValues(alpha: 0.3),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: Theme.of(
-                                          context,
-                                        ).dividerColor.withValues(alpha: 0.5),
-                                      ),
-                                    ),
-                                    padding: const EdgeInsets.all(8),
-                                    child: Scrollbar(
-                                      controller: _stdinScrollController,
-                                      thumbVisibility: true,
-                                      child: SingleChildScrollView(
-                                        controller: _stdinScrollController,
-                                        primary: false,
-                                        child: TextField(
-                                          controller: _stdinController,
-                                          maxLines: null,
-                                          decoration: const InputDecoration(
-                                            hintText: 'プログラムへの入力をここに入力します',
-                                            border: InputBorder.none,
-                                            isDense: true,
-                                          ),
-                                          style: getMonospaceTextStyle(
-                                            codeFontFamily,
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          // 右: 標準出力 / エラー出力
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '実行結果 (stdout)',
-                                  style: Theme.of(context).textTheme.titleSmall,
-                                ),
-                                const SizedBox(height: 8),
-                                Expanded(
-                                  child: Container(
-                                    width: double.infinity,
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .surfaceContainerHighest
-                                          .withValues(alpha: 0.3),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: Theme.of(
-                                          context,
-                                        ).dividerColor.withValues(alpha: 0.5),
-                                      ),
-                                    ),
-                                    padding: const EdgeInsets.all(8),
-                                    child: Scrollbar(
-                                      controller: _ioScrollController,
-                                      thumbVisibility: true,
-                                      child: SingleChildScrollView(
-                                        controller: _ioScrollController,
-                                        primary: false,
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            if (_output.isNotEmpty)
-                                              SelectableText(
-                                                _output,
-                                                style: getMonospaceTextStyle(
-                                                  codeFontFamily,
-                                                  fontSize: 13,
-                                                ),
-                                              ),
-                                            if (_error.isNotEmpty) ...[
-                                              Padding(
-                                                padding: EdgeInsets.only(
-                                                  top: _output.isNotEmpty
-                                                      ? 8.0
-                                                      : 0,
-                                                ),
-                                                child: Text(
-                                                  'エラー出力 (stderr)',
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .titleSmall
-                                                      ?.copyWith(
-                                                        color: Colors.red,
-                                                      ),
-                                                ),
-                                              ),
-                                              SelectableText(
-                                                _error,
-                                                style: getMonospaceTextStyle(
-                                                  codeFontFamily,
-                                                  fontSize: 13,
-                                                  color: Colors.red,
-                                                ),
-                                              ),
-                                            ],
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+                _buildExecutionControls(isButtonDisabled),
+                Expanded(flex: 2, child: _buildIoPanel(codeFontFamily)),
               ],
             ],
           );
@@ -1262,6 +1509,9 @@ class _EditorAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return AppBarM3E(
       automaticallyImplyLeading: false,
       title: Row(
@@ -1270,11 +1520,19 @@ class _EditorAppBar extends StatelessWidget implements PreferredSizeWidget {
           // 言語選択 Dropdown
           Row(
             children: [
-              const Text('言語: ', style: TextStyle(fontSize: 14)),
+              Text(
+                '言語: ',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
               DropdownButton<String>(
                 value: selectedLanguage,
                 isDense: true,
-                underline: Container(height: 1, color: Colors.grey),
+                underline: Container(
+                  height: 1,
+                  color: colorScheme.outlineVariant,
+                ),
                 onChanged: onLanguageChanged,
                 items: languages.map<DropdownMenuItem<String>>((String value) {
                   return DropdownMenuItem<String>(
@@ -1284,7 +1542,12 @@ class _EditorAppBar extends StatelessWidget implements PreferredSizeWidget {
                       children: [
                         ProgrammingLanguageIcon(language: value, size: 26),
                         const SizedBox(width: 8),
-                        Text(value, style: const TextStyle(fontSize: 14)),
+                        Text(
+                          value,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ],
                     ),
                   );
@@ -1303,54 +1566,28 @@ class _EditorAppBar extends StatelessWidget implements PreferredSizeWidget {
           itemBuilder: (context) => [
             PopupMenuItem<_ToolbarAction>(
               value: _ToolbarAction.save,
-              child: Row(
-                children: const [
-                  Icon(Icons.save_alt),
-                  SizedBox(width: 8),
-                  Text('保存'),
-                ],
-              ),
+              child: _popupMenuRow(context, Icons.save_alt, '保存'),
             ),
             PopupMenuItem<_ToolbarAction>(
               value: _ToolbarAction.history,
-              child: Row(
-                children: const [
-                  Icon(Icons.history),
-                  SizedBox(width: 8),
-                  Text('コード履歴'),
-                ],
-              ),
+              child: _popupMenuRow(context, Icons.history, 'コード履歴'),
             ),
             PopupMenuItem<_ToolbarAction>(
               value: _ToolbarAction.restore,
-              child: Row(
-                children: const [
-                  Icon(Icons.settings_backup_restore),
-                  SizedBox(width: 8),
-                  Text('復元'),
-                ],
+              child: _popupMenuRow(
+                context,
+                Icons.settings_backup_restore,
+                '復元',
               ),
             ),
             PopupMenuItem<_ToolbarAction>(
               value: _ToolbarAction.reset,
-              child: Row(
-                children: const [
-                  Icon(Icons.replay),
-                  SizedBox(width: 8),
-                  Text('リセット'),
-                ],
-              ),
+              child: _popupMenuRow(context, Icons.replay, 'リセット'),
             ),
             const PopupMenuDivider(),
             PopupMenuItem<_ToolbarAction>(
               value: _ToolbarAction.share,
-              child: Row(
-                children: const [
-                  Icon(Icons.share),
-                  SizedBox(width: 8),
-                  Text('コード共有'),
-                ],
-              ),
+              child: _popupMenuRow(context, Icons.share, 'コード共有'),
             ),
           ],
         ),
@@ -1360,6 +1597,34 @@ class _EditorAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  Widget _popupMenuRow(BuildContext context, IconData icon, String label) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Row(
+      children: [
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Center(
+            child: Icon(icon, size: 18, color: colorScheme.onSurfaceVariant),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          label,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _CodeEditor extends StatelessWidget {
@@ -1375,6 +1640,8 @@ class _CodeEditor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Card(
       elevation: 2,
       margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
@@ -1391,9 +1658,8 @@ class _CodeEditor extends StatelessWidget {
               gutterStyle: GutterStyle(
                 width: 32,
                 textAlign: TextAlign.right,
-                textStyle: TextStyle(
-                  color: isDarkMode ? Colors.grey : Colors.grey.shade700,
-                  fontSize: 12,
+                textStyle: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
             ),

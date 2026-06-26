@@ -41,6 +41,7 @@ class _RecommendScreenState extends State<RecommendScreen> {
 
   // レート表示用バッジ
   Widget _ratingBadge(int rating) {
+    final theme = Theme.of(context);
     final color = _ratingColor(rating);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -56,9 +57,8 @@ class _RecommendScreenState extends State<RecommendScreen> {
           const SizedBox(width: 6),
           Text(
             rating.toString(),
-            style: TextStyle(
+            style: theme.textTheme.labelMedium?.copyWith(
               color: color,
-              fontSize: 14,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -69,6 +69,7 @@ class _RecommendScreenState extends State<RecommendScreen> {
 
   // Difficulty 表示用バッジ（補正後diffで表示。色も補正後ベース）
   Widget _difficultyBadge(int? difficulty) {
+    final theme = Theme.of(context);
     int? mappedInt;
     if (difficulty != null) {
       final mapped = difficulty <= 400
@@ -93,9 +94,8 @@ class _RecommendScreenState extends State<RecommendScreen> {
           const SizedBox(width: 6),
           Text(
             mappedInt?.toString() ?? 'N/A',
-            style: TextStyle(
+            style: theme.textTheme.labelMedium?.copyWith(
               color: color,
-              fontSize: 14,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -244,16 +244,42 @@ class _RecommendScreenState extends State<RecommendScreen> {
     }
   }
 
+  InputDecoration _inputDecoration(
+    BuildContext context, {
+    required String labelText,
+    String? hintText,
+    required IconData prefixIcon,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: colorScheme.outlineVariant),
+    );
+
+    return InputDecoration(
+      labelText: labelText,
+      hintText: hintText,
+      prefixIcon: Icon(prefixIcon),
+      filled: true,
+      fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+      border: border,
+      enabledBorder: border,
+      focusedBorder: border.copyWith(
+        borderSide: BorderSide(color: colorScheme.primary, width: 1.6),
+      ),
+    );
+  }
+
   Widget _buildRecommendationControls(BuildContext context) {
     final lowerField = TextField(
       controller: _lowerDeltaController,
       keyboardType: const TextInputType.numberWithOptions(signed: true),
       textInputAction: TextInputAction.next,
-      decoration: const InputDecoration(
+      decoration: _inputDecoration(
+        context,
         labelText: '下限差',
         hintText: '-100',
-        prefixIcon: Icon(Icons.arrow_downward),
-        border: OutlineInputBorder(),
+        prefixIcon: Icons.arrow_downward,
       ),
     );
     final upperField = TextField(
@@ -263,11 +289,11 @@ class _RecommendScreenState extends State<RecommendScreen> {
       onSubmitted: (_) {
         if (!_isLoading) _getRecommendations();
       },
-      decoration: const InputDecoration(
+      decoration: _inputDecoration(
+        context,
         labelText: '上限差',
         hintText: '100',
-        prefixIcon: Icon(Icons.arrow_upward),
-        border: OutlineInputBorder(),
+        prefixIcon: Icons.arrow_upward,
       ),
     );
     final submitButton = ButtonM3E(
@@ -309,6 +335,266 @@ class _RecommendScreenState extends State<RecommendScreen> {
     );
   }
 
+  Widget _buildSettingsPanel(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.manage_search,
+                    color: colorScheme.onPrimaryContainer,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '推薦条件',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _savedUsername == null
+                            ? 'AtCoderユーザー名と難易度範囲を指定'
+                            : '$_savedUsername のレート周辺を検索',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                if (_currentRating != null) _ratingBadge(_currentRating!),
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (_savedUsername == null) ...[
+              TextField(
+                controller: _usernameController,
+                decoration: _inputDecoration(
+                  context,
+                  labelText: 'AtCoderユーザー名',
+                  prefixIcon: Icons.person_outline,
+                ),
+              ),
+              const SizedBox(height: 12),
+            ] else ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.45,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.person,
+                      size: 20,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        _savedUsername!,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    ButtonM3E(
+                      onPressed: () async {
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.remove('atcoder_username');
+                        if (!mounted) return;
+                        setState(() {
+                          _savedUsername = null;
+                          _usernameController.clear();
+                          _currentRating = null;
+                        });
+                      },
+                      label: const Text('変更'),
+                      style: ButtonM3EStyle.text,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+            _buildRecommendationControls(context),
+            if (_savedUsername == null) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ButtonM3E(
+                  onPressed: _isLoading ? null : _getRecommendations,
+                  icon: const Icon(Icons.auto_awesome),
+                  label: const Text('おすすめを取得'),
+                  style: ButtonM3EStyle.filled,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMessageState(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String message,
+    bool isError = false,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final backgroundColor = isError
+        ? colorScheme.errorContainer
+        : colorScheme.surfaceContainerHighest.withValues(alpha: 0.45);
+    final foregroundColor = isError
+        ? colorScheme.onErrorContainer
+        : colorScheme.onSurfaceVariant;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: foregroundColor),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: isError ? foregroundColor : null,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  message,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: foregroundColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProblemCard(
+    BuildContext context,
+    MapEntry<String, ProblemDifficulty> problem,
+  ) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final borderRadius = BorderRadius.circular(16);
+    final title = _problemTitles[problem.key] ?? problem.key;
+
+    return Card(
+      elevation: 1,
+      margin: const EdgeInsets.only(bottom: 10),
+      shape: RoundedRectangleBorder(borderRadius: borderRadius),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        borderRadius: borderRadius,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ProblemDetailScreen(
+                problemIdToLoad: problem.key,
+                onProblemChanged: (_) {},
+              ),
+            ),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      problem.key,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  _difficultyBadge(problem.value.difficulty),
+                  const SizedBox(height: 8),
+                  Icon(
+                    Icons.open_in_new,
+                    size: 18,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -316,131 +602,45 @@ class _RecommendScreenState extends State<RecommendScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (_savedUsername == null) ...[
-              TextField(
-                controller: _usernameController,
-                decoration: const InputDecoration(
-                  labelText: 'AtCoderユーザー名',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ] else ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'AtCoderユーザー名: $_savedUsername',
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (_currentRating != null) ...[
-                    _ratingBadge(_currentRating!),
-                    const SizedBox(width: 8),
-                  ],
-                  ButtonM3E(
-                    onPressed: () async {
-                      final prefs = await SharedPreferences.getInstance();
-                      await prefs.remove('atcoder_username');
-                      if (!mounted) return;
-                      setState(() {
-                        _savedUsername = null;
-                        _usernameController.clear();
-                        _currentRating = null;
-                      });
-                    },
-                    label: const Text('変更'),
-                    style: ButtonM3EStyle.text,
-                  ),
-                ],
-              ),
-            ],
-            const SizedBox(height: 12),
-            if (_savedUsername == null)
-              ButtonM3E(
-                onPressed: _isLoading ? null : _getRecommendations,
-                label: const Text('おすすめを取得'),
-                style: ButtonM3EStyle.filled,
-              ),
-            const SizedBox(height: 8),
-            _buildRecommendationControls(context),
+            _buildSettingsPanel(context),
             const SizedBox(height: 16),
             if (_isLoading)
-              const LoadingIndicatorM3E()
+              const Expanded(child: Center(child: LoadingIndicatorM3E()))
             else if (_errorMessage != null)
-              Card(
-                color: Theme.of(context).colorScheme.errorContainer,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        color: Theme.of(context).colorScheme.onErrorContainer,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          _errorMessage!,
-                          style: TextStyle(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onErrorContainer,
-                          ),
-                        ),
-                      ),
-                    ],
+              Expanded(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: _buildMessageState(
+                    context,
+                    icon: Icons.error_outline,
+                    title: 'おすすめ問題を取得できませんでした',
+                    message: _errorMessage!,
+                    isError: true,
                   ),
                 ),
               )
             else if (_recommendedProblems.isEmpty)
               Expanded(
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.search_off,
-                        size: 48,
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
-                      const SizedBox(height: 12),
-                      const Text('条件に合う問題はまだ表示されていません'),
-                    ],
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: _buildMessageState(
+                    context,
+                    icon: Icons.search_off,
+                    title: '条件に合う問題はまだ表示されていません',
+                    message: 'ユーザー名を入力するか、難易度範囲を調整して取得してください。',
                   ),
                 ),
               )
             else
               Expanded(
                 child: ListView.builder(
+                  padding: EdgeInsets.zero,
                   itemCount: _recommendedProblems.length,
                   itemBuilder: (context, index) {
                     final problem = _recommendedProblems[index];
-                    final diff = problem.value.difficulty;
-                    return ListTile(
-                      title: Text(_problemTitles[problem.key] ?? problem.key),
-                      subtitle: Text(problem.key),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _difficultyBadge(diff),
-                          const SizedBox(width: 8),
-                          const Icon(Icons.open_in_new),
-                        ],
-                      ),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ProblemDetailScreen(
-                              problemIdToLoad: problem.key,
-                              onProblemChanged: (_) {},
-                            ),
-                          ),
-                        );
-                      },
-                    );
+                    return _buildProblemCard(context, problem);
                   },
                 ),
               ),

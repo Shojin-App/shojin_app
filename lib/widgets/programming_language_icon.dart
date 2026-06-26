@@ -14,12 +14,10 @@ class ProgrammingLanguageIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final spec = _specFor(language);
-    final brightness = Theme.of(context).brightness;
+    final colorScheme = Theme.of(context).colorScheme;
     final iconColor = spec.useAdaptiveMonochrome
-        ? (brightness == Brightness.dark
-              ? Colors.white
-              : const Color(0xFF171717))
-        : spec.color;
+        ? colorScheme.onSurface
+        : spec.color ?? colorScheme.onSurfaceVariant;
 
     return Container(
       width: size,
@@ -42,30 +40,27 @@ class ProgrammingLanguageIcon extends StatelessWidget {
   _LanguageIconSpec _specFor(String value) {
     switch (value.toLowerCase()) {
       case 'python':
-        return const _LanguageIconSpec(
-          SimpleIcons.python,
-          SimpleIconColors.python,
-        );
+        return _LanguageIconSpec(SimpleIcons.python, SimpleIconColors.python);
       case 'c++':
       case 'cpp':
-        return const _LanguageIconSpec(
+        return _LanguageIconSpec(
           SimpleIcons.cplusplus,
           SimpleIconColors.cplusplus,
         );
       case 'rust':
-        return const _LanguageIconSpec(
+        return _LanguageIconSpec(
           SimpleIcons.rust,
           SimpleIconColors.rust,
           useAdaptiveMonochrome: true,
         );
       case 'java':
-        return const _LanguageIconSpec(
+        return _LanguageIconSpec(
           SimpleIcons.openjdk,
           SimpleIconColors.openjdk,
           useAdaptiveMonochrome: true,
         );
       default:
-        return const _LanguageIconSpec(Icons.code, Color(0xFF6B7280));
+        return const _LanguageIconSpec(Icons.code, null);
     }
   }
 }
@@ -78,6 +73,6 @@ class _LanguageIconSpec {
   });
 
   final IconData icon;
-  final Color color;
+  final Color? color;
   final bool useAdaptiveMonochrome;
 }

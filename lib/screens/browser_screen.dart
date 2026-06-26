@@ -192,6 +192,109 @@ class _BrowserScreenState extends State<BrowserScreen>
     }
   }
 
+  Widget _buildDialogTitle(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    Color? containerColor,
+    Color? iconColor,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: containerColor ?? colorScheme.primaryContainer,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: iconColor ?? colorScheme.onPrimaryContainer),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            title,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDialogInfoCard(
+    BuildContext context, {
+    required IconData icon,
+    required String text,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: colorScheme.onSurfaceVariant),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _buildDialogInputDecoration(
+    BuildContext context, {
+    required String labelText,
+    required IconData prefixIcon,
+    String? errorText,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: colorScheme.outlineVariant),
+    );
+
+    return InputDecoration(
+      labelText: labelText,
+      errorText: errorText,
+      prefixIcon: Icon(prefixIcon),
+      filled: true,
+      fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+      border: border,
+      enabledBorder: border,
+      focusedBorder: border.copyWith(
+        borderSide: BorderSide(color: colorScheme.primary, width: 1.6),
+      ),
+      errorBorder: border.copyWith(
+        borderSide: BorderSide(color: colorScheme.error),
+      ),
+      focusedErrorBorder: border.copyWith(
+        borderSide: BorderSide(color: colorScheme.error, width: 1.6),
+      ),
+    );
+  }
+
   Future<void> _addSite() async {
     final titleController = TextEditingController();
     final urlController = TextEditingController();
@@ -205,18 +308,36 @@ class _BrowserScreenState extends State<BrowserScreen>
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setStateDialog) {
           return AlertDialog(
-            title: const Text('サイトを追加'),
+            title: _buildDialogTitle(
+              dialogContext,
+              icon: Icons.add_link,
+              title: 'サイトを追加',
+            ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                _buildDialogInfoCard(
+                  dialogContext,
+                  icon: Icons.info_outline,
+                  text: 'よく使うサイトを登録すると、ブラウザ上部の切り替えからすぐに開けます。',
+                ),
+                const SizedBox(height: 16),
                 TextField(
                   controller: titleController,
-                  decoration: const InputDecoration(labelText: 'タイトル'),
+                  decoration: _buildDialogInputDecoration(
+                    dialogContext,
+                    labelText: 'タイトル',
+                    prefixIcon: Icons.label_outline,
+                  ),
                 ),
+                const SizedBox(height: 12),
                 TextField(
                   controller: urlController,
-                  decoration: InputDecoration(
+                  decoration: _buildDialogInputDecoration(
+                    dialogContext,
                     labelText: 'URL',
+                    prefixIcon: Icons.link,
                     errorText: urlErrorText,
                   ),
                   keyboardType: TextInputType.url,
@@ -234,6 +355,7 @@ class _BrowserScreenState extends State<BrowserScreen>
               ButtonM3E(
                 style: ButtonM3EStyle.text,
                 onPressed: () => Navigator.pop(dialogContext),
+                icon: const Icon(Icons.close),
                 label: const Text('キャンセル'),
               ),
               ButtonM3E(
@@ -328,6 +450,7 @@ class _BrowserScreenState extends State<BrowserScreen>
                     }
                   }
                 },
+                icon: const Icon(Icons.add_link),
                 label: const Text('追加'),
               ),
             ],
@@ -340,22 +463,51 @@ class _BrowserScreenState extends State<BrowserScreen>
   Future<void> _removeSite(int index) async {
     bool? confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('サイトを削除'),
-        content: Text('\'${_sites[index].title}\' を削除しますか？'),
-        actions: [
-          ButtonM3E(
-            style: ButtonM3EStyle.text,
-            onPressed: () => Navigator.pop(context, false),
-            label: const Text('キャンセル'),
+      builder: (context) {
+        final colorScheme = Theme.of(context).colorScheme;
+
+        return AlertDialog(
+          title: _buildDialogTitle(
+            context,
+            icon: Icons.delete_outline,
+            title: 'サイトを削除',
+            containerColor: colorScheme.errorContainer,
+            iconColor: colorScheme.onErrorContainer,
           ),
-          ButtonM3E(
-            style: ButtonM3EStyle.text,
-            onPressed: () => Navigator.pop(context, true),
-            label: const Text('削除'),
+          content: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: colorScheme.errorContainer.withValues(alpha: 0.55),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              '\'${_sites[index].title}\' を削除しますか？',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onErrorContainer,
+              ),
+            ),
           ),
-        ],
-      ),
+          actions: [
+            ButtonM3E(
+              style: ButtonM3EStyle.text,
+              onPressed: () => Navigator.pop(context, false),
+              label: const Text('キャンセル'),
+            ),
+            ButtonM3E(
+              style: ButtonM3EStyle.text,
+              onPressed: () => Navigator.pop(context, true),
+              label: Text(
+                '削除',
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: colorScheme.error,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
 
     if (confirm == true) {
@@ -380,18 +532,36 @@ class _BrowserScreenState extends State<BrowserScreen>
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setStateDialog) {
           return AlertDialog(
-            title: const Text('サイトを編集'),
+            title: _buildDialogTitle(
+              dialogContext,
+              icon: Icons.edit_outlined,
+              title: 'サイトを編集',
+            ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                _buildDialogInfoCard(
+                  dialogContext,
+                  icon: Icons.public,
+                  text: 'URLを変更した場合は、保存後にサイトのアイコンと色を再取得します。',
+                ),
+                const SizedBox(height: 16),
                 TextField(
                   controller: titleController,
-                  decoration: const InputDecoration(labelText: 'タイトル'),
+                  decoration: _buildDialogInputDecoration(
+                    dialogContext,
+                    labelText: 'タイトル',
+                    prefixIcon: Icons.label_outline,
+                  ),
                 ),
+                const SizedBox(height: 12),
                 TextField(
                   controller: urlController,
-                  decoration: InputDecoration(
+                  decoration: _buildDialogInputDecoration(
+                    dialogContext,
                     labelText: 'URL',
+                    prefixIcon: Icons.link,
                     errorText: urlErrorText,
                   ),
                   keyboardType: TextInputType.url,
@@ -410,11 +580,22 @@ class _BrowserScreenState extends State<BrowserScreen>
                   Navigator.pop(dialogContext);
                   await _removeSite(index);
                 },
-                label: const Text('削除', style: TextStyle(color: Colors.red)),
+                icon: Icon(
+                  Icons.delete_outline,
+                  color: Theme.of(dialogContext).colorScheme.error,
+                ),
+                label: Text(
+                  '削除',
+                  style: Theme.of(dialogContext).textTheme.labelLarge?.copyWith(
+                    color: Theme.of(dialogContext).colorScheme.error,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
               ButtonM3E(
                 style: ButtonM3EStyle.text,
                 onPressed: () => Navigator.pop(dialogContext),
+                icon: const Icon(Icons.close),
                 label: const Text('キャンセル'),
               ),
               ButtonM3E(
@@ -458,6 +639,7 @@ class _BrowserScreenState extends State<BrowserScreen>
                     navigator.pop();
                   }
                 },
+                icon: const Icon(Icons.save_outlined),
                 label: const Text('更新'),
               ),
             ],
@@ -465,6 +647,16 @@ class _BrowserScreenState extends State<BrowserScreen>
         },
       ),
     );
+  }
+
+  bool _isCurrentSite(String url) {
+    if (_currentUrl == url || _currentUrl.startsWith(url)) return true;
+    if (url == BrowserConstants.defaultSites[1].url) {
+      return _currentUrl.startsWith(url);
+    }
+    final siteBaseUrl = Uri.tryParse(url)?.origin;
+    final currentBaseUrl = Uri.tryParse(_currentUrl)?.origin;
+    return siteBaseUrl != null && siteBaseUrl == currentBaseUrl;
   }
 
   Color _getTextColorForBackground(Color backgroundColor) {
@@ -480,8 +672,11 @@ class _BrowserScreenState extends State<BrowserScreen>
     String? colorHex,
     VoidCallback? onLongPress,
   }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isSelected = _isCurrentSite(url);
     Color? backgroundColor;
-    Color textColor = Theme.of(context).colorScheme.onSurfaceVariant;
+    Color textColor = colorScheme.onSurfaceVariant;
 
     if (colorHex != null) {
       try {
@@ -498,13 +693,13 @@ class _BrowserScreenState extends State<BrowserScreen>
           'Error parsing color hex $colorHex: $e',
           name: 'BrowserScreenButton',
         );
-        backgroundColor = Theme.of(context).colorScheme.surfaceContainerHighest;
-        textColor = Theme.of(context).colorScheme.onSurfaceVariant;
+        backgroundColor = colorScheme.surfaceContainerHighest;
+        textColor = colorScheme.onSurfaceVariant;
       }
     } else {
       // デフォルトの背景色とテキスト色を設定
-      backgroundColor = Theme.of(context).colorScheme.surfaceContainerHighest;
-      textColor = Theme.of(context).colorScheme.onSurfaceVariant;
+      backgroundColor = colorScheme.surfaceContainerHighest;
+      textColor = colorScheme.onSurfaceVariant;
 
       // MaterialYou使用時はプライマリカラーで軽いティントを追加してコントラストを向上
       final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
@@ -513,9 +708,14 @@ class _BrowserScreenState extends State<BrowserScreen>
       }
     }
 
+    if (isSelected) {
+      backgroundColor = colorScheme.primaryContainer;
+      textColor = colorScheme.onPrimaryContainer;
+    }
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-      child: ElevatedButton(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+      child: FilledButton(
         onPressed: () async {
           String targetUrl = url;
           // AtCoder Problems の場合はユーザー名を付加する
@@ -547,18 +747,27 @@ class _BrowserScreenState extends State<BrowserScreen>
           }
         },
         onLongPress: onLongPress,
-        style: ElevatedButton.styleFrom(
+        style: FilledButton.styleFrom(
           backgroundColor: backgroundColor,
           foregroundColor: textColor,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(999),
+            side: BorderSide(
+              color: isSelected
+                  ? colorScheme.primary.withValues(alpha: 0.35)
+                  : Colors.transparent,
+            ),
           ),
-          elevation: 1,
+          elevation: isSelected ? 2 : 0,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (isSelected) ...[
+              Icon(Icons.check_circle, size: 16, color: textColor),
+              const SizedBox(width: 6),
+            ],
             if (faviconUrl != null)
               Container(
                 width: 20,
@@ -605,13 +814,155 @@ class _BrowserScreenState extends State<BrowserScreen>
                 color: textColor.withValues(alpha: 0.8),
               ),
             const SizedBox(width: 8),
-            Text(
-              title,
-              style: Theme.of(
-                context,
-              ).textTheme.labelMedium?.copyWith(color: textColor),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 128),
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: textColor,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                ),
+              ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSiteSwitcher() {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
+      child: SizedBox(
+        height: 56,
+        child: Row(
+          children: [
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                scrollDirection: Axis.horizontal,
+                children: [
+                  ...BrowserConstants.defaultSites.map(
+                    (defaultSite) => _buildSiteButton(
+                      title: defaultSite.title,
+                      url: defaultSite.url,
+                      faviconUrl: defaultSite.faviconUrl,
+                      colorHex: defaultSite.colorHex,
+                    ),
+                  ),
+                  ..._sites.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final site = entry.value;
+                    return _buildSiteButton(
+                      title: site.title,
+                      url: site.url,
+                      faviconUrl: site.faviconUrl,
+                      colorHex: site.colorHex,
+                      onLongPress: () => _editSite(index),
+                    );
+                  }),
+                ],
+              ),
+            ),
+            Container(width: 1, height: 28, color: colorScheme.outlineVariant),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: IconButtonM3E(
+                tooltip: 'サイトを追加',
+                icon: const Icon(Icons.add),
+                onPressed: _addSite,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBrowserStateOverlay({
+    required IconData icon,
+    required String title,
+    required String message,
+    bool isError = false,
+    Widget? action,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final foregroundColor = isError
+        ? colorScheme.onErrorContainer
+        : colorScheme.onSurfaceVariant;
+    final iconBackground = isError
+        ? colorScheme.errorContainer
+        : colorScheme.primaryContainer;
+    final iconColor = isError
+        ? colorScheme.onErrorContainer
+        : colorScheme.onPrimaryContainer;
+
+    return Container(
+      color: colorScheme.surface.withValues(alpha: 0.45),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Card(
+            elevation: 3,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: iconBackground,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(icon, color: iconColor),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: isError ? foregroundColor : null,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              message,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: foregroundColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (action != null) ...[const SizedBox(height: 16), action],
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -625,45 +976,7 @@ class _BrowserScreenState extends State<BrowserScreen>
     super.build(context); // AutomaticKeepAliveClientMixin を使うために必要
     return Column(
       children: [
-        SizedBox(
-          height: 60,
-          child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            scrollDirection: Axis.horizontal,
-            children: [
-              // Default sites
-              ...BrowserConstants.defaultSites.map(
-                (defaultSite) => _buildSiteButton(
-                  title: defaultSite.title,
-                  url: defaultSite.url,
-                  faviconUrl: defaultSite.faviconUrl,
-                  colorHex: defaultSite.colorHex,
-                ),
-              ),
-              // User-added sites
-              ..._sites.asMap().entries.map((entry) {
-                int index = entry.key;
-                BrowserSite site = entry.value;
-                return _buildSiteButton(
-                  title: site.title,
-                  url: site.url,
-                  faviconUrl: site.faviconUrl,
-                  colorHex: site.colorHex,
-                  onLongPress: () => _editSite(index),
-                );
-              }),
-              // Add site button
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                child: ButtonM3E(
-                  style: ButtonM3EStyle.tonal,
-                  onPressed: _addSite,
-                  label: const Icon(Icons.add),
-                ),
-              ),
-            ],
-          ),
-        ),
+        _buildSiteSwitcher(),
         Expanded(
           child: Stack(
             children: [
@@ -673,47 +986,36 @@ class _BrowserScreenState extends State<BrowserScreen>
                 const Center(child: LoadingIndicatorM3E()),
 
               if (_isControllerReady && _loadFailed)
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHigh.withValues(alpha: 0.9),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'ページを読み込めませんでした',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        ButtonM3E(
-                          style: ButtonM3EStyle.filled,
-                          onPressed: () {
-                            if (mounted) {
-                              setState(() {
-                                _isLoadingWebView = true;
-                                _loadFailed = false;
-                              });
-                            }
-                            _controller.loadRequest(Uri.parse(_currentUrl));
-                          },
-                          label: const Text('再試行'),
-                        ),
-                      ],
+                _buildBrowserStateOverlay(
+                  icon: Icons.error_outline,
+                  title: 'ページを読み込めませんでした',
+                  message: _currentUrl,
+                  isError: true,
+                  action: SizedBox(
+                    width: double.infinity,
+                    child: ButtonM3E(
+                      style: ButtonM3EStyle.filled,
+                      onPressed: () {
+                        if (mounted) {
+                          setState(() {
+                            _isLoadingWebView = true;
+                            _loadFailed = false;
+                          });
+                        }
+                        _controller.loadRequest(Uri.parse(_currentUrl));
+                      },
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('再試行'),
                     ),
                   ),
                 ),
 
               if (_isControllerReady && _isLoadingWebView && !_loadFailed)
-                Container(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.surface.withValues(alpha: 0.3),
-                  child: const Center(child: LoadingIndicatorM3E()),
+                _buildBrowserStateOverlay(
+                  icon: Icons.public,
+                  title: 'ページを読み込み中',
+                  message: _currentUrl,
+                  action: const Center(child: LoadingIndicatorM3E()),
                 ),
             ],
           ),

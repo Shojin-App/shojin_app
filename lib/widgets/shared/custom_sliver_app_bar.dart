@@ -26,6 +26,7 @@ class CustomSliverAppBar extends StatelessWidget {
       leading: isMainView
           ? null
           : IconButtonM3E(
+              tooltip: '戻る',
               icon: const Icon(Icons.arrow_back),
               onPressed:
                   onBackButtonPressed ?? () => Navigator.of(context).pop(),

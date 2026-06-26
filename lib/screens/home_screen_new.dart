@@ -100,6 +100,9 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
       showDragHandle: true,
       builder: (context) => StatefulBuilder(
         builder: (context, setSheetState) {
+          final theme = Theme.of(context);
+          final colorScheme = theme.colorScheme;
+
           return SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
@@ -108,12 +111,16 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                 children: [
                   Text(
                     'ホームをカスタマイズ',
-                    style: Theme.of(context).textTheme.titleLarge,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'ドラッグで並べ替え、スイッチで表示を切り替えます。',
-                    style: Theme.of(context).textTheme.bodySmall,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Flexible(
@@ -128,18 +135,65 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                       },
                       itemBuilder: (context, index) {
                         final id = draftOrder[index];
-                        return SwitchListTile(
+                        final visible = !draftHidden.contains(id);
+                        return Padding(
                           key: ValueKey(id),
-                          secondary: Icon(_widgetIcon(id)),
-                          title: Text(_widgetLabel(id)),
-                          value: !draftHidden.contains(id),
-                          onChanged: (visible) {
-                            setSheetState(() {
-                              visible
-                                  ? draftHidden.remove(id)
-                                  : draftHidden.add(id);
-                            });
-                          },
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Material(
+                            color: visible
+                                ? colorScheme.primaryContainer.withValues(
+                                    alpha: 0.22,
+                                  )
+                                : colorScheme.surfaceContainerHighest
+                                      .withValues(alpha: 0.45),
+                            borderRadius: BorderRadius.circular(14),
+                            child: SwitchListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 2,
+                              ),
+                              secondary: Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: visible
+                                      ? colorScheme.primaryContainer
+                                      : colorScheme.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Center(
+                                  child: Icon(
+                                    _widgetIcon(id),
+                                    color: visible
+                                        ? colorScheme.onPrimaryContainer
+                                        : colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                              title: Text(
+                                _widgetLabel(id),
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: visible
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                ),
+                              ),
+                              subtitle: Text(
+                                visible ? 'ホームに表示中' : '非表示',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                              value: visible,
+                              onChanged: (visible) {
+                                setSheetState(() {
+                                  visible
+                                      ? draftHidden.remove(id)
+                                      : draftHidden.add(id);
+                                });
+                              },
+                            ),
+                          ),
                         );
                       },
                     ),
@@ -179,10 +233,11 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
           child: _recommendationSection(context),
         );
       case 'clans':
-        return ButtonM3E(
+        return _quickLinkCard(
           key: const ValueKey('clans'),
-          icon: const Icon(Icons.web),
-          label: const Text('AtCoder Clans'),
+          icon: Icons.travel_explore,
+          title: 'AtCoder Clans',
+          subtitle: 'コンテスト情報や解説記事を探す',
           onPressed: () {
             Navigator.push(
               context,
@@ -191,7 +246,6 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
               ),
             );
           },
-          style: ButtonM3EStyle.filled,
         );
       default:
         return const SizedBox.shrink();
@@ -300,6 +354,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
   }
 
   Widget _difficultyBadge(int? difficulty) {
+    final theme = Theme.of(context);
     int? mappedInt;
     if (difficulty != null) {
       final mapped = difficulty <= 400
@@ -324,10 +379,128 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
           const SizedBox(width: 6),
           Text(
             mappedInt?.toString() ?? 'N/A',
-            style: TextStyle(
+            style: theme.textTheme.labelMedium?.copyWith(
               color: color,
-              fontSize: 14,
               fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _quickLinkCard({
+    required Key key,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onPressed,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final borderRadius = BorderRadius.circular(16);
+
+    return Card(
+      key: key,
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: borderRadius),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        borderRadius: borderRadius,
+        onTap: onPressed,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: colorScheme.onPrimaryContainer),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: colorScheme.outline,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _messagePanel(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String message,
+    bool isError = false,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final backgroundColor = isError
+        ? colorScheme.errorContainer
+        : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5);
+    final foregroundColor = isError
+        ? colorScheme.onErrorContainer
+        : colorScheme.onSurfaceVariant;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: foregroundColor),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: isError ? foregroundColor : null,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  message,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: foregroundColor,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -338,10 +511,12 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
   Widget _recommendationSection(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final borderRadius = BorderRadius.circular(16);
 
     return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: borderRadius),
+      clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -349,16 +524,42 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
           children: [
             Row(
               children: [
-                Text(
-                  'おすすめ問題',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.bold,
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: colorScheme.secondaryContainer,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.auto_awesome,
+                    color: colorScheme.onSecondaryContainer,
                   ),
                 ),
-                const Spacer(),
-                const SizedBox(width: 8),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'おすすめ問題',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        _currentRating == null
+                            ? 'レートに近い問題を表示'
+                            : 'あなたのレート: $_currentRating',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 IconButtonM3E(
+                  tooltip: 'おすすめ問題を開く',
                   icon: Icon(
                     Icons.arrow_forward_ios,
                     size: 16,
@@ -375,9 +576,14 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             if (_savedUsername == null) ...[
-              Text('AtCoderユーザー名が未設定です', style: theme.textTheme.bodyMedium),
+              _messagePanel(
+                context,
+                icon: Icons.person_search,
+                title: 'AtCoderユーザー名が未設定です',
+                message: 'ユーザー名を設定すると、今のレートに近い問題をすぐ確認できます。',
+              ),
               const SizedBox(height: 12),
               ButtonM3E(
                 icon: const Icon(Icons.recommend),
@@ -394,43 +600,27 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
               ),
             ] else if (_isLoadingRecommendation) ...[
               const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12.0),
+                padding: EdgeInsets.symmetric(vertical: 20.0),
                 child: Center(child: LoadingIndicatorM3E()),
               ),
             ] else if (_recommendationErrorMessage != null) ...[
-              Text(
-                _recommendationErrorMessage!,
-                style: const TextStyle(color: Colors.red),
+              _messagePanel(
+                context,
+                icon: Icons.error_outline,
+                title: 'おすすめ問題を取得できませんでした',
+                message: _recommendationErrorMessage!,
+                isError: true,
               ),
             ] else if (_topRecommendation == null) ...[
-              Text('おすすめ問題が見つかりませんでした', style: theme.textTheme.bodyMedium),
+              _messagePanel(
+                context,
+                icon: Icons.search_off,
+                title: 'おすすめ問題が見つかりませんでした',
+                message: '条件に合う問題がない可能性があります。おすすめ画面で範囲を調整できます。',
+              ),
             ] else ...[
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(
-                  _topRecommendationTitle ?? _topRecommendation!.key,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                subtitle: _currentRating != null
-                    ? Text(
-                        '${_topRecommendation!.key} · あなたのレート: $_currentRating',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      )
-                    : null,
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _difficultyBadge(_topRecommendation!.value.difficulty),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.open_in_new),
-                  ],
-                ),
+              InkWell(
+                borderRadius: BorderRadius.circular(12),
                 onTap: () {
                   Navigator.push(
                     context,
@@ -442,6 +632,64 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                     ),
                   );
                 },
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.45,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+                    ),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _topRecommendationTitle ??
+                                  _topRecommendation!.key,
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _topRecommendation!.key,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          _difficultyBadge(
+                            _topRecommendation!.value.difficulty,
+                          ),
+                          const SizedBox(height: 8),
+                          Icon(
+                            Icons.open_in_new,
+                            size: 18,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ],

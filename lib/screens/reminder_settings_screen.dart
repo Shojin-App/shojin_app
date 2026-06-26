@@ -31,6 +31,13 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
     ContestType.ahc: 'AtCoder Heuristic Contest',
   };
 
+  final Map<ContestType, String> _contestTypeLabels = {
+    ContestType.abc: 'ABC',
+    ContestType.arc: 'ARC',
+    ContestType.agc: 'AGC',
+    ContestType.ahc: 'AHC',
+  };
+
   static const List<_NotificationTimeOption> _timeOptions = [
     _NotificationTimeOption('0分前', 0),
     _NotificationTimeOption('5分前', 5),
@@ -90,37 +97,118 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
     final TextEditingController controller = TextEditingController();
     final newTime = await showDialog<int>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('通知時間を入力 (分前)'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          decoration: const InputDecoration(hintText: '例: 10'),
-        ),
-        actions: [
-          ButtonM3E(
-            style: ButtonM3EStyle.text,
-            onPressed: () => Navigator.of(context).pop(),
-            label: const Text('キャンセル'),
+      builder: (context) {
+        final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
+
+        return AlertDialog(
+          title: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.timer_outlined,
+                  color: colorScheme.onPrimaryContainer,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  '通知時間を入力',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
           ),
-          ButtonM3E(
-            style: ButtonM3EStyle.text,
-            onPressed: () {
-              final value = int.tryParse(controller.text);
-              if (value != null && value >= 0) {
-                // 0分前も許可
-                Navigator.of(context).pop(value);
-              } else {
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('有効な数値を入力してください')));
-              }
-            },
-            label: const Text('決定'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.45,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+                  ),
+                ),
+                child: Text(
+                  'コンテスト開始の何分前に通知するかを入力してください。0分前も指定できます。',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: InputDecoration(
+                  labelText: '分前',
+                  hintText: '例: 10',
+                  prefixIcon: const Icon(Icons.schedule),
+                  filled: true,
+                  fillColor: colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.35,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: colorScheme.outlineVariant),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: colorScheme.outlineVariant),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: colorScheme.primary,
+                      width: 1.6,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+          actions: [
+            ButtonM3E(
+              style: ButtonM3EStyle.text,
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.close),
+              label: const Text('キャンセル'),
+            ),
+            ButtonM3E(
+              style: ButtonM3EStyle.text,
+              onPressed: () {
+                final value = int.tryParse(controller.text);
+                if (value != null && value >= 0) {
+                  // 0分前も許可
+                  Navigator.of(context).pop(value);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('有効な数値を入力してください')),
+                  );
+                }
+              },
+              icon: const Icon(Icons.check),
+              label: const Text('決定'),
+            ),
+          ],
+        );
+      },
     );
 
     if (newTime != null) {
@@ -180,77 +268,241 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
     _saveSettings();
   }
 
+  String _timeSummary(ReminderSetting setting) {
+    if (!setting.isEnabled) return '通知はOFFです';
+    final sorted = [...setting.minutesBefore]..sort();
+    return sorted.map((minutes) => '$minutes分前').join(' / ');
+  }
+
+  Widget _buildStateCard({
+    required IconData icon,
+    required String title,
+    required String message,
+    Widget? child,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(icon, color: colorScheme.onPrimaryContainer),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            message,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                if (child != null) child,
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReminderCard(int index) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final setting = _reminderSettings[index];
+    final contestName = _contestTypeNames[setting.contestType] ?? 'その他';
+    final label = _contestTypeLabels[setting.contestType] ?? 'OTHER';
+    final labelColor = setting.isEnabled
+        ? colorScheme.primaryContainer
+        : colorScheme.surfaceContainerHighest;
+    final onLabelColor = setting.isEnabled
+        ? colorScheme.onPrimaryContainer
+        : colorScheme.onSurfaceVariant;
+
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: labelColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(
+                    child: Text(
+                      label,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: onLabelColor,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        contestName,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _timeSummary(setting),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: setting.isEnabled
+                              ? colorScheme.primary
+                              : colorScheme.onSurfaceVariant,
+                          fontWeight: setting.isEnabled
+                              ? FontWeight.w700
+                              : FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: setting.isEnabled,
+                  onChanged: (bool value) {
+                    setState(() {
+                      setting.isEnabled = value;
+                    });
+                    _saveSettings();
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.45,
+                ),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.notifications_active_outlined,
+                        size: 18,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '通知タイミング',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8.0,
+                    runSpacing: 8.0,
+                    children: [
+                      ...setting.minutesBefore.map((time) {
+                        return InputChip(
+                          label: Text('$time分前'),
+                          onDeleted: () => _removeNotificationTime(index, time),
+                        );
+                      }),
+                      ActionChip(
+                        avatar: const Icon(Icons.add_alarm_outlined, size: 18),
+                        label: const Text('追加'),
+                        onPressed: () => _addNotificationTime(index),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBarM3E(title: const Text('リマインダー設定')),
       body: _isLoading
-          ? const Center(child: LoadingIndicatorM3E())
+          ? _buildStateCard(
+              icon: Icons.notifications_active_outlined,
+              title: 'リマインダー設定を読み込み中',
+              message: '保存済みの通知タイミングを確認しています。',
+              child: const Padding(
+                padding: EdgeInsets.only(top: 16),
+                child: LoadingIndicatorM3E(),
+              ),
+            )
           : _reminderSettings.isEmpty
-          ? const Center(child: Text('設定項目がありません。'))
+          ? _buildStateCard(
+              icon: Icons.notifications_off_outlined,
+              title: '設定項目がありません',
+              message: 'コンテスト種別のリマインダー設定を読み込めませんでした。',
+            )
           : ListView.builder(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
               itemCount: _reminderSettings.length,
-              itemBuilder: (context, index) {
-                final setting = _reminderSettings[index];
-                final contestName =
-                    _contestTypeNames[setting.contestType] ?? 'その他';
-
-                return Card(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SwitchListTile(
-                          title: Text(
-                            contestName,
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          value: setting.isEnabled,
-                          onChanged: (bool value) {
-                            setState(() {
-                              setting.isEnabled = value;
-                            });
-                            _saveSettings();
-                          },
-                        ),
-                        const SizedBox(height: 8),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('通知タイミング (分前):'),
-                              const SizedBox(height: 8),
-                              Wrap(
-                                spacing: 8.0,
-                                runSpacing: 4.0,
-                                children: setting.minutesBefore.map((time) {
-                                  return Chip(
-                                    label: Text('$time 分前'),
-                                    onDeleted: () =>
-                                        _removeNotificationTime(index, time),
-                                  );
-                                }).toList(),
-                              ),
-                              ButtonM3E(
-                                style: ButtonM3EStyle.text,
-                                icon: const Icon(Icons.add_alarm_outlined),
-                                label: const Text('時間を追加'),
-                                onPressed: () => _addNotificationTime(index),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+              itemBuilder: (context, index) => _buildReminderCard(index),
             ),
     );
   }

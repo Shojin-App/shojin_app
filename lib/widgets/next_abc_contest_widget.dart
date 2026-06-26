@@ -44,28 +44,34 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
     return Consumer<ContestProvider>(
       builder: (context, provider, child) {
         if (provider.isLoading) {
-          return const Center(child: LoadingIndicatorM3E());
+          return _buildStateCard(
+            context,
+            icon: Icons.event_available,
+            title: '次回のABC',
+            message: 'コンテスト情報を取得しています',
+            child: const Padding(
+              padding: EdgeInsets.only(top: 16),
+              child: Center(child: LoadingIndicatorM3E()),
+            ),
+          );
         }
 
         if (provider.error != null) {
-          return Card(
+          return _buildStateCard(
+            context,
+            icon: Icons.error_outline,
+            title: 'コンテスト情報の取得に失敗しました',
+            message: '通信状況を確認して再試行してください。',
+            isError: true,
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  const Icon(Icons.error, color: Colors.red),
-                  const SizedBox(height: 8),
-                  Text(
-                    'コンテスト情報の取得に失敗しました',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  ButtonM3E(
-                    onPressed: () => provider.fetchNextABC(),
-                    label: const Text('再試行'),
-                    style: ButtonM3EStyle.filled,
-                  ),
-                ],
+              padding: const EdgeInsets.only(top: 16),
+              child: SizedBox(
+                width: double.infinity,
+                child: ButtonM3E(
+                  onPressed: () => provider.fetchNextABC(),
+                  label: const Text('再試行'),
+                  style: ButtonM3EStyle.filled,
+                ),
               ),
             ),
           );
@@ -73,20 +79,11 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
 
         final nextABC = provider.nextABC;
         if (nextABC == null) {
-          return Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  const Icon(Icons.event_busy, size: 48),
-                  const SizedBox(height: 8),
-                  Text(
-                    '次回のABCが見つかりません',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ],
-              ),
-            ),
+          return _buildStateCard(
+            context,
+            icon: Icons.event_busy,
+            title: '次回のABCが見つかりません',
+            message: 'AtCoderの予定が公開されたあとに再度確認できます。',
           );
         }
 
@@ -95,13 +92,87 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
     );
   }
 
+  Widget _buildStateCard(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String message,
+    bool isError = false,
+    Widget? child,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final foregroundColor = isError
+        ? colorScheme.onErrorContainer
+        : colorScheme.onSurfaceVariant;
+    final iconBackground = isError
+        ? colorScheme.errorContainer
+        : colorScheme.primaryContainer;
+    final iconColor = isError
+        ? colorScheme.onErrorContainer
+        : colorScheme.onPrimaryContainer;
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: iconBackground,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: iconColor),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: isError ? foregroundColor : null,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        message,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: foregroundColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            if (child != null) child,
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildContestCard(BuildContext context, Contest contest) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final borderRadius = BorderRadius.circular(16);
 
     return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: borderRadius),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () {
           Navigator.push(
@@ -111,7 +182,7 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
             ),
           );
         },
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: borderRadius,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -119,36 +190,56 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
             children: [
               Row(
                 children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.event_available,
+                      color: colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '次回のABC',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          contest.startTimeWithWeekday,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
                   _buildContestTypeChip(context, contest),
-                  const Spacer(),
+                  const SizedBox(width: 8),
                   Icon(
                     Icons.arrow_forward_ios,
                     size: 16,
-                    color: colorScheme.onSurfaceVariant,
+                    color: colorScheme.outline,
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(Icons.code, color: colorScheme.primary, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '次回のABC',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               Text(
                 contest.nameJa,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -160,29 +251,43 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
-                  maxLines: 2,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
-              const SizedBox(height: 12),
-              _buildInfoRow(
-                context,
-                Icons.event,
-                '開始時刻',
-                contest.startTimeWithWeekday,
-              ),
-              const SizedBox(height: 8),
-              _buildInfoRow(context, Icons.timer, '時間', contest.durationString),
-              if (contest.ratedRange != null) ...[
-                const SizedBox(height: 8),
-                _buildInfoRow(
-                  context,
-                  Icons.bar_chart,
-                  'レート対象',
-                  contest.ratedRange!,
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.45,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+                  ),
                 ),
-              ],
-              const SizedBox(height: 12),
+                child: Column(
+                  children: [
+                    _buildInfoRow(
+                      context,
+                      Icons.timer_outlined,
+                      '時間',
+                      contest.durationString,
+                    ),
+                    if (contest.ratedRange != null) ...[
+                      const SizedBox(height: 8),
+                      _buildInfoRow(
+                        context,
+                        Icons.bar_chart,
+                        'レート対象',
+                        contest.ratedRange!,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
               const Divider(),
               const SizedBox(height: 8),
               _buildReminderRow(context),
@@ -278,9 +383,11 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
 
   Widget _buildContestTypeChip(BuildContext context, Contest contest) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     String type = 'その他';
-    Color color = theme.colorScheme.outline;
+    Color containerColor = colorScheme.surfaceContainerHighest;
+    Color foregroundColor = colorScheme.onSurfaceVariant;
 
     final nameJa = contest.nameJa;
     final nameEn = contest.nameEn;
@@ -291,38 +398,45 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
         nameJa.contains('AtCoder Beginner Contest') ||
         nameEn.contains('AtCoder Beginner Contest')) {
       type = 'ABC';
-      color = Colors.green;
+      containerColor = colorScheme.primaryContainer;
+      foregroundColor = colorScheme.onPrimaryContainer;
     } else if (nameJa.contains('Regular Contest') ||
         nameEn.contains('Regular Contest') ||
         nameJa.contains('AtCoder Regular Contest') ||
         nameEn.contains('AtCoder Regular Contest')) {
       type = 'ARC';
-      color = Colors.orange;
+      containerColor = colorScheme.tertiaryContainer;
+      foregroundColor = colorScheme.onTertiaryContainer;
     } else if (nameJa.contains('Grand Contest') ||
         nameEn.contains('Grand Contest') ||
         nameJa.contains('AtCoder Grand Contest') ||
         nameEn.contains('AtCoder Grand Contest')) {
       type = 'AGC';
-      color = Colors.red;
+      containerColor = colorScheme.errorContainer;
+      foregroundColor = colorScheme.onErrorContainer;
     } else if (nameJa.contains('Heuristic Contest') ||
         nameEn.contains('Heuristic Contest') ||
         nameJa.contains('AtCoder Heuristic Contest') ||
         nameEn.contains('AtCoder Heuristic Contest')) {
       type = 'AHC';
-      color = Colors.purple;
+      containerColor = colorScheme.secondaryContainer;
+      foregroundColor = colorScheme.onSecondaryContainer;
     }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: containerColor.withValues(alpha: 0.78),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color, width: 1),
+        border: Border.all(
+          color: foregroundColor.withValues(alpha: 0.18),
+          width: 1,
+        ),
       ),
       child: Text(
         type,
         style: theme.textTheme.bodySmall?.copyWith(
-          color: color,
+          color: foregroundColor,
           fontWeight: FontWeight.bold,
         ),
       ),

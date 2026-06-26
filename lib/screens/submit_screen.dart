@@ -1,13 +1,20 @@
 import 'dart:convert'; // for auto-paste code
 import 'dart:developer'; // for JS debug messages
+
 import 'package:flutter/material.dart';
+import 'package:m3e_collection/m3e_collection.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class SubmitScreen extends StatefulWidget {
   final String url;
   final String initialCode;
   final String initialLanguage;
-  const SubmitScreen({super.key, required this.url, required this.initialCode, required this.initialLanguage});
+  const SubmitScreen({
+    super.key,
+    required this.url,
+    required this.initialCode,
+    required this.initialLanguage,
+  });
 
   @override
   State<SubmitScreen> createState() => _SubmitScreenState();
@@ -15,20 +22,39 @@ class SubmitScreen extends StatefulWidget {
 
 class _SubmitScreenState extends State<SubmitScreen> {
   late final WebViewController _controller;
+  int _loadingProgress = 0;
+  bool _hasPageError = false;
+  String _statusMessage = '提出ページを読み込んでいます';
 
   @override
   void initState() {
     super.initState();
     // JavaScript チャンネル追加（デバッグ用）
     _controller = WebViewController()
-      ..addJavaScriptChannel('Debug', onMessageReceived: (message) {
-        log('JS> ${message.message}', name: 'SubmitScreen');
-      })
+      ..addJavaScriptChannel(
+        'Debug',
+        onMessageReceived: (message) {
+          log('JS> ${message.message}', name: 'SubmitScreen');
+        },
+      )
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(NavigationDelegate(
-        onPageFinished: (url) {
-          _controller.runJavaScript(
-            '''(function() {
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onProgress: (progress) {
+            if (!mounted) return;
+            setState(() {
+              _loadingProgress = progress;
+            });
+          },
+          onPageStarted: (_) {
+            if (!mounted) return;
+            setState(() {
+              _hasPageError = false;
+              _statusMessage = '提出ページを読み込んでいます';
+            });
+          },
+          onPageFinished: (url) {
+            _controller.runJavaScript('''(function() {
   // debug: select[name="language_id"] presence
   var sel = document.querySelector('select[name="language_id"]');
   window.Debug.postMessage('select[name="language_id"] found: ' + (sel !== null));
@@ -72,18 +98,136 @@ class _SubmitScreenState extends State<SubmitScreen> {
               ed.setValue(code, -1);
               ed.clearSelection();
             }
-})();'''
-          );
-        },
-      ))
+})();''');
+            if (!mounted) return;
+            setState(() {
+              _statusMessage = 'コードを提出フォームへ自動入力しました';
+              _loadingProgress = 100;
+            });
+          },
+          onWebResourceError: (error) {
+            if (!mounted || error.isForMainFrame == false) return;
+            setState(() {
+              _hasPageError = true;
+              _statusMessage = '提出ページを読み込めませんでした';
+            });
+          },
+        ),
+      )
       ..loadRequest(Uri.parse(widget.url));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('提出画面')),
-      body: WebViewWidget(controller: _controller),
+      appBar: AppBarM3E(
+        title: const Text('提出'),
+        actions: [
+          IconButtonM3E(
+            tooltip: '再読み込み',
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              _controller.reload();
+            },
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          _buildStatusHeader(context),
+          Expanded(child: WebViewWidget(controller: _controller)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusHeader(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final progress = (_loadingProgress / 100).clamp(0.0, 1.0);
+    final foregroundColor = _hasPageError
+        ? colorScheme.onErrorContainer
+        : colorScheme.onSurfaceVariant;
+    final iconBackground = _hasPageError
+        ? colorScheme.errorContainer
+        : colorScheme.primaryContainer;
+    final iconColor = _hasPageError
+        ? colorScheme.onErrorContainer
+        : colorScheme.onPrimaryContainer;
+
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: iconBackground,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    _hasPageError
+                        ? Icons.error_outline
+                        : Icons.cloud_upload_outlined,
+                    color: iconColor,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _statusMessage,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: _hasPageError ? foregroundColor : null,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${widget.initialLanguage} / ${widget.initialCode.length}文字',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: foregroundColor,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  '$_loadingProgress%',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: foregroundColor,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+            if (!_hasPageError && _loadingProgress < 100) ...[
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 6,
+                  backgroundColor: colorScheme.surfaceContainerHighest,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

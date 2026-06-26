@@ -202,6 +202,268 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
     });
   }
 
+  void _copyErrorMessage() {
+    if (_errorMessage == null) return;
+    Clipboard.setData(ClipboardData(text: _errorMessage!));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('エラーメッセージをコピーしました'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Widget _buildFetchPanel(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.article_outlined,
+                    color: colorScheme.onPrimaryContainer,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '問題を取得',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'AtCoderの問題URLを貼り付けて本文とサンプルを表示',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Form(
+              key: _formKey,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final inputBorder = OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: colorScheme.outlineVariant),
+                  );
+                  final urlField = TextFormField(
+                    controller: _urlController,
+                    decoration: InputDecoration(
+                      labelText: 'AtCoder 問題URL',
+                      hintText:
+                          'https://atcoder.jp/contests/abc000/tasks/abc000_a',
+                      filled: true,
+                      fillColor: colorScheme.surfaceContainerHighest.withValues(
+                        alpha: 0.35,
+                      ),
+                      border: inputBorder,
+                      enabledBorder: inputBorder,
+                      focusedBorder: inputBorder.copyWith(
+                        borderSide: BorderSide(
+                          color: colorScheme.primary,
+                          width: 1.6,
+                        ),
+                      ),
+                      errorBorder: inputBorder.copyWith(
+                        borderSide: BorderSide(color: colorScheme.error),
+                      ),
+                      focusedErrorBorder: inputBorder.copyWith(
+                        borderSide: BorderSide(
+                          color: colorScheme.error,
+                          width: 1.6,
+                        ),
+                      ),
+                      prefixIcon: IconButton(
+                        tooltip: 'クリップボードから貼り付け',
+                        icon: const Icon(Icons.content_paste),
+                        onPressed: _pasteUrlFromClipboard,
+                      ),
+                      suffixIcon: IconButton(
+                        tooltip: 'URLをクリア',
+                        icon: const Icon(Icons.clear),
+                        onPressed: _urlController.text.isEmpty
+                            ? null
+                            : _clearUrl,
+                      ),
+                    ),
+                    onChanged: (_) => setState(() {}),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'URLを入力してください';
+                      }
+                      if (!_atCoderService.isValidAtCoderUrl(value)) {
+                        return '正しいAtCoderの問題URLを入力してください';
+                      }
+                      return null;
+                    },
+                  );
+                  final fetchButton = ButtonM3E(
+                    style: ButtonM3EStyle.filled,
+                    onPressed: _isLoading
+                        ? null
+                        : () {
+                            if (_formKey.currentState!.validate()) {
+                              _lastLoadedProblemId = null;
+                              _fetchProblem();
+                            }
+                          },
+                    icon: _isLoading
+                        ? SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation(
+                                colorScheme.onPrimary,
+                              ),
+                            ),
+                          )
+                        : const Icon(Icons.download_outlined),
+                    label: const Text('取得'),
+                  );
+
+                  if (constraints.maxWidth < 560) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        urlField,
+                        const SizedBox(height: 12),
+                        fetchButton,
+                      ],
+                    );
+                  }
+
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: urlField),
+                      const SizedBox(width: 12),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: fetchButton,
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMessagePanel(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String message,
+    bool isError = false,
+    VoidCallback? onCopy,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final backgroundColor = isError
+        ? colorScheme.errorContainer
+        : colorScheme.surfaceContainerHighest.withValues(alpha: 0.45);
+    final foregroundColor = isError
+        ? colorScheme.onErrorContainer
+        : colorScheme.onSurfaceVariant;
+    final iconBackground = isError
+        ? colorScheme.error.withValues(alpha: 0.12)
+        : colorScheme.primaryContainer;
+    final iconColor = isError
+        ? colorScheme.onErrorContainer
+        : colorScheme.onPrimaryContainer;
+
+    return Card(
+      elevation: 2,
+      color: backgroundColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: isError
+              ? colorScheme.error.withValues(alpha: 0.24)
+              : colorScheme.outlineVariant.withValues(alpha: 0.7),
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: iconBackground,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Center(child: Icon(icon, color: iconColor)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: isError ? foregroundColor : null,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  SelectableText(
+                    message,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: foregroundColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (onCopy != null) ...[
+              const SizedBox(width: 8),
+              IconButtonM3E(
+                icon: Icon(Icons.copy, color: foregroundColor),
+                tooltip: 'コピー',
+                onPressed: onCopy,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -212,145 +474,17 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Form(
-                key: _formKey, // Keep form key for manual input validation
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller:
-                            _urlController, // Controller is updated automatically now
-                        decoration: InputDecoration(
-                          labelText: 'AtCoder 問題URL',
-                          hintText:
-                              'https://atcoder.jp/contests/コンテスト名/tasks/問題名',
-                          border: const OutlineInputBorder(),
-                          prefixIcon: IconButton(
-                            tooltip: 'クリップボードから貼り付け',
-                            icon: const Icon(Icons.content_paste),
-                            onPressed: _pasteUrlFromClipboard,
-                          ),
-                          suffixIcon: IconButton(
-                            tooltip: 'URLをクリア',
-                            icon: const Icon(Icons.clear),
-                            onPressed: _urlController.text.isEmpty
-                                ? null
-                                : _clearUrl,
-                          ),
-                        ),
-                        onChanged: (_) => setState(() {}),
-                        validator: (value) {
-                          // Validator for manual input
-                          if (value == null || value.isEmpty) {
-                            return 'URLを入力してください';
-                          }
-                          if (!_atCoderService.isValidAtCoderUrl(value)) {
-                            return '正しいAtCoderの問題URLを入力してください';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    ButtonM3E(
-                      style: ButtonM3EStyle.filled,
-                      // Trigger manual fetch using the current text in the controller
-                      onPressed: _isLoading
-                          ? null
-                          : () {
-                              // Manually trigger fetch only if form is valid
-                              if (_formKey.currentState!.validate()) {
-                                _lastLoadedProblemId =
-                                    null; // Reset auto-load tracking for manual fetch
-                                _fetchProblem();
-                              }
-                            },
-                      label: _isLoading
-                          ? SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation(
-                                  Theme.of(context).colorScheme.onPrimary,
-                                ),
-                              ),
-                            )
-                          : const Text('取得'),
-                    ),
-                  ],
-                ),
-              ),
+              _buildFetchPanel(context),
               if (_errorMessage != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 16),
-                  child: Card(
-                    color: Colors.red[50],
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.error_outline, color: Colors.red[700]),
-                              const SizedBox(width: 8),
-                              Text(
-                                'エラーが発生しました',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: Colors.red[700],
-                                ),
-                              ),
-                              const Spacer(),
-                              IconButtonM3E(
-                                icon: Icon(Icons.copy, color: Colors.red[700]),
-                                tooltip: 'エラーメッセージをコピー',
-                                onPressed: () {
-                                  Clipboard.setData(
-                                    ClipboardData(text: _errorMessage!),
-                                  );
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('エラーメッセージをコピーしました'),
-                                      duration: Duration(seconds: 2),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.red[100],
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            width: double.infinity,
-                            child: SelectableText(
-                              _errorMessage!,
-                              style: getMonospaceTextStyle(
-                                Provider.of<ThemeProvider>(
-                                  context,
-                                  listen: false,
-                                ).codeFontFamily,
-                                color: Colors.red[900],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'URLが正しいことを確認し、もう一度お試しください。',
-                            style: TextStyle(
-                              color: Colors.red[700],
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  child: _buildMessagePanel(
+                    context,
+                    icon: Icons.error_outline,
+                    title: 'エラーが発生しました',
+                    message: 'URLが正しいことを確認し、もう一度お試しください。\n\n$_errorMessage',
+                    isError: true,
+                    onCopy: _copyErrorMessage,
                   ),
                 ),
               const SizedBox(height: 12),
@@ -359,8 +493,14 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
                     ? const Center(child: LoadingIndicatorM3E())
                     : (_problem != null
                           ? _buildProblemView(_problem!)
-                          : const Center(
-                              child: Text('問題URLを入力またはWebViewから選択してください。'),
+                          : Center(
+                              child: _buildMessagePanel(
+                                context,
+                                icon: Icons.link_outlined,
+                                title: '問題がまだ選択されていません',
+                                message:
+                                    '問題URLを入力するか、ブラウザやおすすめ問題から問題を選択してください。',
+                              ),
                             )),
               ),
             ],
@@ -374,37 +514,78 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final codeFontFamily = themeProvider.codeFontFamily;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return SingleChildScrollView(
       padding: EdgeInsets.only(bottom: bottomPadding > 0 ? bottomPadding : 16),
       child: Padding(
         padding: const EdgeInsets.only(top: 16),
         child: Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          clipBehavior: Clip.antiAlias,
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (problem.contestName.isNotEmpty &&
-                    problem.contestName != 'コンテスト名が見つかりません')
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: Text(
-                      problem.contestName,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: colorScheme.secondaryContainer,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.assignment_outlined,
+                        color: colorScheme.onSecondaryContainer,
                       ),
                     ),
-                  ),
-                TexWidget(
-                  content: problem.title,
-                  textStyle: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (problem.contestName.isNotEmpty &&
+                              problem.contestName != 'コンテスト名が見つかりません') ...[
+                            Text(
+                              problem.contestName,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                          ],
+                          TexWidget(
+                            content: problem.title,
+                            textStyle: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButtonM3E(
+                      icon: const Icon(Icons.open_in_new),
+                      tooltip: '元ページを開く',
+                      onPressed: () => launchUrl(
+                        Uri.parse(problem.url),
+                        mode: LaunchMode.externalApplication,
+                      ),
+                    ),
+                  ],
                 ),
-                const Divider(),
+                const SizedBox(height: 12),
+                Divider(color: colorScheme.outlineVariant),
                 _buildSection('問題文', problem.statement, codeFontFamily),
                 _buildSection('制約', problem.constraints, codeFontFamily),
                 _buildSection('入力', problem.inputFormat, codeFontFamily),
@@ -413,29 +594,20 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
                   (sample) => _buildSampleIO(sample, codeFontFamily),
                 ),
                 const SizedBox(height: 16),
-                const Divider(),
+                Divider(color: colorScheme.outlineVariant),
                 Row(
                   children: [
                     Icon(
                       Icons.info_outline,
                       size: 16,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      color: colorScheme.onSurfaceVariant,
                     ),
                     const SizedBox(width: 8),
                     Text(
                       '出典: AtCoder',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
                       ),
-                    ),
-                    const Spacer(),
-                    TextButton.icon(
-                      onPressed: () => launchUrl(
-                        Uri.parse(problem.url),
-                        mode: LaunchMode.externalApplication,
-                      ),
-                      icon: const Icon(Icons.open_in_new, size: 16),
-                      label: const Text('元ページを開く'),
                     ),
                   ],
                 ),
@@ -451,6 +623,8 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
     if (content.isEmpty) return const SizedBox.shrink();
 
     developer.log('セクション[$title]の内容: $content');
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     List<Widget> contentWidgets = [];
     final parts = content.split(RegExp(r'```'));
@@ -461,20 +635,18 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
         Container(
           width: double.infinity,
           margin: const EdgeInsets.symmetric(vertical: 8),
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(4),
+            color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Theme.of(
-                context,
-              ).colorScheme.outline.withValues(alpha: 0.3),
+              color: colorScheme.outlineVariant.withValues(alpha: 0.7),
             ),
           ),
           // TexWidgetを使い、フォントスタイルを維持
           child: TexWidget(
             content: content,
-            textStyle: Theme.of(context).textTheme.bodyMedium,
+            textStyle: theme.textTheme.bodyMedium,
           ),
         ),
       );
@@ -487,7 +659,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
           contentWidgets.add(
             TexWidget(
               content: parts[i].trim(),
-              textStyle: Theme.of(context).textTheme.bodyMedium,
+              textStyle: theme.textTheme.bodyMedium,
             ),
           );
         } else {
@@ -495,14 +667,14 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
             Container(
               width: double.infinity,
               margin: const EdgeInsets.symmetric(vertical: 8),
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(16),
+                color: colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.55,
+                ),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.outline.withValues(alpha: 0.3),
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.7),
                 ),
               ),
               child: Text(
@@ -516,10 +688,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
     } else {
       // 「入力」セクション以外でコードブロックがない場合の通常の処理
       contentWidgets.add(
-        TexWidget(
-          content: content,
-          textStyle: Theme.of(context).textTheme.bodyMedium,
-        ),
+        TexWidget(content: content, textStyle: theme.textTheme.bodyMedium),
       );
     }
 
@@ -527,9 +696,19 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
-        Text(
-          title,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withValues(alpha: 0.65),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            title,
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: colorScheme.onPrimaryContainer,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ),
         const SizedBox(height: 8),
         ...contentWidgets,
@@ -538,84 +717,89 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
   }
 
   Widget _buildSampleIO(SampleIO sample, String codeFontFamily) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
-        Row(
-          children: [
-            Text(
-              '入力例 ${sample.index}',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const Spacer(),
-            IconButtonM3E(
-              icon: const Icon(Icons.copy, size: 16),
-              tooltip: '入力例をコピー',
-              onPressed: () {
-                Clipboard.setData(ClipboardData(text: sample.input));
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('入力例をコピーしました')));
-              },
-            ),
-          ],
-        ),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Theme.of(
-                context,
-              ).colorScheme.outline.withValues(alpha: 0.3),
-            ),
-          ),
-          child: Text(
-            sample.input,
-            style: getMonospaceTextStyle(codeFontFamily),
-          ),
+        _buildSampleBlock(
+          title: '入力例 ${sample.index}',
+          content: sample.input,
+          codeFontFamily: codeFontFamily,
+          theme: theme,
+          colorScheme: colorScheme,
+          copiedMessage: '入力例をコピーしました',
         ),
         const SizedBox(height: 8),
-        Row(
-          children: [
-            Text(
-              '出力例 ${sample.index}',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const Spacer(),
-            IconButtonM3E(
-              icon: const Icon(Icons.copy, size: 16),
-              tooltip: '出力例をコピー',
-              onPressed: () {
-                Clipboard.setData(ClipboardData(text: sample.output));
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('出力例をコピーしました')));
-              },
-            ),
-          ],
-        ),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Theme.of(
-                context,
-              ).colorScheme.outline.withValues(alpha: 0.3),
-            ),
-          ),
-          child: Text(
-            sample.output,
-            style: getMonospaceTextStyle(codeFontFamily),
-          ),
+        _buildSampleBlock(
+          title: '出力例 ${sample.index}',
+          content: sample.output,
+          codeFontFamily: codeFontFamily,
+          theme: theme,
+          colorScheme: colorScheme,
+          copiedMessage: '出力例をコピーしました',
         ),
       ],
+    );
+  }
+
+  Widget _buildSampleBlock({
+    required String title,
+    required String content,
+    required String codeFontFamily,
+    required ThemeData theme,
+    required ColorScheme colorScheme,
+    required String copiedMessage,
+  }) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 8, 4),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                IconButtonM3E(
+                  icon: const Icon(Icons.copy, size: 16),
+                  tooltip: '$titleをコピー',
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: content));
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(copiedMessage)));
+                  },
+                ),
+              ],
+            ),
+          ),
+          Divider(height: 1, color: colorScheme.outlineVariant),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: SelectableText(
+              content,
+              style: getMonospaceTextStyle(codeFontFamily),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
