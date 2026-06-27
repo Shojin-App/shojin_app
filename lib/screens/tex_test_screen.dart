@@ -10,56 +10,59 @@ class TexTestScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBarM3E(title: const Text('TeX表示テスト')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildIntroCard(context),
-            const SizedBox(height: 12),
-            _buildTestSection(
-              context,
-              'インライン数式',
-              'この式 \$x = a + b\$ は足し算を表します。また、\$y \\leq 10\$ という制約があります。',
-              Icons.text_fields,
-            ),
-            _buildTestSection(
-              context,
-              'ディスプレイ数式',
-              'この問題の解は次の式で表されます：\n\$\$x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}\$\$',
-              Icons.functions,
-            ),
-            _buildTestSection(
-              context,
-              '複数の数式',
-              'まず \$n \\leq 10^5\$ とします。次に、総和は \$\\sum_{i=1}^{n} a_i\$ です。',
-              Icons.view_list_outlined,
-            ),
-            _buildTestSection(
-              context,
-              'AtCoder風の制約',
-              '制約：\n• \$1 \\leq N \\leq 2 \\times 10^5\$\n• \$1 \\leq A_i \\leq 10^9\$\n• \$\\sum A_i \\leq 10^{18}\$',
-              Icons.rule_outlined,
-            ),
-            _buildTestSection(
-              context,
-              'ギリシャ文字',
-              '角度 \$\\theta\$ は \$0 \\leq \\theta \\leq \\pi\$ を満たします。また、\$\\alpha + \\beta = \\gamma\$ です。',
-              Icons.language,
-            ),
-            _buildTestSection(
-              context,
-              '基本的なTeXコマンド',
-              'a \\leq b, c \\geq d, e \\times f, g \\div h, \\pm 1, a \\neq b, x \\in S, A \\subset B',
-              Icons.short_text,
-            ),
-            _buildTestSection(
-              context,
-              'コードブロック付き',
-              '入力は以下の形式で与えられる：\n\n```\nN\nA_1 A_2 ... A_N\n```\n\nここで、\$1 \\leq N \\leq 10^5\$ です。',
-              Icons.code,
-            ),
-          ],
+      body: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildIntroCard(context),
+              const SizedBox(height: 12),
+              _buildTestSection(
+                context,
+                'インライン数式',
+                'この式 \$x = a + b\$ は足し算を表します。また、\$y \\leq 10\$ という制約があります。',
+                Icons.text_fields,
+              ),
+              _buildTestSection(
+                context,
+                'ディスプレイ数式',
+                'この問題の解は次の式で表されます：\n\$\$x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}\$\$',
+                Icons.functions,
+              ),
+              _buildTestSection(
+                context,
+                '複数の数式',
+                'まず \$n \\leq 10^5\$ とします。次に、総和は \$\\sum_{i=1}^{n} a_i\$ です。',
+                Icons.view_list_outlined,
+              ),
+              _buildTestSection(
+                context,
+                'AtCoder風の制約',
+                '制約：\n• \$1 \\leq N \\leq 2 \\times 10^5\$\n• \$1 \\leq A_i \\leq 10^9\$\n• \$\\sum A_i \\leq 10^{18}\$',
+                Icons.rule_outlined,
+              ),
+              _buildTestSection(
+                context,
+                'ギリシャ文字',
+                '角度 \$\\theta\$ は \$0 \\leq \\theta \\leq \\pi\$ を満たします。また、\$\\alpha + \\beta = \\gamma\$ です。',
+                Icons.language,
+              ),
+              _buildTestSection(
+                context,
+                '基本的なTeXコマンド',
+                'a \\leq b, c \\geq d, e \\times f, g \\div h, \\pm 1, a \\neq b, x \\in S, A \\subset B',
+                Icons.short_text,
+              ),
+              _buildTestSection(
+                context,
+                'コードブロック付き',
+                '入力は以下の形式で与えられる：\n\n```\nN\nA_1 A_2 ... A_N\n```\n\nここで、\$1 \\leq N \\leq 10^5\$ です。',
+                Icons.code,
+              ),
+            ],
+          ),
         ),
       ),
     );

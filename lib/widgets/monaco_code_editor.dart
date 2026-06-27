@@ -2,8 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:m3e_collection/m3e_collection.dart';
 import 'package:flutter_monaco/flutter_monaco.dart';
+
+import 'shared/app_loading_indicator.dart';
 
 /// Monaco Editor wrapper widget for the editor screen.
 /// This provides VS Code-like editing experience.
@@ -191,7 +192,9 @@ class MonacoCodeEditorState extends State<MonacoCodeEditor> {
         message: 'エディタの初期化が完了するまでお待ちください。',
         child: const Padding(
           padding: EdgeInsets.only(top: 16),
-          child: Center(child: LoadingIndicatorM3E()),
+          child: Center(
+            child: AppLoadingIndicator(semanticsLabel: 'エディタを読み込み中'),
+          ),
         ),
       );
     }
@@ -302,9 +305,7 @@ class MonacoCodeEditorState extends State<MonacoCodeEditor> {
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final foregroundColor = isError
-        ? colorScheme.onErrorContainer
-        : colorScheme.onSurfaceVariant;
+    final foregroundColor = colorScheme.onSurfaceVariant;
     final iconBackground = isError
         ? colorScheme.errorContainer
         : colorScheme.primaryContainer;
@@ -344,7 +345,7 @@ class MonacoCodeEditorState extends State<MonacoCodeEditor> {
                         Text(
                           title,
                           style: theme.textTheme.titleMedium?.copyWith(
-                            color: isError ? foregroundColor : null,
+                            color: isError ? colorScheme.onSurface : null,
                             fontWeight: FontWeight.w700,
                           ),
                         ),

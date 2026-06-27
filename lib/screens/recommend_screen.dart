@@ -6,6 +6,8 @@ import '../models/problem_difficulty.dart';
 import '../services/atcoder_service.dart';
 import '../utils/atcoder_colors.dart';
 import '../utils/rating_utils.dart';
+import '../utils/responsive_layout.dart';
+import '../widgets/shared/app_loading_indicator.dart';
 import 'problem_detail_screen.dart';
 
 class RecommendScreen extends StatefulWidget {
@@ -597,54 +599,68 @@ class _RecommendScreenState extends State<RecommendScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final horizontalPadding = ResponsiveLayout.horizontalPadding(context);
+
     return Scaffold(
       appBar: AppBarM3E(title: const Text('おすすめ問題')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildSettingsPanel(context),
-            const SizedBox(height: 16),
-            if (_isLoading)
-              const Expanded(child: Center(child: LoadingIndicatorM3E()))
-            else if (_errorMessage != null)
-              Expanded(
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: _buildMessageState(
-                    context,
-                    icon: Icons.error_outline,
-                    title: 'おすすめ問題を取得できませんでした',
-                    message: _errorMessage!,
-                    isError: true,
+      body: SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
+            16,
+            horizontalPadding,
+            16,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildSettingsPanel(context),
+              const SizedBox(height: 16),
+              if (_isLoading)
+                const Expanded(
+                  child: Center(
+                    child: AppLoadingIndicator(semanticsLabel: 'おすすめ問題を読み込み中'),
+                  ),
+                )
+              else if (_errorMessage != null)
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: _buildMessageState(
+                      context,
+                      icon: Icons.error_outline,
+                      title: 'おすすめ問題を取得できませんでした',
+                      message: _errorMessage!,
+                      isError: true,
+                    ),
+                  ),
+                )
+              else if (_recommendedProblems.isEmpty)
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: _buildMessageState(
+                      context,
+                      icon: Icons.search_off,
+                      title: '条件に合う問題はまだ表示されていません',
+                      message: 'ユーザー名を入力するか、難易度範囲を調整して取得してください。',
+                    ),
+                  ),
+                )
+              else
+                Expanded(
+                  child: ListView.builder(
+                    padding: EdgeInsets.zero,
+                    itemCount: _recommendedProblems.length,
+                    itemBuilder: (context, index) {
+                      final problem = _recommendedProblems[index];
+                      return _buildProblemCard(context, problem);
+                    },
                   ),
                 ),
-              )
-            else if (_recommendedProblems.isEmpty)
-              Expanded(
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: _buildMessageState(
-                    context,
-                    icon: Icons.search_off,
-                    title: '条件に合う問題はまだ表示されていません',
-                    message: 'ユーザー名を入力するか、難易度範囲を調整して取得してください。',
-                  ),
-                ),
-              )
-            else
-              Expanded(
-                child: ListView.builder(
-                  padding: EdgeInsets.zero,
-                  itemCount: _recommendedProblems.length,
-                  itemBuilder: (context, index) {
-                    final problem = _recommendedProblems[index];
-                    return _buildProblemCard(context, problem);
-                  },
-                ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -1,5 +1,10 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:m3e_collection/m3e_collection.dart';
+import 'package:provider/provider.dart';
+
+import '../../providers/theme_provider.dart';
 
 class CustomSliverAppBar extends StatelessWidget {
   final bool isMainView;
@@ -19,9 +24,12 @@ class CustomSliverAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SliverAppBarM3E(
+    final opacity = context.watch<ThemeProvider>().navBarOpacity;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return SliverAppBar(
       pinned: true,
-      variant: AppBarM3EVariant.small,
+      centerTitle: true,
       title: title,
       leading: isMainView
           ? null
@@ -31,8 +39,17 @@ class CustomSliverAppBar extends StatelessWidget {
               onPressed:
                   onBackButtonPressed ?? () => Navigator.of(context).pop(),
             ),
-      backgroundColor: Colors
-          .transparent, // Let SliverAppBarM3E handle its own surface coloring or transparency
+      backgroundColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      forceMaterialTransparency: true,
+      flexibleSpace: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: opacity * 24, sigmaY: opacity * 24),
+          child: ColoredBox(
+            color: colorScheme.surface.withValues(alpha: opacity),
+          ),
+        ),
+      ),
       actions: actions,
     );
   }

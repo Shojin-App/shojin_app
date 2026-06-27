@@ -10,6 +10,7 @@ import '../constants/browser_constants.dart';
 import '../models/browser_site.dart';
 import '../providers/theme_provider.dart';
 import '../services/browser_site_service.dart';
+import '../widgets/shared/app_loading_indicator.dart';
 
 class BrowserScreen extends StatefulWidget {
   final Function(String) navigateToProblem;
@@ -403,8 +404,9 @@ class _BrowserScreenState extends State<BrowserScreen>
                     showDialog(
                       context: dialogContext,
                       barrierDismissible: false,
-                      builder: (context) =>
-                          const Center(child: LoadingIndicatorM3E()),
+                      builder: (context) => const Center(
+                        child: AppLoadingIndicator(semanticsLabel: 'サイト情報を取得中'),
+                      ),
                     );
                     try {
                       final newSite = BrowserSite(title: title, url: url);
@@ -895,9 +897,7 @@ class _BrowserScreenState extends State<BrowserScreen>
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final foregroundColor = isError
-        ? colorScheme.onErrorContainer
-        : colorScheme.onSurfaceVariant;
+    final foregroundColor = colorScheme.onSurfaceVariant;
     final iconBackground = isError
         ? colorScheme.errorContainer
         : colorScheme.primaryContainer;
@@ -942,7 +942,7 @@ class _BrowserScreenState extends State<BrowserScreen>
                             Text(
                               title,
                               style: theme.textTheme.titleMedium?.copyWith(
-                                color: isError ? foregroundColor : null,
+                                color: isError ? colorScheme.onSurface : null,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -974,53 +974,62 @@ class _BrowserScreenState extends State<BrowserScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context); // AutomaticKeepAliveClientMixin を使うために必要
-    return Column(
-      children: [
-        _buildSiteSwitcher(),
-        Expanded(
-          child: Stack(
-            children: [
-              if (_isControllerReady)
-                WebViewWidget(controller: _controller)
-              else
-                const Center(child: LoadingIndicatorM3E()),
+    final navigationInset = MediaQuery.paddingOf(context).bottom;
 
-              if (_isControllerReady && _loadFailed)
-                _buildBrowserStateOverlay(
-                  icon: Icons.error_outline,
-                  title: 'ページを読み込めませんでした',
-                  message: _currentUrl,
-                  isError: true,
-                  action: SizedBox(
-                    width: double.infinity,
-                    child: ButtonM3E(
-                      style: ButtonM3EStyle.filled,
-                      onPressed: () {
-                        if (mounted) {
-                          setState(() {
-                            _isLoadingWebView = true;
-                            _loadFailed = false;
-                          });
-                        }
-                        _controller.loadRequest(Uri.parse(_currentUrl));
-                      },
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('再試行'),
+    return Padding(
+      padding: EdgeInsets.only(bottom: navigationInset),
+      child: Column(
+        children: [
+          _buildSiteSwitcher(),
+          Expanded(
+            child: Stack(
+              children: [
+                if (_isControllerReady)
+                  WebViewWidget(controller: _controller)
+                else
+                  const Center(
+                    child: AppLoadingIndicator(semanticsLabel: 'ブラウザを準備中'),
+                  ),
+
+                if (_isControllerReady && _loadFailed)
+                  _buildBrowserStateOverlay(
+                    icon: Icons.error_outline,
+                    title: 'ページを読み込めませんでした',
+                    message: _currentUrl,
+                    isError: true,
+                    action: SizedBox(
+                      width: double.infinity,
+                      child: ButtonM3E(
+                        style: ButtonM3EStyle.filled,
+                        onPressed: () {
+                          if (mounted) {
+                            setState(() {
+                              _isLoadingWebView = true;
+                              _loadFailed = false;
+                            });
+                          }
+                          _controller.loadRequest(Uri.parse(_currentUrl));
+                        },
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('再試行'),
+                      ),
                     ),
                   ),
-                ),
 
-              if (_isControllerReady && _isLoadingWebView && !_loadFailed)
-                _buildBrowserStateOverlay(
-                  icon: Icons.public,
-                  title: 'ページを読み込み中',
-                  message: _currentUrl,
-                  action: const Center(child: LoadingIndicatorM3E()),
-                ),
-            ],
+                if (_isControllerReady && _isLoadingWebView && !_loadFailed)
+                  _buildBrowserStateOverlay(
+                    icon: Icons.public,
+                    title: 'ページを読み込み中',
+                    message: _currentUrl,
+                    action: const Center(
+                      child: AppLoadingIndicator(semanticsLabel: 'ページを読み込み中'),
+                    ),
+                  ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

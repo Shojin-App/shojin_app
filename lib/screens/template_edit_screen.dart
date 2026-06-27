@@ -151,15 +151,18 @@ class _TemplateEditScreenState extends State<TemplateEditScreen> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildTemplateHeader(context),
-            const SizedBox(height: 12),
-            Expanded(child: _buildEditorCard(context)),
-          ],
+      body: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildTemplateHeader(context),
+              const SizedBox(height: 12),
+              Expanded(child: _buildEditorCard(context)),
+            ],
+          ),
         ),
       ),
     );

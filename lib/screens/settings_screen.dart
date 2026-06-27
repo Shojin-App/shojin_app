@@ -13,8 +13,10 @@ import '../services/auto_update_manager.dart'; // Import auto update manager
 import '../services/enhanced_update_service.dart'; // Use enhanced service
 import '../services/settings_service.dart';
 import '../utils/app_fonts.dart'; // Import app fonts helper
+import '../utils/responsive_layout.dart';
 import '../utils/text_style_helper.dart';
 import '../widgets/shared/custom_sliver_app_bar.dart'; // Import CustomSliverAppBar
+import '../widgets/shared/app_loading_indicator.dart';
 import '../widgets/programming_language_icon.dart';
 import 'licenses_screen.dart'; // Third-party licenses screen
 import 'template_edit_screen.dart';
@@ -266,6 +268,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final navigationInset = MediaQuery.paddingOf(context).bottom;
+    final horizontalInset = ResponsiveLayout.horizontalPadding(
+      context,
+      minimum: 8,
+    );
+
     return CustomScrollView(
       slivers: [
         // カスタムSliverAppBar
@@ -282,41 +290,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
 
         // 設定項目のリスト
-        SliverList(
-          delegate: SliverChildListDelegate([
-            const SizedBox(height: 8),
-            // AtCoder 設定セクション（最上部）
-            _buildAtcoderSection(),
-            const SizedBox(height: 12),
+        SliverPadding(
+          padding: EdgeInsets.symmetric(horizontal: horizontalInset),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
+              const SizedBox(height: 8),
+              // AtCoder 設定セクション（最上部）
+              _buildAtcoderSection(),
+              const SizedBox(height: 12),
 
-            // テーマ設定セクション
-            _buildThemeSection(),
-            const SizedBox(height: 12),
+              // テーマ設定セクション
+              _buildThemeSection(),
+              const SizedBox(height: 12),
 
-            // エディタ設定セクション
-            _buildEditorSection(),
-            const SizedBox(height: 12),
+              // エディタ設定セクション
+              _buildEditorSection(),
+              const SizedBox(height: 12),
 
-            // 言語設定セクション
-            _buildLanguageSection(),
-            const SizedBox(height: 12),
+              // 言語設定セクション
+              _buildLanguageSection(),
+              const SizedBox(height: 12),
 
-            // テンプレート設定セクション
-            _buildTemplateSection(),
-            const SizedBox(height: 12),
+              // テンプレート設定セクション
+              _buildTemplateSection(),
+              const SizedBox(height: 12),
 
-            // 更新設定セクション
-            _buildUpdateSection(),
-            const SizedBox(height: 12),
+              // 更新設定セクション
+              _buildUpdateSection(),
+              const SizedBox(height: 12),
 
-            // エクスポート/インポート設定セクション
-            _buildExportSection(),
-            const SizedBox(height: 12),
+              // エクスポート/インポート設定セクション
+              _buildExportSection(),
+              const SizedBox(height: 12),
 
-            // アプリについてセクション
-            _buildAboutSection(),
-            const SizedBox(height: 32),
-          ]),
+              // アプリについてセクション
+              _buildAboutSection(),
+              SizedBox(height: 32 + navigationInset),
+            ]),
+          ),
         ),
       ],
     );
@@ -446,17 +457,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      '${(themeProvider.navBarOpacity * 100).round()}%',
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
                   SliderM3E(
                     min: 0.0,
                     max: 1.0,
                     divisions: 20,
-                    label: themeProvider.navBarOpacity.toStringAsFixed(2),
+                    label: '${(themeProvider.navBarOpacity * 100).round()}%',
                     value: themeProvider.navBarOpacity,
                     onChanged: (value) {
                       HapticFeedback.lightImpact();
                       themeProvider.setNavBarOpacity(value);
                     },
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '透明',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      Text(
+                        '不透明',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -513,6 +551,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               padding: const EdgeInsets.fromLTRB(20.0, 16.0, 20.0, 8.0),
               child: DropdownButtonFormField<String>(
                 initialValue: themeProvider.codeFontFamily,
+                borderRadius: BorderRadius.circular(16),
                 decoration: _settingsInputDecoration(
                   labelText: 'コードブロックのフォント',
                   prefixIcon: Icons.font_download_outlined,
@@ -621,7 +660,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 if (_isLoadingUpdate) ...[
                   const SizedBox(height: 16),
-                  const LoadingIndicatorM3E(),
+                  const AppLoadingIndicator(semanticsLabel: 'アップデート情報を読み込み中'),
                 ],
                 if (_updateCheckResult.isNotEmpty) ...[
                   const SizedBox(height: 16),

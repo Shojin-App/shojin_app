@@ -9,8 +9,10 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/problem.dart';
 import '../providers/theme_provider.dart';
 import '../services/atcoder_service.dart';
+import '../utils/responsive_layout.dart';
 import '../utils/text_style_helper.dart';
 import '../widgets/tex_widget.dart';
+import '../widgets/shared/app_loading_indicator.dart';
 
 class ProblemDetailScreen extends StatefulWidget {
   final String? initialUrl; // Keep for potential direct URL loading
@@ -36,6 +38,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
 
   Problem? _problem;
   bool _isLoading = false;
+  bool _isFetchPanelExpanded = false;
   String? _errorMessage;
   String? _lastLoadedProblemId; // Track the last ID loaded via problemIdToLoad
 
@@ -150,6 +153,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
       setState(() {
         _problem = problem;
         _isLoading = false;
+        _isFetchPanelExpanded = false;
         // Reset last loaded ID if fetch fails? Or keep it?
       });
       // Problem fetched successfully, call the callback to update EditorScreen
@@ -199,6 +203,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
       _problem = null;
       _errorMessage = null;
       _lastLoadedProblemId = null;
+      _isFetchPanelExpanded = true;
     });
   }
 
@@ -466,15 +471,39 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final horizontalPadding = ResponsiveLayout.horizontalPadding(context);
+
     return Scaffold(
-      appBar: AppBarM3E(title: const Text('問題詳細')),
+      appBar: AppBarM3E(
+        title: const Text('問題詳細'),
+        actions: [
+          if (_problem != null)
+            IconButtonM3E(
+              tooltip: _isFetchPanelExpanded ? 'URL入力を閉じる' : '別の問題を開く',
+              icon: Icon(_isFetchPanelExpanded ? Icons.close : Icons.add_link),
+              onPressed: () {
+                setState(() {
+                  _isFetchPanelExpanded = !_isFetchPanelExpanded;
+                });
+              },
+            ),
+        ],
+      ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
+            16,
+            horizontalPadding,
+            16,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildFetchPanel(context),
+              if (_problem == null ||
+                  _isFetchPanelExpanded ||
+                  _errorMessage != null)
+                _buildFetchPanel(context),
               if (_errorMessage != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 16),
@@ -490,7 +519,9 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
               const SizedBox(height: 12),
               Expanded(
                 child: _isLoading
-                    ? const Center(child: LoadingIndicatorM3E())
+                    ? const Center(
+                        child: AppLoadingIndicator(semanticsLabel: '問題を読み込み中'),
+                      )
                     : (_problem != null
                           ? _buildProblemView(_problem!)
                           : Center(

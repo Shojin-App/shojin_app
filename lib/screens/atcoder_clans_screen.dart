@@ -3,6 +3,8 @@ import 'package:m3e_collection/m3e_collection.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../widgets/shared/app_loading_indicator.dart';
+
 class AtCoderClansScreen extends StatefulWidget {
   const AtCoderClansScreen({super.key});
 
@@ -86,48 +88,55 @@ class _AtCoderClansScreenState extends State<AtCoderClansScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          _buildStatusHeader(context),
-          Expanded(
-            child: Stack(
-              children: [
-                WebViewWidget(controller: _controller),
-                if (_hasError)
-                  _buildStateOverlay(
-                    context,
-                    icon: Icons.error_outline,
-                    title: 'AtCoder Clansを読み込めませんでした',
-                    message: '通信状況を確認して再試行してください。',
-                    isError: true,
-                    action: SizedBox(
-                      width: double.infinity,
-                      child: ButtonM3E(
-                        style: ButtonM3EStyle.filled,
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('再試行'),
-                        onPressed: () {
-                          setState(() {
-                            _isLoading = true;
-                            _hasError = false;
-                          });
-                          _controller.reload();
-                        },
+      body: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            _buildStatusHeader(context),
+            Expanded(
+              child: Stack(
+                children: [
+                  WebViewWidget(controller: _controller),
+                  if (_hasError)
+                    _buildStateOverlay(
+                      context,
+                      icon: Icons.error_outline,
+                      title: 'AtCoder Clansを読み込めませんでした',
+                      message: '通信状況を確認して再試行してください。',
+                      isError: true,
+                      action: SizedBox(
+                        width: double.infinity,
+                        child: ButtonM3E(
+                          style: ButtonM3EStyle.filled,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('再試行'),
+                          onPressed: () {
+                            setState(() {
+                              _isLoading = true;
+                              _hasError = false;
+                            });
+                            _controller.reload();
+                          },
+                        ),
+                      ),
+                    )
+                  else if (_isLoading)
+                    _buildStateOverlay(
+                      context,
+                      icon: Icons.travel_explore,
+                      title: 'AtCoder Clansを読み込み中',
+                      message: 'コンテスト情報や関連リンクを準備しています。',
+                      action: const Center(
+                        child: AppLoadingIndicator(
+                          semanticsLabel: 'AtCoder Clansを読み込み中',
+                        ),
                       ),
                     ),
-                  )
-                else if (_isLoading)
-                  _buildStateOverlay(
-                    context,
-                    icon: Icons.travel_explore,
-                    title: 'AtCoder Clansを読み込み中',
-                    message: 'コンテスト情報や関連リンクを準備しています。',
-                    action: const Center(child: LoadingIndicatorM3E()),
-                  ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -136,9 +145,7 @@ class _AtCoderClansScreenState extends State<AtCoderClansScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final progress = (_loadingProgress / 100).clamp(0.0, 1.0);
-    final foregroundColor = _hasError
-        ? colorScheme.onErrorContainer
-        : colorScheme.onSurfaceVariant;
+    final foregroundColor = colorScheme.onSurfaceVariant;
     final iconBackground = _hasError
         ? colorScheme.errorContainer
         : colorScheme.primaryContainer;
@@ -149,7 +156,20 @@ class _AtCoderClansScreenState extends State<AtCoderClansScreen> {
     return Card(
       elevation: 2,
       margin: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: _hasError
+          ? Color.alphaBlend(
+              colorScheme.errorContainer.withValues(alpha: 0.18),
+              colorScheme.surface,
+            )
+          : null,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: _hasError
+              ? colorScheme.error.withValues(alpha: 0.35)
+              : colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+      ),
       clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -181,7 +201,7 @@ class _AtCoderClansScreenState extends State<AtCoderClansScreen> {
                             ? 'ページを読み込んでいます'
                             : 'AtCoder Clans',
                         style: theme.textTheme.titleSmall?.copyWith(
-                          color: _hasError ? foregroundColor : null,
+                          color: _hasError ? colorScheme.onSurface : null,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -232,9 +252,7 @@ class _AtCoderClansScreenState extends State<AtCoderClansScreen> {
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final foregroundColor = isError
-        ? colorScheme.onErrorContainer
-        : colorScheme.onSurfaceVariant;
+    final foregroundColor = colorScheme.onSurfaceVariant;
     final iconBackground = isError
         ? colorScheme.errorContainer
         : colorScheme.primaryContainer;
@@ -279,7 +297,7 @@ class _AtCoderClansScreenState extends State<AtCoderClansScreen> {
                             Text(
                               title,
                               style: theme.textTheme.titleMedium?.copyWith(
-                                color: isError ? foregroundColor : null,
+                                color: isError ? colorScheme.onSurface : null,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),

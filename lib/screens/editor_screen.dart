@@ -56,6 +56,7 @@ class _EditorScreenState extends State<EditorScreen> {
       GlobalKey<MonacoCodeEditorState>();
   // 標準入力用コントローラー
   final TextEditingController _stdinController = TextEditingController();
+  final FocusNode _stdinFocusNode = FocusNode();
   // スクロールコントローラー（PrimaryScrollController競合回避のため個別に用意）
   final ScrollController _stdinScrollController = ScrollController();
   final ScrollController _ioScrollController = ScrollController();
@@ -65,6 +66,9 @@ class _EditorScreenState extends State<EditorScreen> {
   bool _isRunning = false; // 実行中フラグ
   bool _isTesting = false; // テスト実行中フラグ
   List<TestResult> _testResults = []; // テスト結果リスト
+  String? _lastTestedCode;
+  String? _lastTestedLanguage;
+  String? _lastTestedProblemId;
   Problem? _currentProblem; // 現在の問題データ
   final AtCoderService _atcoderService =
       AtCoderService(); // AtCoderServiceインスタンス
@@ -89,7 +93,7 @@ class _EditorScreenState extends State<EditorScreen> {
     // CodeController を初期化する際に、選択されている言語のハイライトを設定
     _codeController = CodeController(
       language: _getHighlightLanguage(_selectedLanguage), // 修正
-      text: '// Loading code...',
+      text: '// コードを読み込み中...',
     );
     _loadSavedCode();
     _loadProblemData(); // 問題データを読み込む
@@ -102,6 +106,7 @@ class _EditorScreenState extends State<EditorScreen> {
     _debounce?.cancel();
     _codeController.dispose();
     _stdinController.dispose();
+    _stdinFocusNode.dispose();
     _stdinScrollController.dispose();
     _ioScrollController.dispose();
     super.dispose();
@@ -349,7 +354,7 @@ class _EditorScreenState extends State<EditorScreen> {
           final compilerError = result['compiler_error'];
           if (compilerError != null && compilerError.isNotEmpty) {
             // 文字列補間を使って安全に結合
-            _error += "\n--- Compiler Error ---\n$compilerError";
+            _error += "\n--- コンパイルエラー ---\n$compilerError";
           }
         });
       } else {
@@ -520,7 +525,7 @@ class _EditorScreenState extends State<EditorScreen> {
 
         if (compilerError != null && compilerError.isNotEmpty) {
           testCase.status = JudgeStatus.ce;
-          testCase.errorOutput += "\n--- Compiler Error ---\n$compilerError";
+          testCase.errorOutput += "\n--- コンパイルエラー ---\n$compilerError";
         } else if (testCase.signal != null &&
             (testCase.signal!.contains('TLE') ||
                 testCase.signal!.contains('Killed') ||
@@ -592,35 +597,47 @@ class _EditorScreenState extends State<EditorScreen> {
       name: 'EditorScreen',
     );
 
-    // --- 状態更新と準備 ---
-    // 外側のStateを更新してボタンを無効化 & テスト結果リスト初期化
+    final code = _currentCode;
+    final testedLanguage = _selectedLanguage;
+    final reuseResults =
+        _lastTestedCode == code &&
+        _lastTestedLanguage == testedLanguage &&
+        _lastTestedProblemId == widget.problemId &&
+        _testResults.isNotEmpty &&
+        _testResults.every(
+          (result) =>
+              result.status != JudgeStatus.pending &&
+              result.status != JudgeStatus.running,
+        );
+
+    // コードが同一なら完了済みの結果を保持し、再実行を省略する。
     setState(() {
-      _isTesting = true;
-      _testResults = _currentProblem!.samples
-          .map(
-            (sample) => TestResult(
-              index: sample.index,
-              input: sample.input,
-              expectedOutput: sample.output,
-              // 初期状態は pending
-            ),
-          )
-          .toList();
+      _isTesting = !reuseResults;
+      if (!reuseResults) {
+        _testResults = _currentProblem!.samples
+            .map(
+              (sample) => TestResult(
+                index: sample.index,
+                input: sample.input,
+                expectedOutput: sample.output,
+              ),
+            )
+            .toList();
+      }
     });
     developer.log(
       'Outer state updated: _isTesting=true, _testResults initialized with ${_testResults.length} cases.',
       name: 'EditorScreen',
     );
 
-    final code = _currentCode;
-    final wandboxLanguage = _getWandboxLanguageName(_selectedLanguage);
+    final wandboxLanguage = _getWandboxLanguageName(testedLanguage);
     developer.log(
       'Code length: ${code.length}, Wandbox language: $wandboxLanguage',
       name: 'EditorScreen',
     );
 
     // --- ダイアログ表示と非同期テスト実行 ---
-    bool testsStarted = false; // 非同期処理の重複実行を防ぐフラグ
+    bool testsStarted = reuseResults; // キャッシュ利用時は実行ループを開始しない
 
     // ダイアログを表示 (await しない)
     showDialog(
@@ -685,6 +702,10 @@ class _EditorScreenState extends State<EditorScreen> {
                   "★★★ Finished test execution loop (async) ★★★",
                   name: 'EditorScreen',
                 );
+
+                _lastTestedCode = code;
+                _lastTestedLanguage = testedLanguage;
+                _lastTestedProblemId = widget.problemId;
 
                 // --- テスト完了後の状態更新 ---
                 // メイン画面の State がまだ有効か確認
@@ -759,7 +780,9 @@ class _EditorScreenState extends State<EditorScreen> {
                         ),
                       ),
                       child: Text(
-                        _currentProblem?.title ?? 'サンプルケース',
+                        reuseResults
+                            ? '${_currentProblem?.title ?? 'サンプルケース'} ・ 前回の結果'
+                            : _currentProblem?.title ?? 'サンプルケース',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),
@@ -1114,7 +1137,7 @@ class _EditorScreenState extends State<EditorScreen> {
                     ),
                   )
                 : const Icon(Icons.checklist_rtl),
-            label: Text(_isTesting ? 'サンプルテスト中…' : 'サンプル'),
+            label: const Text('サンプル'),
             onPressed: isButtonDisabled
                 ? null
                 : () {
@@ -1203,112 +1226,130 @@ class _EditorScreenState extends State<EditorScreen> {
       clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            Expanded(
-              child: _buildTextPanel(
-                title: '標準入力',
-                subtitle: 'stdin',
-                icon: Icons.keyboard_alt_outlined,
-                child: TextField(
-                  controller: _stdinController,
-                  maxLines: null,
-                  decoration: InputDecoration(
-                    hintText: 'プログラムへの入力をここに入力します',
-                    hintStyle: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final stackVertically = constraints.maxWidth < 600;
+            return Flex(
+              direction: stackVertically ? Axis.vertical : Axis.horizontal,
+              children: [
+                Expanded(
+                  child: _buildTextPanel(
+                    title: '標準入力',
+                    subtitle: 'stdin',
+                    icon: Icons.keyboard_alt_outlined,
+                    child: TextField(
+                      controller: _stdinController,
+                      focusNode: _stdinFocusNode,
+                      scrollController: _stdinScrollController,
+                      expands: true,
+                      minLines: null,
+                      maxLines: null,
+                      keyboardType: TextInputType.multiline,
+                      onTap: () => _stdinFocusNode.requestFocus(),
+                      decoration: InputDecoration(
+                        hintText: 'プログラムへの入力をここに入力します',
+                        hintStyle: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        border: InputBorder.none,
+                        isDense: true,
+                      ),
+                      style: getMonospaceTextStyle(
+                        codeFontFamily,
+                        fontSize: 13,
+                      ),
                     ),
-                    border: InputBorder.none,
-                    isDense: true,
+                    scrollController: _stdinScrollController,
+                    scrollChild: false,
                   ),
-                  style: getMonospaceTextStyle(codeFontFamily, fontSize: 13),
                 ),
-                scrollController: _stdinScrollController,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildTextPanel(
-                title: '実行結果',
-                subtitle: 'stdout / stderr',
-                icon: Icons.output_outlined,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (_output.isEmpty && _error.isEmpty)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHigh.withValues(
-                            alpha: 0.6,
-                          ),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: colorScheme.outlineVariant.withValues(
-                              alpha: 0.65,
+                SizedBox(
+                  width: stackVertically ? 0 : 12,
+                  height: stackVertically ? 12 : 0,
+                ),
+                Expanded(
+                  child: _buildTextPanel(
+                    title: '実行結果',
+                    subtitle: 'stdout / stderr',
+                    icon: Icons.output_outlined,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (_output.isEmpty && _error.isEmpty)
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
                             ),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.play_circle_outline,
-                              size: 18,
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'まだ実行結果はありません',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                  fontWeight: FontWeight.w600,
+                            decoration: BoxDecoration(
+                              color: colorScheme.surfaceContainerHigh
+                                  .withValues(alpha: 0.6),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: colorScheme.outlineVariant.withValues(
+                                  alpha: 0.65,
                                 ),
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                    if (_output.isNotEmpty)
-                      SelectableText(
-                        _output,
-                        style: getMonospaceTextStyle(
-                          codeFontFamily,
-                          fontSize: 13,
-                        ),
-                      ),
-                    if (_error.isNotEmpty) ...[
-                      Padding(
-                        padding: EdgeInsets.only(
-                          top: _output.isNotEmpty ? 8.0 : 0,
-                        ),
-                        child: Text(
-                          'エラー出力',
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            color: colorScheme.error,
-                            fontWeight: FontWeight.w700,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.play_circle_outline,
+                                  size: 18,
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'まだ実行結果はありません',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ),
-                      SelectableText(
-                        _error,
-                        style: getMonospaceTextStyle(
-                          codeFontFamily,
-                          fontSize: 13,
-                          color: colorScheme.error,
-                        ),
-                      ),
-                    ],
-                  ],
+                        if (_output.isNotEmpty)
+                          SelectableText(
+                            _output,
+                            style: getMonospaceTextStyle(
+                              codeFontFamily,
+                              fontSize: 13,
+                            ),
+                          ),
+                        if (_error.isNotEmpty) ...[
+                          Padding(
+                            padding: EdgeInsets.only(
+                              top: _output.isNotEmpty ? 8.0 : 0,
+                            ),
+                            child: Text(
+                              'エラー出力',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                color: colorScheme.error,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          SelectableText(
+                            _error,
+                            style: getMonospaceTextStyle(
+                              codeFontFamily,
+                              fontSize: 13,
+                              color: colorScheme.error,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    scrollController: _ioScrollController,
+                  ),
                 ),
-                scrollController: _ioScrollController,
-              ),
-            ),
-          ],
+              ],
+            );
+          },
         ),
       ),
     );
@@ -1320,6 +1361,7 @@ class _EditorScreenState extends State<EditorScreen> {
     required IconData icon,
     required Widget child,
     required ScrollController scrollController,
+    bool scrollChild = true,
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -1360,15 +1402,17 @@ class _EditorScreenState extends State<EditorScreen> {
               ),
             ),
             padding: const EdgeInsets.all(10),
-            child: Scrollbar(
-              controller: scrollController,
-              thumbVisibility: true,
-              child: SingleChildScrollView(
-                controller: scrollController,
-                primary: false,
-                child: child,
-              ),
-            ),
+            child: scrollChild
+                ? Scrollbar(
+                    controller: scrollController,
+                    thumbVisibility: true,
+                    child: SingleChildScrollView(
+                      controller: scrollController,
+                      primary: false,
+                      child: child,
+                    ),
+                  )
+                : child,
           ),
         ),
       ],
@@ -1378,6 +1422,7 @@ class _EditorScreenState extends State<EditorScreen> {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final navigationInset = MediaQuery.paddingOf(context).bottom;
     final codeFontFamily = themeProvider.codeFontFamily;
     final bool isLoadingProblem =
         _isLoadingCode ||
@@ -1401,9 +1446,9 @@ class _EditorScreenState extends State<EditorScreen> {
             case _ToolbarAction.history:
               if (widget.problemId.isEmpty ||
                   widget.problemId == 'default_problem') {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('No problem selected.')),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('問題が選択されていません')));
                 break;
               }
               final restoredCode = await Navigator.push(
@@ -1417,9 +1462,9 @@ class _EditorScreenState extends State<EditorScreen> {
                 await _setCode(restoredCode);
                 if (!context.mounted) return;
                 setState(() {});
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Code restored from history.')),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('コード履歴から復元しました')));
               }
               break;
             case _ToolbarAction.restore:
@@ -1452,43 +1497,46 @@ class _EditorScreenState extends State<EditorScreen> {
           }
         },
       ),
-      body: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, child) {
-          return Column(
-            children: [
-              // ローディング表示 or コードエディタ
-              if (isLoadingProblem)
-                const Expanded(
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              else
-                Expanded(
-                  flex: 3,
-                  child: themeProvider.editorType == EditorType.monaco
-                      ? MonacoCodeEditor(
-                          key: _monacoEditorKey,
-                          initialValue: _monacoCode.isNotEmpty
-                              ? _monacoCode
-                              : _codeController.text,
-                          language: _selectedLanguage,
-                          isDarkMode: _isDarkMode,
-                          onChanged: _onMonacoCodeChanged,
-                        )
-                      : _CodeEditor(
-                          codeController: _codeController,
-                          isDarkMode: _isDarkMode,
-                          codeFontFamily: codeFontFamily,
-                        ),
-                ),
+      body: Padding(
+        padding: EdgeInsets.only(bottom: navigationInset),
+        child: Consumer<ThemeProvider>(
+          builder: (context, themeProvider, child) {
+            return Column(
+              children: [
+                // ローディング表示 or コードエディタ
+                if (isLoadingProblem)
+                  const Expanded(
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else
+                  Expanded(
+                    flex: 3,
+                    child: themeProvider.editorType == EditorType.monaco
+                        ? MonacoCodeEditor(
+                            key: _monacoEditorKey,
+                            initialValue: _monacoCode.isNotEmpty
+                                ? _monacoCode
+                                : _codeController.text,
+                            language: _selectedLanguage,
+                            isDarkMode: _isDarkMode,
+                            onChanged: _onMonacoCodeChanged,
+                          )
+                        : _CodeEditor(
+                            codeController: _codeController,
+                            isDarkMode: _isDarkMode,
+                            codeFontFamily: codeFontFamily,
+                          ),
+                  ),
 
-              // 入出力エリア: ボタン行 + 左右分割 (stdin | stdout/stderr)
-              if (!isLoadingProblem) ...[
-                _buildExecutionControls(isButtonDisabled),
-                Expanded(flex: 2, child: _buildIoPanel(codeFontFamily)),
+                // 入出力エリア: ボタン行 + 左右分割 (stdin | stdout/stderr)
+                if (!isLoadingProblem) ...[
+                  _buildExecutionControls(isButtonDisabled),
+                  Expanded(flex: 2, child: _buildIoPanel(codeFontFamily)),
+                ],
               ],
-            ],
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -1529,6 +1577,7 @@ class _EditorAppBar extends StatelessWidget implements PreferredSizeWidget {
               DropdownButton<String>(
                 value: selectedLanguage,
                 isDense: true,
+                borderRadius: BorderRadius.circular(16),
                 underline: Container(
                   height: 1,
                   color: colorScheme.outlineVariant,
@@ -1562,6 +1611,9 @@ class _EditorAppBar extends StatelessWidget implements PreferredSizeWidget {
         PopupMenuButton<_ToolbarAction>(
           icon: const Icon(Icons.more_vert),
           tooltip: 'その他',
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           onSelected: onSelected,
           itemBuilder: (context) => [
             PopupMenuItem<_ToolbarAction>(

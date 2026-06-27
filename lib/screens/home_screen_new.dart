@@ -9,8 +9,10 @@ import '../screens/problem_detail_screen.dart';
 import '../services/atcoder_service.dart';
 import '../utils/atcoder_colors.dart';
 import '../utils/rating_utils.dart';
+import '../utils/responsive_layout.dart';
 import '../widgets/next_abc_contest_widget.dart';
 import '../widgets/shared/custom_sliver_app_bar.dart';
+import '../widgets/shared/app_loading_indicator.dart';
 
 class NewHomeScreen extends StatefulWidget {
   const NewHomeScreen({super.key});
@@ -34,6 +36,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
   String? _topRecommendationTitle;
   List<String> _widgetOrder = [..._defaultWidgetOrder];
   Set<String> _hiddenWidgets = {};
+  bool _areWidgetPreferencesLoaded = false;
 
   @override
   void initState() {
@@ -55,6 +58,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
       _hiddenWidgets = (prefs.getStringList(_hiddenWidgetsKey) ?? const [])
           .where(_defaultWidgetOrder.contains)
           .toSet();
+      _areWidgetPreferencesLoaded = true;
     });
   }
 
@@ -115,17 +119,11 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'ドラッグで並べ替え、スイッチで表示を切り替えます。',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
                   const SizedBox(height: 12),
                   Flexible(
                     child: ReorderableListView.builder(
                       shrinkWrap: true,
+                      buildDefaultDragHandles: false,
                       itemCount: draftOrder.length,
                       onReorderItem: (oldIndex, newIndex) {
                         setSheetState(() {
@@ -152,23 +150,42 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                                 horizontal: 12,
                                 vertical: 2,
                               ),
-                              secondary: Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: visible
-                                      ? colorScheme.primaryContainer
-                                      : colorScheme.surfaceContainerHighest,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Center(
-                                  child: Icon(
-                                    _widgetIcon(id),
-                                    color: visible
-                                        ? colorScheme.onPrimaryContainer
-                                        : colorScheme.onSurfaceVariant,
+                              secondary: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  ReorderableDragStartListener(
+                                    index: index,
+                                    child: Tooltip(
+                                      message: '並べ替え',
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8),
+                                        child: Icon(
+                                          Icons.drag_handle,
+                                          color: colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                ),
+                                  const SizedBox(width: 4),
+                                  Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      color: visible
+                                          ? colorScheme.primaryContainer
+                                          : colorScheme.surfaceContainerHighest,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Center(
+                                      child: Icon(
+                                        _widgetIcon(id),
+                                        color: visible
+                                            ? colorScheme.onPrimaryContainer
+                                            : colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                               title: Text(
                                 _widgetLabel(id),
@@ -601,7 +618,9 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
             ] else if (_isLoadingRecommendation) ...[
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 20.0),
-                child: Center(child: LoadingIndicatorM3E()),
+                child: Center(
+                  child: AppLoadingIndicator(semanticsLabel: 'おすすめ問題を読み込み中'),
+                ),
               ),
             ] else if (_recommendationErrorMessage != null) ...[
               _messagePanel(
@@ -698,8 +717,66 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
     );
   }
 
+  Widget _buildEmptyHomeState(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Card(
+      elevation: 2,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.space_dashboard_outlined,
+                    color: colorScheme.onPrimaryContainer,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    '表示中のウィジェットはありません',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ButtonM3E(
+              style: ButtonM3EStyle.filled,
+              icon: const Icon(Icons.dashboard_customize_outlined),
+              label: const Text('ホームをカスタマイズ'),
+              onPressed: _showWidgetManager,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final navigationInset = MediaQuery.paddingOf(context).bottom;
+    final horizontalInset = ResponsiveLayout.horizontalPadding(context);
+    final visibleWidgetIds = _widgetOrder
+        .where((id) => !_hiddenWidgets.contains(id))
+        .toList();
+
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -715,19 +792,36 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
             ],
           ),
           SliverPadding(
-            padding: const EdgeInsets.all(16.0),
+            padding: EdgeInsets.fromLTRB(
+              horizontalInset,
+              16,
+              horizontalInset,
+              16 + navigationInset,
+            ),
             sliver: SliverToBoxAdapter(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: _widgetOrder
-                    .where((id) => !_hiddenWidgets.contains(id))
-                    .expand(
-                      (id) => [
-                        _buildHomeWidget(id),
-                        const SizedBox(height: 16),
-                      ],
-                    )
-                    .toList(),
+                children: !_areWidgetPreferencesLoaded
+                    ? const [
+                        Padding(
+                          padding: EdgeInsets.symmetric(vertical: 32),
+                          child: Center(
+                            child: AppLoadingIndicator(
+                              semanticsLabel: 'ホーム設定を読み込み中',
+                            ),
+                          ),
+                        ),
+                      ]
+                    : visibleWidgetIds.isEmpty
+                    ? [_buildEmptyHomeState(context)]
+                    : visibleWidgetIds
+                          .expand(
+                            (id) => [
+                              _buildHomeWidget(id),
+                              const SizedBox(height: 16),
+                            ],
+                          )
+                          .toList(),
               ),
             ),
           ),

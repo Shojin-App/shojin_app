@@ -5,6 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../models/contest.dart';
 import '../providers/contest_provider.dart';
+import '../utils/responsive_layout.dart';
+import '../widgets/shared/app_loading_indicator.dart';
 
 class UpcomingContestsScreen extends StatefulWidget {
   const UpcomingContestsScreen({super.key});
@@ -41,6 +43,11 @@ class _UpcomingContestsScreenState extends State<UpcomingContestsScreen>
         title: const Text('今後のコンテスト'),
         bottom: TabBar(
           controller: _tabController,
+          indicatorPadding: const EdgeInsets.symmetric(
+            horizontal: 4,
+            vertical: 6,
+          ),
+          splashBorderRadius: const BorderRadius.all(Radius.circular(12)),
           tabs: const [
             Tab(text: 'ABC'),
             Tab(text: 'すべて'),
@@ -49,6 +56,7 @@ class _UpcomingContestsScreenState extends State<UpcomingContestsScreen>
         actions: [
           IconButtonM3E(
             icon: const Icon(Icons.refresh),
+            tooltip: 'コンテスト情報を更新',
             onPressed: () => context.read<ContestProvider>().refreshAll(),
           ),
         ],
@@ -127,7 +135,7 @@ class _UpcomingContestsScreenState extends State<UpcomingContestsScreen>
     return RefreshIndicator(
       onRefresh: onRefresh,
       child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: ResponsiveLayout.listPadding(context),
         itemCount: contests.length,
         itemBuilder: (context, index) {
           return _buildContestCard(context, contests[index]);
@@ -144,7 +152,9 @@ class _UpcomingContestsScreenState extends State<UpcomingContestsScreen>
         message: message,
         child: const Padding(
           padding: EdgeInsets.only(top: 16),
-          child: LoadingIndicatorM3E(),
+          child: Center(
+            child: AppLoadingIndicator(semanticsLabel: 'コンテスト予定を読み込み中'),
+          ),
         ),
       ),
     );
@@ -191,9 +201,7 @@ class _UpcomingContestsScreenState extends State<UpcomingContestsScreen>
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final foregroundColor = isError
-        ? colorScheme.onErrorContainer
-        : colorScheme.onSurfaceVariant;
+    final foregroundColor = colorScheme.onSurfaceVariant;
     final iconBackground = isError
         ? colorScheme.errorContainer
         : colorScheme.primaryContainer;
@@ -233,7 +241,7 @@ class _UpcomingContestsScreenState extends State<UpcomingContestsScreen>
                         Text(
                           title,
                           style: theme.textTheme.titleMedium?.copyWith(
-                            color: isError ? foregroundColor : null,
+                            color: isError ? colorScheme.onSurface : null,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -261,11 +269,21 @@ class _UpcomingContestsScreenState extends State<UpcomingContestsScreen>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final borderRadius = BorderRadius.circular(16);
+    final contestColors = _contestColors(context, contest);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: borderRadius),
+      color: Color.alphaBlend(
+        contestColors.container.withValues(alpha: 0.22),
+        colorScheme.surface,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: borderRadius,
+        side: BorderSide(
+          color: contestColors.foreground.withValues(alpha: 0.18),
+        ),
+      ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => _launchURL(contest.url),
@@ -281,12 +299,12 @@ class _UpcomingContestsScreenState extends State<UpcomingContestsScreen>
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer,
+                      color: contestColors.container,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
                       Icons.event_available,
-                      color: colorScheme.onPrimaryContainer,
+                      color: contestColors.foreground,
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -306,7 +324,7 @@ class _UpcomingContestsScreenState extends State<UpcomingContestsScreen>
                         Text(
                           contest.status,
                           style: theme.textTheme.labelMedium?.copyWith(
-                            color: colorScheme.primary,
+                            color: contestColors.foreground,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -378,64 +396,67 @@ class _UpcomingContestsScreenState extends State<UpcomingContestsScreen>
 
   Widget _buildContestTypeChip(BuildContext context, Contest contest) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    String type = 'その他';
-    Color containerColor = colorScheme.surfaceContainerHighest;
-    Color foregroundColor = colorScheme.onSurfaceVariant;
-
-    // より確実な文字列マッチング
-    final nameJa = contest.nameJa;
-    final nameEn = contest.nameEn;
-
-    if (contest.isABC ||
-        nameJa.contains('Beginner Contest') ||
-        nameEn.contains('Beginner Contest') ||
-        nameJa.contains('AtCoder Beginner Contest') ||
-        nameEn.contains('AtCoder Beginner Contest')) {
-      type = 'ABC';
-      containerColor = colorScheme.primaryContainer;
-      foregroundColor = colorScheme.onPrimaryContainer;
-    } else if (nameJa.contains('Regular Contest') ||
-        nameEn.contains('Regular Contest') ||
-        nameJa.contains('AtCoder Regular Contest') ||
-        nameEn.contains('AtCoder Regular Contest')) {
-      type = 'ARC';
-      containerColor = colorScheme.tertiaryContainer;
-      foregroundColor = colorScheme.onTertiaryContainer;
-    } else if (nameJa.contains('Grand Contest') ||
-        nameEn.contains('Grand Contest') ||
-        nameJa.contains('AtCoder Grand Contest') ||
-        nameEn.contains('AtCoder Grand Contest')) {
-      type = 'AGC';
-      containerColor = colorScheme.errorContainer;
-      foregroundColor = colorScheme.onErrorContainer;
-    } else if (nameJa.contains('Heuristic Contest') ||
-        nameEn.contains('Heuristic Contest') ||
-        nameJa.contains('AtCoder Heuristic Contest') ||
-        nameEn.contains('AtCoder Heuristic Contest')) {
-      type = 'AHC';
-      containerColor = colorScheme.secondaryContainer;
-      foregroundColor = colorScheme.onSecondaryContainer;
-    }
+    final colors = _contestColors(context, contest);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: containerColor.withValues(alpha: 0.78),
+        color: colors.container.withValues(alpha: 0.88),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: foregroundColor.withValues(alpha: 0.18),
+          color: colors.foreground.withValues(alpha: 0.22),
           width: 1,
         ),
       ),
       child: Text(
-        type,
+        colors.label,
         style: theme.textTheme.bodySmall?.copyWith(
-          color: foregroundColor,
+          color: colors.foreground,
           fontWeight: FontWeight.bold,
         ),
       ),
+    );
+  }
+
+  ({String label, Color container, Color foreground}) _contestColors(
+    BuildContext context,
+    Contest contest,
+  ) {
+    final colors = Theme.of(context).colorScheme;
+    final names = '${contest.nameJa} ${contest.nameEn}';
+
+    if (contest.isABC || names.contains('Beginner Contest')) {
+      return (
+        label: 'ABC',
+        container: colors.primaryContainer,
+        foreground: colors.onPrimaryContainer,
+      );
+    }
+    if (names.contains('Regular Contest')) {
+      return (
+        label: 'ARC',
+        container: colors.tertiaryContainer,
+        foreground: colors.onTertiaryContainer,
+      );
+    }
+    if (names.contains('Grand Contest')) {
+      return (
+        label: 'AGC',
+        container: colors.errorContainer,
+        foreground: colors.onErrorContainer,
+      );
+    }
+    if (names.contains('Heuristic Contest')) {
+      return (
+        label: 'AHC',
+        container: colors.secondaryContainer,
+        foreground: colors.onSecondaryContainer,
+      );
+    }
+    return (
+      label: 'その他',
+      container: colors.surfaceContainerHighest,
+      foreground: colors.onSurfaceVariant,
     );
   }
 

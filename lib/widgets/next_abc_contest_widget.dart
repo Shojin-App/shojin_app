@@ -8,6 +8,7 @@ import '../providers/contest_provider.dart';
 import '../screens/reminder_settings_screen.dart';
 import '../screens/upcoming_contests_screen.dart';
 import '../services/reminder_storage_service.dart';
+import 'shared/app_loading_indicator.dart';
 
 class NextABCContestWidget extends StatefulWidget {
   const NextABCContestWidget({super.key});
@@ -51,7 +52,9 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
             message: 'コンテスト情報を取得しています',
             child: const Padding(
               padding: EdgeInsets.only(top: 16),
-              child: Center(child: LoadingIndicatorM3E()),
+              child: Center(
+                child: AppLoadingIndicator(semanticsLabel: 'コンテスト情報を読み込み中'),
+              ),
             ),
           );
         }
@@ -102,9 +105,7 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final foregroundColor = isError
-        ? colorScheme.onErrorContainer
-        : colorScheme.onSurfaceVariant;
+    final foregroundColor = colorScheme.onSurfaceVariant;
     final iconBackground = isError
         ? colorScheme.errorContainer
         : colorScheme.primaryContainer;
@@ -141,7 +142,7 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
                       Text(
                         title,
                         style: theme.textTheme.titleMedium?.copyWith(
-                          color: isError ? foregroundColor : null,
+                          color: isError ? colorScheme.onSurface : null,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -338,6 +339,7 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
         ),
         IconButtonM3E(
           icon: Icon(Icons.settings, color: colorScheme.onSurfaceVariant),
+          tooltip: 'リマインダー設定',
           onPressed: () {
             Navigator.push(
               context,

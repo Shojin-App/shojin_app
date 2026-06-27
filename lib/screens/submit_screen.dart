@@ -132,11 +132,14 @@ class _SubmitScreenState extends State<SubmitScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          _buildStatusHeader(context),
-          Expanded(child: WebViewWidget(controller: _controller)),
-        ],
+      body: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            _buildStatusHeader(context),
+            Expanded(child: WebViewWidget(controller: _controller)),
+          ],
+        ),
       ),
     );
   }
@@ -145,9 +148,7 @@ class _SubmitScreenState extends State<SubmitScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final progress = (_loadingProgress / 100).clamp(0.0, 1.0);
-    final foregroundColor = _hasPageError
-        ? colorScheme.onErrorContainer
-        : colorScheme.onSurfaceVariant;
+    final foregroundColor = colorScheme.onSurfaceVariant;
     final iconBackground = _hasPageError
         ? colorScheme.errorContainer
         : colorScheme.primaryContainer;
@@ -158,7 +159,20 @@ class _SubmitScreenState extends State<SubmitScreen> {
     return Card(
       elevation: 2,
       margin: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: _hasPageError
+          ? Color.alphaBlend(
+              colorScheme.errorContainer.withValues(alpha: 0.18),
+              colorScheme.surface,
+            )
+          : null,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: _hasPageError
+              ? colorScheme.error.withValues(alpha: 0.35)
+              : colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+      ),
       clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -188,7 +202,7 @@ class _SubmitScreenState extends State<SubmitScreen> {
                       Text(
                         _statusMessage,
                         style: theme.textTheme.titleSmall?.copyWith(
-                          color: _hasPageError ? foregroundColor : null,
+                          color: _hasPageError ? colorScheme.onSurface : null,
                           fontWeight: FontWeight.w700,
                         ),
                       ),

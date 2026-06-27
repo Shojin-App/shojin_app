@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 
 import '../models/code_history.dart';
 import '../services/code_history_service.dart';
+import '../utils/responsive_layout.dart';
+import '../widgets/shared/app_loading_indicator.dart';
 
 class CodeHistoryScreen extends StatefulWidget {
   final String problemId;
@@ -39,7 +41,7 @@ class _CodeHistoryScreenState extends State<CodeHistoryScreen> {
               message: '保存されたコード履歴を確認しています。',
               child: const Padding(
                 padding: EdgeInsets.only(top: 16),
-                child: LoadingIndicatorM3E(),
+                child: AppLoadingIndicator(semanticsLabel: 'コード履歴を読み込み中'),
               ),
             );
           } else if (snapshot.hasError) {
@@ -60,7 +62,7 @@ class _CodeHistoryScreenState extends State<CodeHistoryScreen> {
           } else {
             final historyList = snapshot.data!;
             return ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+              padding: ResponsiveLayout.listPadding(context),
               itemCount: historyList.length,
               itemBuilder: (context, index) {
                 final history = historyList[index];
@@ -83,9 +85,7 @@ class _CodeHistoryScreenState extends State<CodeHistoryScreen> {
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final foregroundColor = isError
-        ? colorScheme.onErrorContainer
-        : colorScheme.onSurfaceVariant;
+    final foregroundColor = colorScheme.onSurfaceVariant;
     final iconBackground = isError
         ? colorScheme.errorContainer
         : colorScheme.primaryContainer;
@@ -128,7 +128,7 @@ class _CodeHistoryScreenState extends State<CodeHistoryScreen> {
                           Text(
                             title,
                             style: theme.textTheme.titleMedium?.copyWith(
-                              color: isError ? foregroundColor : null,
+                              color: isError ? colorScheme.onSurface : null,
                               fontWeight: FontWeight.w700,
                             ),
                           ),

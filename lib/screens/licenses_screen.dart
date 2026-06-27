@@ -2,9 +2,10 @@ import 'package:flutter/foundation.dart'
     show LicenseRegistry; // for potential custom additions
 import 'package:flutter/material.dart';
 
-import 'package:m3e_collection/m3e_collection.dart';
 import '../generated/manual_licenses.dart';
 import '../generated/oss_licenses.dart';
+import '../utils/responsive_layout.dart';
+import '../widgets/shared/app_loading_indicator.dart';
 
 /// ライセンス一覧（生成データ利用）
 class LicensesScreen extends StatelessWidget {
@@ -18,6 +19,8 @@ class LicensesScreen extends StatelessWidget {
         appBar: AppBar(
           title: const Text('ライセンス'),
           bottom: const TabBar(
+            indicatorPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+            splashBorderRadius: BorderRadius.all(Radius.circular(12)),
             tabs: [
               Tab(text: '直接'),
               Tab(text: '全体'),
@@ -46,7 +49,7 @@ class _LicenseList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      padding: ResponsiveLayout.listPadding(context),
       itemCount: packages.length + 1,
       itemBuilder: (context, index) {
         if (index == 0) {
@@ -103,9 +106,7 @@ class _LicensePackageCard extends StatelessWidget {
           ),
         ),
         subtitle: Text(
-          package.version?.isNotEmpty == true
-              ? package.version!
-              : 'version unknown',
+          package.version?.isNotEmpty == true ? package.version! : 'バージョン不明',
           style: theme.textTheme.bodySmall?.copyWith(
             color: colorScheme.onSurfaceVariant,
           ),
@@ -145,7 +146,7 @@ class _LicensePackageCard extends StatelessWidget {
               ),
             ),
             child: SelectableText(
-              package.license ?? '(No license text)',
+              package.license ?? 'ライセンス本文がありません',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurface,
                 height: 1.35,
@@ -208,7 +209,7 @@ class _StandardLicensePaneState extends State<_StandardLicensePane> {
             message: 'FlutterのLicenseRegistryから情報を収集しています。',
             child: Padding(
               padding: EdgeInsets.only(top: 16),
-              child: LoadingIndicatorM3E(),
+              child: AppLoadingIndicator(semanticsLabel: '標準ライセンスを読み込み中'),
             ),
           );
         }
@@ -229,7 +230,7 @@ class _StandardLicensePaneState extends State<_StandardLicensePane> {
           );
         }
         return ListView.builder(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          padding: ResponsiveLayout.listPadding(context),
           itemCount: data.length + 1,
           itemBuilder: (context, index) {
             if (index == 0) {
@@ -341,9 +342,7 @@ class _InfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final foregroundColor = isError
-        ? colorScheme.onErrorContainer
-        : colorScheme.onSurfaceVariant;
+    final foregroundColor = colorScheme.onSurfaceVariant;
     final iconBackground = isError
         ? colorScheme.errorContainer
         : colorScheme.primaryContainer;
@@ -378,7 +377,7 @@ class _InfoCard extends StatelessWidget {
                   Text(
                     title,
                     style: theme.textTheme.titleMedium?.copyWith(
-                      color: isError ? foregroundColor : null,
+                      color: isError ? colorScheme.onSurface : null,
                       fontWeight: FontWeight.w700,
                     ),
                   ),

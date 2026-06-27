@@ -23,6 +23,7 @@ import 'services/auto_update_manager.dart'; // Add auto update manager
 import 'services/contest_reminder_service.dart';
 import 'services/notification_service.dart'; // Import NotificationService
 import 'utils/app_fonts.dart'; // Import app fonts helper
+import 'utils/responsive_layout.dart';
 
 void main() async {
   // Flutter Engineの初期化を保証
@@ -260,7 +261,7 @@ class MyApp extends StatelessWidget {
                 elevation: 2,
                 margin: const EdgeInsets.all(8),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24.0),
+                  borderRadius: BorderRadius.circular(16.0),
                 ),
                 // MaterialYou使用時のコントラスト改善
                 surfaceTintColor: themeProvider.useMaterialYou
@@ -286,6 +287,62 @@ class MyApp extends StatelessWidget {
                       : lightColorScheme.onSurfaceVariant;
                   return TextStyle(color: color);
                 }),
+              ),
+              tabBarTheme: TabBarThemeData(
+                indicator: BoxDecoration(
+                  color: lightColorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                indicatorSize: TabBarIndicatorSize.tab,
+                dividerColor: Colors.transparent,
+                labelColor: lightColorScheme.onPrimaryContainer,
+                unselectedLabelColor: lightColorScheme.onSurfaceVariant,
+                labelStyle: textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              menuTheme: MenuThemeData(
+                style: MenuStyle(
+                  shape: WidgetStatePropertyAll(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ),
+              popupMenuTheme: PopupMenuThemeData(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              dropdownMenuTheme: DropdownMenuThemeData(
+                menuStyle: MenuStyle(
+                  shape: WidgetStatePropertyAll(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ),
+              dialogTheme: DialogThemeData(
+                elevation: 3,
+                backgroundColor: lightColorScheme.surfaceContainerHigh,
+                surfaceTintColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              snackBarTheme: SnackBarThemeData(
+                behavior: SnackBarBehavior.floating,
+                elevation: 3,
+                backgroundColor: lightColorScheme.inverseSurface,
+                actionTextColor: lightColorScheme.inversePrimary,
+                contentTextStyle: textTheme.bodyMedium?.copyWith(
+                  color: lightColorScheme.onInverseSurface,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
               elevatedButtonTheme: ElevatedButtonThemeData(
                 style: ElevatedButton.styleFrom(
@@ -328,11 +385,67 @@ class MyApp extends StatelessWidget {
                   return TextStyle(color: color);
                 }),
               ),
+              tabBarTheme: TabBarThemeData(
+                indicator: BoxDecoration(
+                  color: darkColorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                indicatorSize: TabBarIndicatorSize.tab,
+                dividerColor: Colors.transparent,
+                labelColor: darkColorScheme.onPrimaryContainer,
+                unselectedLabelColor: darkColorScheme.onSurfaceVariant,
+                labelStyle: textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              menuTheme: MenuThemeData(
+                style: MenuStyle(
+                  shape: WidgetStatePropertyAll(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ),
+              popupMenuTheme: PopupMenuThemeData(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              dropdownMenuTheme: DropdownMenuThemeData(
+                menuStyle: MenuStyle(
+                  shape: WidgetStatePropertyAll(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ),
+              dialogTheme: DialogThemeData(
+                elevation: 3,
+                backgroundColor: darkColorScheme.surfaceContainerHigh,
+                surfaceTintColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              snackBarTheme: SnackBarThemeData(
+                behavior: SnackBarBehavior.floating,
+                elevation: 3,
+                backgroundColor: darkColorScheme.inverseSurface,
+                actionTextColor: darkColorScheme.inversePrimary,
+                contentTextStyle: textTheme.bodyMedium?.copyWith(
+                  color: darkColorScheme.onInverseSurface,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
               cardTheme: CardThemeData(
                 elevation: 2,
                 margin: const EdgeInsets.all(8),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24.0),
+                  borderRadius: BorderRadius.circular(16.0),
                 ),
                 color: themeProvider.isPureBlack
                     ? const Color(0xFF121212)
@@ -535,7 +648,7 @@ class _MainScreenState extends State<MainScreen> {
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: overlayStyle,
         child: Scaffold(
-          extendBody: false,
+          extendBody: true,
           body: SafeArea(
             top: _selectedIndex != 4,
             bottom:
@@ -544,7 +657,10 @@ class _MainScreenState extends State<MainScreen> {
           ),
           bottomNavigationBar: ClipRect(
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+              filter: ImageFilter.blur(
+                sigmaX: Provider.of<ThemeProvider>(context).navBarOpacity * 24,
+                sigmaY: Provider.of<ThemeProvider>(context).navBarOpacity * 24,
+              ),
               child: Container(
                 // Adjust opacity from settings
                 color: Theme.of(context).colorScheme.surface.withValues(
@@ -553,38 +669,47 @@ class _MainScreenState extends State<MainScreen> {
                 child: Material(
                   color:
                       Colors.transparent, // Let the translucent container show
-                  child: NavigationBarM3E(
-                    backgroundColor: Colors.transparent,
-                    elevation: 0,
-                    onDestinationSelected: _onItemTapped,
-                    selectedIndex: _selectedIndex,
-                    destinations: const [
-                      NavigationDestinationM3E(
-                        icon: Icon(Icons.home_outlined),
-                        selectedIcon: Icon(Icons.home),
-                        label: 'ホーム',
+                  child: Center(
+                    heightFactor: 1,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxWidth: ResponsiveLayout.maxContentWidth,
                       ),
-                      NavigationDestinationM3E(
-                        icon: Icon(Icons.public_outlined),
-                        selectedIcon: Icon(Icons.public),
-                        label: 'ブラウザ',
+                      child: NavigationBarM3E(
+                        backgroundColor: Colors.transparent,
+                        elevation: 0,
+                        semanticLabel: 'メインナビゲーション',
+                        onDestinationSelected: _onItemTapped,
+                        selectedIndex: _selectedIndex,
+                        destinations: const [
+                          NavigationDestinationM3E(
+                            icon: Icon(Icons.home_outlined),
+                            selectedIcon: Icon(Icons.home),
+                            label: 'ホーム',
+                          ),
+                          NavigationDestinationM3E(
+                            icon: Icon(Icons.public_outlined),
+                            selectedIcon: Icon(Icons.public),
+                            label: 'ブラウザ',
+                          ),
+                          NavigationDestinationM3E(
+                            icon: Icon(Icons.list_alt_outlined),
+                            selectedIcon: Icon(Icons.list_alt),
+                            label: '問題',
+                          ),
+                          NavigationDestinationM3E(
+                            icon: Icon(Icons.code_outlined),
+                            selectedIcon: Icon(Icons.code),
+                            label: 'エディタ',
+                          ),
+                          NavigationDestinationM3E(
+                            icon: Icon(Icons.settings_outlined),
+                            selectedIcon: Icon(Icons.settings),
+                            label: '設定',
+                          ),
+                        ],
                       ),
-                      NavigationDestinationM3E(
-                        icon: Icon(Icons.list_alt_outlined),
-                        selectedIcon: Icon(Icons.list_alt),
-                        label: '問題',
-                      ),
-                      NavigationDestinationM3E(
-                        icon: Icon(Icons.code_outlined),
-                        selectedIcon: Icon(Icons.code),
-                        label: 'エディタ',
-                      ),
-                      NavigationDestinationM3E(
-                        icon: Icon(Icons.settings_outlined),
-                        selectedIcon: Icon(Icons.settings),
-                        label: '設定',
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -639,6 +764,12 @@ class _AnimatedTabStackState extends State<AnimatedTabStack>
   void didUpdateWidget(covariant AnimatedTabStack oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.index != oldWidget.index) {
+      if (MediaQuery.disableAnimationsOf(context)) {
+        _controller.stop();
+        _controller.value = 1;
+        _previousIndex = null;
+        return;
+      }
       _previousIndex = oldWidget.index;
       _transitionDirection = widget.index > oldWidget.index ? 1 : -1;
       _controller.forward(from: 0);
