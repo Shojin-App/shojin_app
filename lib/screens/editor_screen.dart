@@ -98,11 +98,13 @@ class _EditorScreenState extends State<EditorScreen> {
     _loadSavedCode();
     _loadProblemData(); // 問題データを読み込む
     _codeController.addListener(_onCodeChanged);
+    _stdinFocusNode.addListener(_onStdinFocusChanged);
   }
 
   @override
   void dispose() {
     _codeController.removeListener(_onCodeChanged);
+    _stdinFocusNode.removeListener(_onStdinFocusChanged);
     _debounce?.cancel();
     _codeController.dispose();
     _stdinController.dispose();
@@ -110,6 +112,10 @@ class _EditorScreenState extends State<EditorScreen> {
     _stdinScrollController.dispose();
     _ioScrollController.dispose();
     super.dispose();
+  }
+
+  void _onStdinFocusChanged() {
+    if (mounted) setState(() {});
   }
 
   void _log(String message, {Object? error, StackTrace? stackTrace}) {
@@ -1510,7 +1516,7 @@ class _EditorScreenState extends State<EditorScreen> {
                   )
                 else
                   Expanded(
-                    flex: 3,
+                    flex: _stdinFocusNode.hasFocus ? 1 : 3,
                     child: themeProvider.editorType == EditorType.monaco
                         ? MonacoCodeEditor(
                             key: _monacoEditorKey,
@@ -1531,7 +1537,10 @@ class _EditorScreenState extends State<EditorScreen> {
                 // 入出力エリア: ボタン行 + 左右分割 (stdin | stdout/stderr)
                 if (!isLoadingProblem) ...[
                   _buildExecutionControls(isButtonDisabled),
-                  Expanded(flex: 2, child: _buildIoPanel(codeFontFamily)),
+                  Expanded(
+                    flex: _stdinFocusNode.hasFocus ? 3 : 2,
+                    child: _buildIoPanel(codeFontFamily),
+                  ),
                 ],
               ],
             );

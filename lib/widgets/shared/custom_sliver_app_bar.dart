@@ -41,16 +41,68 @@ class CustomSliverAppBar extends StatelessWidget {
             ),
       backgroundColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
-      forceMaterialTransparency: true,
-      flexibleSpace: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: opacity * 24, sigmaY: opacity * 24),
-          child: ColoredBox(
-            color: colorScheme.surface.withValues(alpha: opacity),
-          ),
-        ),
+      flexibleSpace: _TranslucentBarBackground(
+        opacity: opacity,
+        color: colorScheme.surface,
       ),
       actions: actions,
+    );
+  }
+}
+
+class TranslucentAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final Widget title;
+  final List<Widget>? actions;
+  final Widget? leading;
+  final bool automaticallyImplyLeading;
+
+  const TranslucentAppBar({
+    super.key,
+    required this.title,
+    this.actions,
+    this.leading,
+    this.automaticallyImplyLeading = true,
+  });
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  @override
+  Widget build(BuildContext context) {
+    final opacity = context.watch<ThemeProvider>().navBarOpacity;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return AppBar(
+      title: title,
+      actions: actions,
+      leading: leading,
+      automaticallyImplyLeading: automaticallyImplyLeading,
+      centerTitle: true,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      backgroundColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      flexibleSpace: _TranslucentBarBackground(
+        opacity: opacity,
+        color: colorScheme.surface,
+      ),
+    );
+  }
+}
+
+class _TranslucentBarBackground extends StatelessWidget {
+  const _TranslucentBarBackground({required this.opacity, required this.color});
+
+  final double opacity;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: opacity * 24, sigmaY: opacity * 24),
+        child: ColoredBox(color: color.withValues(alpha: opacity)),
+      ),
     );
   }
 }

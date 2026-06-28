@@ -650,7 +650,9 @@ class _MainScreenState extends State<MainScreen> {
         child: Scaffold(
           extendBody: true,
           body: SafeArea(
-            top: _selectedIndex != 4,
+            // Browser and the M3E editor app bar need an external top inset.
+            // The other tabs paint their own translucent app bar into it.
+            top: _selectedIndex == 1 || _selectedIndex == 3,
             bottom:
                 false, // allow content under BottomNavigationBar for BackdropFilter
             child: AnimatedTabStack(index: _selectedIndex, children: screens),
@@ -823,15 +825,18 @@ class _AnimatedTabStackState extends State<AnimatedTabStack>
 
     return Offstage(
       offstage: !isVisible,
-      child: TickerMode(
-        enabled: isVisible,
-        child: IgnorePointer(
-          ignoring: !isSelected,
-          child: FractionalTranslation(
-            translation: Offset(slideOffset, 0),
-            child: Opacity(
-              opacity: opacity.clamp(0, 1),
-              child: widget.children[childIndex],
+      child: ExcludeFocus(
+        excluding: !isSelected,
+        child: TickerMode(
+          enabled: isVisible,
+          child: IgnorePointer(
+            ignoring: !isSelected,
+            child: FractionalTranslation(
+              translation: Offset(slideOffset, 0),
+              child: Opacity(
+                opacity: opacity.clamp(0, 1),
+                child: widget.children[childIndex],
+              ),
             ),
           ),
         ),

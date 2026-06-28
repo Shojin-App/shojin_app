@@ -13,6 +13,7 @@ import '../utils/responsive_layout.dart';
 import '../utils/text_style_helper.dart';
 import '../widgets/tex_widget.dart';
 import '../widgets/shared/app_loading_indicator.dart';
+import '../widgets/shared/custom_sliver_app_bar.dart';
 
 class ProblemDetailScreen extends StatefulWidget {
   final String? initialUrl; // Keep for potential direct URL loading
@@ -474,7 +475,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
     final horizontalPadding = ResponsiveLayout.horizontalPadding(context);
 
     return Scaffold(
-      appBar: AppBarM3E(
+      appBar: TranslucentAppBar(
         title: const Text('問題詳細'),
         actions: [
           if (_problem != null)
@@ -490,6 +491,8 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
         ],
       ),
       body: SafeArea(
+        top: false,
+        bottom: false,
         child: Padding(
           padding: EdgeInsets.fromLTRB(
             horizontalPadding,
@@ -544,12 +547,11 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
   Widget _buildProblemView(Problem problem) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final codeFontFamily = themeProvider.codeFontFamily;
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return SingleChildScrollView(
-      padding: EdgeInsets.only(bottom: bottomPadding > 0 ? bottomPadding : 16),
+      padding: const EdgeInsets.only(bottom: 16),
       child: Padding(
         padding: const EdgeInsets.only(top: 16),
         child: Card(
