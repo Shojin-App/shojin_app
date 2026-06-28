@@ -448,7 +448,7 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        setting.isEnabled ? '通知はONです' : '通知はOFFです',
+                        setting.isEnabled ? '通知は有効です' : '通知は無効です',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: setting.isEnabled
                               ? colorScheme.primary
@@ -461,14 +461,17 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
                     ],
                   ),
                 ),
-                Switch(
-                  value: setting.isEnabled,
-                  onChanged: (bool value) {
-                    setState(() {
-                      setting.isEnabled = value;
-                    });
-                    _saveSettings();
-                  },
+                Semantics(
+                  label: '$contestNameのリマインダー',
+                  child: Switch(
+                    value: setting.isEnabled,
+                    onChanged: (bool value) {
+                      setState(() {
+                        setting.isEnabled = value;
+                      });
+                      _saveSettings();
+                    },
+                  ),
                 ),
               ],
             ),
@@ -511,13 +514,22 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
                       ...setting.minutesBefore.map((time) {
                         return InputChip(
                           label: Text('$time分前'),
-                          onDeleted: () => _removeNotificationTime(index, time),
+                          deleteButtonTooltipMessage: 'この通知時間を削除',
+                          onDeleted: setting.minutesBefore.length > 1
+                              ? () => _removeNotificationTime(index, time)
+                              : null,
                         );
                       }),
-                      ActionChip(
-                        avatar: const Icon(Icons.add_alarm_outlined, size: 18),
-                        label: const Text('追加'),
-                        onPressed: () => _addNotificationTime(index),
+                      Tooltip(
+                        message: '通知時間を追加',
+                        child: ActionChip(
+                          avatar: const Icon(
+                            Icons.add_alarm_outlined,
+                            size: 18,
+                          ),
+                          label: const Text('追加'),
+                          onPressed: () => _addNotificationTime(index),
+                        ),
                       ),
                     ],
                   ),

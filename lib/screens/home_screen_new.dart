@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show listEquals, setEquals;
 import 'package:m3e_collection/m3e_collection.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shojin_app/screens/atcoder_clans_screen.dart';
@@ -95,6 +96,8 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
   }
 
   Future<void> _showWidgetManager() async {
+    final originalOrder = [..._widgetOrder];
+    final originalHidden = {..._hiddenWidgets};
     var draftOrder = [..._widgetOrder];
     var draftHidden = {..._hiddenWidgets};
 
@@ -106,6 +109,12 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
         builder: (context, setSheetState) {
           final theme = Theme.of(context);
           final colorScheme = theme.colorScheme;
+          final hasChanges =
+              !listEquals(draftOrder, originalOrder) ||
+              !setEquals(draftHidden, originalHidden);
+          final isDefault =
+              listEquals(draftOrder, _defaultWidgetOrder) &&
+              draftHidden.isEmpty;
 
           return SafeArea(
             child: Padding(
@@ -113,11 +122,29 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    'ホームをカスタマイズ',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'ホームをカスタマイズ',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      IconButtonM3E(
+                        tooltip: '初期状態に戻す',
+                        icon: const Icon(Icons.restart_alt),
+                        onPressed: isDefault
+                            ? null
+                            : () {
+                                setSheetState(() {
+                                  draftOrder = [..._defaultWidgetOrder];
+                                  draftHidden.clear();
+                                });
+                              },
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 12),
                   Flexible(
@@ -221,14 +248,36 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                     child: ButtonM3E(
                       style: ButtonM3EStyle.filled,
                       label: const Text('保存'),
-                      onPressed: () {
-                        setState(() {
-                          _widgetOrder = draftOrder;
-                          _hiddenWidgets = draftHidden;
-                        });
-                        _saveWidgetPreferences();
-                        Navigator.pop(context);
-                      },
+                      onPressed: !hasChanges
+                          ? null
+                          : () async {
+                              setState(() {
+                                _widgetOrder = [...draftOrder];
+                                _hiddenWidgets = {...draftHidden};
+                              });
+                              await _saveWidgetPreferences();
+                              if (!mounted || !context.mounted) return;
+                              Navigator.pop(context);
+                              final messenger = ScaffoldMessenger.of(
+                                this.context,
+                              );
+                              messenger.hideCurrentSnackBar();
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: const Text('ホームを更新しました'),
+                                  action: SnackBarAction(
+                                    label: '元に戻す',
+                                    onPressed: () async {
+                                      setState(() {
+                                        _widgetOrder = [...originalOrder];
+                                        _hiddenWidgets = {...originalHidden};
+                                      });
+                                      await _saveWidgetPreferences();
+                                    },
+                                  ),
+                                ),
+                              );
+                            },
                     ),
                   ),
                 ],
@@ -415,7 +464,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final borderRadius = BorderRadius.circular(16);
+    final borderRadius = BorderRadius.circular(8);
 
     return Card(
       key: key,
@@ -528,7 +577,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
   Widget _recommendationSection(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final borderRadius = BorderRadius.circular(16);
+    final borderRadius = BorderRadius.circular(8);
 
     return Card(
       elevation: 2,
@@ -724,7 +773,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
     return Card(
       elevation: 2,
       margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: const EdgeInsets.all(16),

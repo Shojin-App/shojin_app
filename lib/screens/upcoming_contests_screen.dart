@@ -213,7 +213,7 @@ class _UpcomingContestsScreenState extends State<UpcomingContestsScreen>
       padding: const EdgeInsets.all(16),
       child: Card(
         elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         clipBehavior: Clip.antiAlias,
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -268,7 +268,7 @@ class _UpcomingContestsScreenState extends State<UpcomingContestsScreen>
   Widget _buildContestCard(BuildContext context, Contest contest) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final borderRadius = BorderRadius.circular(16);
+    final borderRadius = BorderRadius.circular(8);
     final contestColors = _contestColors(context, contest);
 
     return Card(

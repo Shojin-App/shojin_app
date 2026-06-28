@@ -1181,34 +1181,33 @@ class _SettingsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0),
-      elevation: 2,
+    return Material(
       color: colorScheme.surfaceContainerLow,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16.0),
+        borderRadius: BorderRadius.circular(8.0),
         side: BorderSide(
           color: colorScheme.outlineVariant.withValues(alpha: 0.6),
         ),
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 10.0),
+            padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 8.0),
             child: Row(
               children: [
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
                     color: colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Center(
                     child: Icon(
                       icon,
-                      size: 22,
+                      size: 20,
                       color: colorScheme.onPrimaryContainer,
                     ),
                   ),
@@ -1218,7 +1217,7 @@ class _SettingsSection extends StatelessWidget {
                   child: Text(
                     title,
                     style: AppFonts.notoSansJp(
-                      fontSize: 18,
+                      fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: colorScheme.onSurface,
                     ),
@@ -1228,7 +1227,7 @@ class _SettingsSection extends StatelessWidget {
             ),
           ),
           ...children,
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
         ],
       ),
     );

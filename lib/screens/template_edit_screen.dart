@@ -135,7 +135,11 @@ class _TemplateEditScreenState extends State<TemplateEditScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBarM3E(
-        title: Text('${widget.language}のテンプレート編集'),
+        title: Text(
+          '${widget.language}のテンプレート編集',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         actions: [
           IconButtonM3E(
             onPressed: _resetTemplate,
@@ -143,11 +147,11 @@ class _TemplateEditScreenState extends State<TemplateEditScreen> {
             tooltip: 'デフォルトに戻す',
             semanticLabel: 'デフォルトに戻す',
           ),
-          ButtonM3E(
-            style: ButtonM3EStyle.text,
+          IconButtonM3E(
             onPressed: _isEdited ? _saveTemplate : null,
             icon: const Icon(Icons.save_outlined),
-            label: const Text('保存'),
+            tooltip: '保存',
+            semanticLabel: '保存',
           ),
         ],
       ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:m3e_collection/m3e_collection.dart';
 import 'package:intl/intl.dart';
 
@@ -19,6 +20,10 @@ class CodeHistoryScreen extends StatefulWidget {
 class _CodeHistoryScreenState extends State<CodeHistoryScreen> {
   final CodeHistoryService _codeHistoryService = CodeHistoryService();
   late Future<List<CodeHistory>> _historyFuture;
+
+  String _formatTimestamp(DateTime timestamp) {
+    return DateFormat('yyyy/MM/dd HH:mm:ss').format(timestamp.toLocal());
+  }
 
   @override
   void initState() {
@@ -192,7 +197,7 @@ class _CodeHistoryScreenState extends State<CodeHistoryScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      DateFormat.yMMMd().add_Hms().format(history.timestamp),
+                      _formatTimestamp(history.timestamp),
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -262,7 +267,7 @@ class _CodeHistoryScreenState extends State<CodeHistoryScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                DateFormat.yMMMd().add_Hms().format(history.timestamp),
+                _formatTimestamp(history.timestamp),
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -336,6 +341,18 @@ class _CodeHistoryScreenState extends State<CodeHistoryScreen> {
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.close),
             label: const Text('キャンセル'),
+            style: ButtonM3EStyle.text,
+          ),
+          ButtonM3E(
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: history.content));
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('コードをコピーしました')));
+            },
+            icon: const Icon(Icons.copy_outlined),
+            label: const Text('コピー'),
             style: ButtonM3EStyle.text,
           ),
           ButtonM3E(

@@ -261,7 +261,7 @@ class MyApp extends StatelessWidget {
                 elevation: 2,
                 margin: const EdgeInsets.all(8),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16.0),
+                  borderRadius: BorderRadius.circular(8.0),
                 ),
                 // MaterialYou使用時のコントラスト改善
                 surfaceTintColor: themeProvider.useMaterialYou
@@ -445,7 +445,7 @@ class MyApp extends StatelessWidget {
                 elevation: 2,
                 margin: const EdgeInsets.all(8),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16.0),
+                  borderRadius: BorderRadius.circular(8.0),
                 ),
                 color: themeProvider.isPureBlack
                     ? const Color(0xFF121212)

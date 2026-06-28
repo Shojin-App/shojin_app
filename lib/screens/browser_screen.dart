@@ -24,6 +24,7 @@ class BrowserScreen extends StatefulWidget {
 class _BrowserScreenState extends State<BrowserScreen>
     with AutomaticKeepAliveClientMixin {
   late WebViewController _controller;
+  final ScrollController _siteScrollController = ScrollController();
   List<BrowserSite> _sites = [];
   bool _isControllerReady = false;
   bool _loadFailed = false;
@@ -34,6 +35,12 @@ class _BrowserScreenState extends State<BrowserScreen>
   void initState() {
     super.initState();
     _initialize();
+  }
+
+  @override
+  void dispose() {
+    _siteScrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _initialize() async {
@@ -717,118 +724,127 @@ class _BrowserScreenState extends State<BrowserScreen>
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-      child: FilledButton(
-        onPressed: () async {
-          String targetUrl = url;
-          // AtCoder Problems の場合はユーザー名を付加する
-          if (url == BrowserConstants.defaultSites[1].url) {
-            final prefs = await SharedPreferences.getInstance();
-            final username = prefs.getString('atcoder_username');
-            if (username != null && username.isNotEmpty) {
-              targetUrl = '$url$username';
-            }
-          }
+      child: Tooltip(
+        message: onLongPress != null ? '$titleを開く（長押しで編集）' : '$titleを開く',
+        child: Semantics(
+          selected: isSelected,
+          hint: onLongPress != null ? '長押しで編集できます' : null,
+          child: FilledButton(
+            onPressed: () async {
+              String targetUrl = url;
+              // AtCoder Problems の場合はユーザー名を付加する
+              if (url == BrowserConstants.defaultSites[1].url) {
+                final prefs = await SharedPreferences.getInstance();
+                final username = prefs.getString('atcoder_username');
+                if (username != null && username.isNotEmpty) {
+                  targetUrl = '$url$username';
+                }
+              }
 
-          if (_currentUrl != targetUrl) {
-            _currentUrl = targetUrl;
-            if (mounted) {
-              setState(() {
-                _isLoadingWebView = true;
-                _loadFailed = false;
-              });
-            }
-            _controller.loadRequest(Uri.parse(targetUrl));
-          } else {
-            developer.log(
-              'Button pressed for already loaded URL: $url',
-              name: 'BrowserScreenButton',
-            );
-            // Optionally reload:
-            // if (mounted) { setState(() { _isLoadingWebView = true; _loadFailed = false; }); }
-            // _controller.reload();
-          }
-        },
-        onLongPress: onLongPress,
-        style: FilledButton.styleFrom(
-          backgroundColor: backgroundColor,
-          foregroundColor: textColor,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(999),
-            side: BorderSide(
-              color: isSelected
-                  ? colorScheme.primary.withValues(alpha: 0.35)
-                  : Colors.transparent,
-            ),
-          ),
-          elevation: isSelected ? 2 : 0,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (isSelected) ...[
-              Icon(Icons.check_circle, size: 16, color: textColor),
-              const SizedBox(width: 6),
-            ],
-            if (faviconUrl != null)
-              Container(
-                width: 20,
-                height: 20,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: textColor.withValues(alpha: 0.5),
-                    width: 1.0,
-                  ),
+              if (_currentUrl != targetUrl) {
+                _currentUrl = targetUrl;
+                if (mounted) {
+                  setState(() {
+                    _isLoadingWebView = true;
+                    _loadFailed = false;
+                  });
+                }
+                _controller.loadRequest(Uri.parse(targetUrl));
+              } else {
+                developer.log(
+                  'Button pressed for already loaded URL: $url',
+                  name: 'BrowserScreenButton',
+                );
+                // Optionally reload:
+                // if (mounted) { setState(() { _isLoadingWebView = true; _loadFailed = false; }); }
+                // _controller.reload();
+              }
+            },
+            onLongPress: onLongPress,
+            style: FilledButton.styleFrom(
+              backgroundColor: backgroundColor,
+              foregroundColor: textColor,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(999),
+                side: BorderSide(
+                  color: isSelected
+                      ? colorScheme.primary.withValues(alpha: 0.35)
+                      : Colors.transparent,
                 ),
-                child: ClipOval(
-                  child: Image.network(
-                    faviconUrl,
+              ),
+              elevation: isSelected ? 2 : 0,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isSelected) ...[
+                  Icon(Icons.check_circle, size: 16, color: textColor),
+                  const SizedBox(width: 6),
+                ],
+                if (faviconUrl != null)
+                  Container(
                     width: 20,
                     height: 20,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Icon(
-                      Icons.public,
-                      size: 18,
-                      color: textColor.withValues(alpha: 0.8),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: textColor.withValues(alpha: 0.5),
+                        width: 1.0,
+                      ),
                     ),
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded /
-                                    loadingProgress.expectedTotalBytes!
-                              : null,
+                    child: ClipOval(
+                      child: Image.network(
+                        faviconUrl,
+                        width: 20,
+                        height: 20,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Icon(
+                          Icons.public,
+                          size: 18,
+                          color: textColor.withValues(alpha: 0.8),
                         ),
-                      );
-                    },
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                  : null,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  )
+                else
+                  Icon(
+                    Icons.public,
+                    size: 18,
+                    color: textColor.withValues(alpha: 0.8),
+                  ),
+                const SizedBox(width: 8),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 128),
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: textColor,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w500,
+                    ),
                   ),
                 ),
-              )
-            else
-              Icon(
-                Icons.public,
-                size: 18,
-                color: textColor.withValues(alpha: 0.8),
-              ),
-            const SizedBox(width: 8),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 128),
-              child: Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: textColor,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -847,30 +863,35 @@ class _BrowserScreenState extends State<BrowserScreen>
         child: Row(
           children: [
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                scrollDirection: Axis.horizontal,
-                children: [
-                  ...BrowserConstants.defaultSites.map(
-                    (defaultSite) => _buildSiteButton(
-                      title: defaultSite.title,
-                      url: defaultSite.url,
-                      faviconUrl: defaultSite.faviconUrl,
-                      colorHex: defaultSite.colorHex,
+              child: Scrollbar(
+                controller: _siteScrollController,
+                scrollbarOrientation: ScrollbarOrientation.bottom,
+                child: ListView(
+                  controller: _siteScrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    ...BrowserConstants.defaultSites.map(
+                      (defaultSite) => _buildSiteButton(
+                        title: defaultSite.title,
+                        url: defaultSite.url,
+                        faviconUrl: defaultSite.faviconUrl,
+                        colorHex: defaultSite.colorHex,
+                      ),
                     ),
-                  ),
-                  ..._sites.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final site = entry.value;
-                    return _buildSiteButton(
-                      title: site.title,
-                      url: site.url,
-                      faviconUrl: site.faviconUrl,
-                      colorHex: site.colorHex,
-                      onLongPress: () => _editSite(index),
-                    );
-                  }),
-                ],
+                    ..._sites.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final site = entry.value;
+                      return _buildSiteButton(
+                        title: site.title,
+                        url: site.url,
+                        faviconUrl: site.faviconUrl,
+                        colorHex: site.colorHex,
+                        onLongPress: () => _editSite(index),
+                      );
+                    }),
+                  ],
+                ),
               ),
             ),
             Container(width: 1, height: 28, color: colorScheme.outlineVariant),

@@ -1108,7 +1108,7 @@ class _EditorScreenState extends State<EditorScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    Widget runButton = ButtonM3E(
+    final runButton = ButtonM3E(
       style: ButtonM3EStyle.filled,
       icon: _isRunning
           ? SizedBox(
@@ -1124,50 +1124,40 @@ class _EditorScreenState extends State<EditorScreen> {
       onPressed: _isRunning ? null : _runCode,
     );
 
-    final buttons = <Widget>[
-      Expanded(child: runButton),
-      if (_currentProblem != null) ...[
-        const SizedBox(width: 8),
-        Expanded(
-          child: ButtonM3E(
-            style: ButtonM3EStyle.tonal,
-            icon: _isTesting
-                ? SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation(
-                        colorScheme.onSecondaryContainer,
-                      ),
-                    ),
-                  )
-                : const Icon(Icons.checklist_rtl),
-            label: const Text('サンプル'),
-            onPressed: isButtonDisabled
-                ? null
-                : () {
-                    _log('★★★ Test Button Pressed! ★★★');
-                    _runTests();
-                  },
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: ButtonM3E(
-            style: ButtonM3EStyle.filled,
-            icon: const Icon(Icons.cloud_upload),
-            label: const Text('提出'),
-            onPressed: _openSubmitScreen,
-          ),
-        ),
-      ],
-    ];
+    final sampleButton = ButtonM3E(
+      style: ButtonM3EStyle.tonal,
+      icon: _isTesting
+          ? SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation(
+                  colorScheme.onSecondaryContainer,
+                ),
+              ),
+            )
+          : const Icon(Icons.checklist_rtl),
+      label: const Text('サンプル'),
+      onPressed: isButtonDisabled
+          ? null
+          : () {
+              _log('★★★ Test Button Pressed! ★★★');
+              _runTests();
+            },
+    );
+
+    final submitButton = ButtonM3E(
+      style: ButtonM3EStyle.filled,
+      icon: const Icon(Icons.cloud_upload),
+      label: const Text('提出'),
+      onPressed: _openSubmitScreen,
+    );
 
     return Card(
       elevation: 2,
       margin: const EdgeInsets.fromLTRB(4, 6, 4, 4),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -1181,7 +1171,7 @@ class _EditorScreenState extends State<EditorScreen> {
                   height: 36,
                   decoration: BoxDecoration(
                     color: colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     Icons.terminal,
@@ -1214,7 +1204,40 @@ class _EditorScreenState extends State<EditorScreen> {
               ],
             ),
             const SizedBox(height: 12),
-            Row(children: buttons),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                if (_currentProblem == null) {
+                  return SizedBox(width: double.infinity, child: runButton);
+                }
+
+                if (constraints.maxWidth < 420) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(child: runButton),
+                          const SizedBox(width: 8),
+                          Expanded(child: sampleButton),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      submitButton,
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    Expanded(child: runButton),
+                    const SizedBox(width: 8),
+                    Expanded(child: sampleButton),
+                    const SizedBox(width: 8),
+                    Expanded(child: submitButton),
+                  ],
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -1228,7 +1251,7 @@ class _EditorScreenState extends State<EditorScreen> {
     return Card(
       elevation: 2,
       margin: const EdgeInsets.fromLTRB(4, 4, 4, 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -1291,7 +1314,7 @@ class _EditorScreenState extends State<EditorScreen> {
                             decoration: BoxDecoration(
                               color: colorScheme.surfaceContainerHigh
                                   .withValues(alpha: 0.6),
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(8),
                               border: Border.all(
                                 color: colorScheme.outlineVariant.withValues(
                                   alpha: 0.65,
@@ -1571,49 +1594,61 @@ class _EditorAppBar extends StatelessWidget implements PreferredSizeWidget {
 
     return AppBarM3E(
       automaticallyImplyLeading: false,
-      title: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // 言語選択 Dropdown
-          Row(
-            children: [
-              Text(
-                '言語: ',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+      title: Align(
+        alignment: Alignment.centerLeft,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 180),
+          child: Tooltip(
+            message: '言語を選択',
+            child: Semantics(
+              label: 'プログラミング言語',
+              child: Container(
+                height: 40,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.65,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: colorScheme.outlineVariant),
                 ),
-              ),
-              DropdownButton<String>(
-                value: selectedLanguage,
-                isDense: true,
-                borderRadius: BorderRadius.circular(16),
-                underline: Container(
-                  height: 1,
-                  color: colorScheme.outlineVariant,
-                ),
-                onChanged: onLanguageChanged,
-                items: languages.map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ProgrammingLanguageIcon(language: value, size: 26),
-                        const SizedBox(width: 8),
-                        Text(
-                          value,
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: selectedLanguage,
+                    isDense: true,
+                    isExpanded: true,
+                    borderRadius: BorderRadius.circular(16),
+                    icon: const Icon(Icons.expand_more, size: 20),
+                    onChanged: onLanguageChanged,
+                    items: languages.map<DropdownMenuItem<String>>((
+                      String value,
+                    ) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Row(
+                          children: [
+                            ProgrammingLanguageIcon(language: value, size: 24),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                value,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  );
-                }).toList(),
+                      );
+                    }).toList(),
+                  ),
+                ),
               ),
-            ],
+            ),
           ),
-        ],
+        ),
       ),
       actions: [
         // 3点メニュー（オーバーフローメニュー）

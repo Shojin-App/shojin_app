@@ -227,7 +227,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
 
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -414,7 +414,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
       elevation: 2,
       color: backgroundColor,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(8),
         side: BorderSide(
           color: isError
               ? colorScheme.error.withValues(alpha: 0.24)
@@ -560,9 +560,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
         padding: const EdgeInsets.only(top: 16),
         child: Card(
           elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           clipBehavior: Clip.antiAlias,
           child: Padding(
             padding: const EdgeInsets.all(16),

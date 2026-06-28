@@ -115,7 +115,7 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
 
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -168,7 +168,7 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
   Widget _buildContestCard(BuildContext context, Contest contest) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final borderRadius = BorderRadius.circular(16);
+    final borderRadius = BorderRadius.circular(8);
 
     return Card(
       elevation: 2,
@@ -311,12 +311,12 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
     Color reminderColor;
 
     if (!isEnabled) {
-      reminderText = 'リマインダー: OFF';
+      reminderText = 'リマインダー: 無効';
       reminderIcon = Icons.notifications_off_outlined;
       reminderColor = colorScheme.onSurfaceVariant;
     } else {
       if (minutes.isEmpty) {
-        reminderText = 'リマインダー: ON (時間未定)';
+        reminderText = 'リマインダー: 有効 (時刻未設定)';
       } else {
         reminderText = 'リマインダー: ${minutes.map((m) => '$m分前').join(', ')}';
       }
