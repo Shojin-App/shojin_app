@@ -1717,8 +1717,11 @@ class _CodeEditor extends StatelessWidget {
               controller: codeController,
               textStyle: getMonospaceTextStyle(codeFontFamily),
               gutterStyle: GutterStyle(
-                width: 32,
+                width: 48,
+                margin: 8,
                 textAlign: TextAlign.right,
+                showErrors: false,
+                showFoldingHandles: false,
                 textStyle: Theme.of(context).textTheme.labelSmall?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
