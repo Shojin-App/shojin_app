@@ -1717,7 +1717,10 @@ class _CodeEditor extends StatelessWidget {
               controller: codeController,
               textStyle: getMonospaceTextStyle(codeFontFamily),
               gutterStyle: GutterStyle(
-                width: 48,
+                // flutter_code_editor 0.3.5 は無効化した各補助列についても
+                // 指定幅から16pxずつ差し引くため、行番号の実効幅48pxに
+                // 補助列2つ分の32pxを加えた値を指定する必要がある。
+                width: 80,
                 margin: 8,
                 textAlign: TextAlign.right,
                 showErrors: false,
