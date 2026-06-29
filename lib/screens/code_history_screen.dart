@@ -7,6 +7,7 @@ import '../models/code_history.dart';
 import '../services/code_history_service.dart';
 import '../utils/responsive_layout.dart';
 import '../widgets/shared/app_loading_indicator.dart';
+import '../widgets/shared/app_state_card.dart';
 
 class CodeHistoryScreen extends StatefulWidget {
   final String problemId;
@@ -88,71 +89,15 @@ class _CodeHistoryScreenState extends State<CodeHistoryScreen> {
     bool isError = false,
     Widget? child,
   }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final foregroundColor = colorScheme.onSurfaceVariant;
-    final iconBackground = isError
-        ? colorScheme.errorContainer
-        : colorScheme.primaryContainer;
-    final iconColor = isError
-        ? colorScheme.onErrorContainer
-        : colorScheme.onPrimaryContainer;
-
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: iconBackground,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(icon, color: iconColor),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              color: isError ? colorScheme.onSurface : null,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            message,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: foregroundColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                if (child != null) child,
-              ],
-            ),
-          ),
+        child: AppStateCard(
+          icon: icon,
+          title: title,
+          message: message,
+          isError: isError,
+          child: child,
         ),
       ),
     );
@@ -161,7 +106,7 @@ class _CodeHistoryScreenState extends State<CodeHistoryScreen> {
   Widget _buildHistoryCard(BuildContext context, CodeHistory history) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final borderRadius = BorderRadius.circular(16);
+    final borderRadius = BorderRadius.circular(8);
     final lineCount = history.content.isEmpty
         ? 0
         : '\n'.allMatches(history.content).length + 1;

@@ -44,6 +44,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // AtCoder ユーザー名設定
   final TextEditingController _atcoderUsernameController =
       TextEditingController();
+  String _savedAtCoderUsername = '';
+  bool _isSavingAtCoderUsername = false;
   @override
   void initState() {
     super.initState();
@@ -110,9 +112,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _loadAtCoderUsername() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final saved = prefs.getString('atcoder_username');
-      if (mounted && saved != null) {
+      final saved = prefs.getString('atcoder_username') ?? '';
+      if (mounted) {
         setState(() {
+          _savedAtCoderUsername = saved;
           _atcoderUsernameController.text = saved;
         });
       }
@@ -122,13 +125,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _saveAtCoderUsername() async {
+    final username = _atcoderUsernameController.text.trim();
+    if (_isSavingAtCoderUsername || username == _savedAtCoderUsername) return;
+
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    setState(() {
+      _isSavingAtCoderUsername = true;
+    });
+
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(
-        'atcoder_username',
-        _atcoderUsernameController.text.trim(),
-      );
+      await prefs.setString('atcoder_username', username);
       // If theme uses AtCoder accent, refresh it
       try {
         if (themeProvider.useAtcoderRatingColor) {
@@ -138,6 +145,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         // ignore UI refresh errors
       }
       if (!mounted) return;
+      setState(() {
+        _savedAtCoderUsername = username;
+      });
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('AtCoderユーザー名を保存しました')));
@@ -146,6 +156,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('保存に失敗しました: $e')));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSavingAtCoderUsername = false;
+        });
+      }
     }
   }
 
@@ -268,7 +284,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final navigationInset = MediaQuery.paddingOf(context).bottom;
     final horizontalInset = ResponsiveLayout.horizontalPadding(
       context,
       minimum: 8,
@@ -325,7 +340,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               // アプリについてセクション
               _buildAboutSection(),
-              SizedBox(height: 32 + navigationInset),
+              SizedBox(
+                height: ResponsiveLayout.bottomNavigationClearance(
+                  context,
+                  spacing: 32,
+                ),
+              ),
             ]),
           ),
         ),
@@ -385,11 +405,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
           child: SizedBox(
             width: double.infinity,
-            child: ButtonM3E(
-              onPressed: _saveAtCoderUsername,
-              icon: const Icon(Icons.save_outlined),
-              label: const Text('保存'),
-              style: ButtonM3EStyle.filled,
+            child: ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _atcoderUsernameController,
+              builder: (context, value, child) {
+                final hasChanges = value.text.trim() != _savedAtCoderUsername;
+                return ButtonM3E(
+                  onPressed: hasChanges && !_isSavingAtCoderUsername
+                      ? _saveAtCoderUsername
+                      : null,
+                  icon: _isSavingAtCoderUsername
+                      ? const AppLoadingIndicator(
+                          size: 18,
+                          semanticsLabel: 'AtCoderユーザー名を保存中',
+                        )
+                      : const Icon(Icons.save_outlined),
+                  label: Text(_isSavingAtCoderUsername ? '保存中' : '保存'),
+                  style: ButtonM3EStyle.filled,
+                );
+              },
             ),
           ),
         ),

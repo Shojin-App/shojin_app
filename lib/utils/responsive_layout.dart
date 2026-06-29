@@ -4,6 +4,7 @@ class ResponsiveLayout {
   const ResponsiveLayout._();
 
   static const double maxContentWidth = 960;
+  static const double bottomNavigationBarHeight = 80;
 
   static double horizontalPadding(BuildContext context, {double minimum = 16}) {
     final centered = (MediaQuery.sizeOf(context).width - maxContentWidth) / 2;
@@ -24,5 +25,18 @@ class ResponsiveLayout {
       horizontal,
       bottom + safeBottom,
     );
+  }
+
+  static double bottomNavigationClearance(
+    BuildContext context, {
+    double spacing = 16,
+  }) {
+    if (MediaQuery.viewInsetsOf(context).bottom > 0) {
+      return spacing;
+    }
+
+    return bottomNavigationBarHeight +
+        MediaQuery.viewPaddingOf(context).bottom +
+        spacing;
   }
 }

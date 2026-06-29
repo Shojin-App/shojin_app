@@ -33,8 +33,6 @@ class ProblemDetailScreen extends StatefulWidget {
 }
 
 class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
-  static const double _bottomNavigationBarHeight = 80;
-
   final _urlController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   final _atCoderService = AtCoderService();
@@ -500,7 +498,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
             horizontalPadding,
             16,
             horizontalPadding,
-            16,
+            ResponsiveLayout.bottomNavigationClearance(context),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -551,11 +549,9 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
     final codeFontFamily = themeProvider.codeFontFamily;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final bottomClearance =
-        _bottomNavigationBarHeight + MediaQuery.paddingOf(context).bottom + 16;
 
     return SingleChildScrollView(
-      padding: EdgeInsets.only(bottom: bottomClearance),
+      padding: const EdgeInsets.only(bottom: 16),
       child: Padding(
         padding: const EdgeInsets.only(top: 16),
         child: Card(

@@ -856,7 +856,7 @@ class _BrowserScreenState extends State<BrowserScreen>
     return Card(
       elevation: 2,
       margin: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       clipBehavior: Clip.antiAlias,
       child: SizedBox(
         height: 56,
@@ -934,7 +934,7 @@ class _BrowserScreenState extends State<BrowserScreen>
           child: Card(
             elevation: 3,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(8),
             ),
             clipBehavior: Clip.antiAlias,
             child: Padding(

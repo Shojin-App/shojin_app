@@ -171,7 +171,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                                   )
                                 : colorScheme.surfaceContainerHighest
                                       .withValues(alpha: 0.45),
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(8),
                             child: SwitchListTile(
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 12,
@@ -201,7 +201,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                                       color: visible
                                           ? colorScheme.primaryContainer
                                           : colorScheme.surfaceContainerHighest,
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Center(
                                       child: Icon(
@@ -809,7 +809,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
             ButtonM3E(
               style: ButtonM3EStyle.filled,
               icon: const Icon(Icons.dashboard_customize_outlined),
-              label: const Text('ホームをカスタマイズ'),
+              label: const Text('表示を設定'),
               onPressed: _showWidgetManager,
             ),
           ],
@@ -820,7 +820,6 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final navigationInset = MediaQuery.paddingOf(context).bottom;
     final horizontalInset = ResponsiveLayout.horizontalPadding(context);
     final visibleWidgetIds = _widgetOrder
         .where((id) => !_hiddenWidgets.contains(id))
@@ -845,7 +844,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
               horizontalInset,
               16,
               horizontalInset,
-              16 + navigationInset,
+              ResponsiveLayout.bottomNavigationClearance(context),
             ),
             sliver: SliverToBoxAdapter(
               child: Column(

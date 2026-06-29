@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_monaco/flutter_monaco.dart';
 
 import 'shared/app_loading_indicator.dart';
+import 'shared/app_state_card.dart';
 
 /// Monaco Editor wrapper widget for the editor screen.
 /// This provides VS Code-like editing experience.
@@ -202,10 +203,10 @@ class MonacoCodeEditorState extends State<MonacoCodeEditor> {
     return Card(
       elevation: 2,
       margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       clipBehavior: Clip.antiAlias,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16.0),
+        borderRadius: BorderRadius.circular(8.0),
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () async {
@@ -303,69 +304,13 @@ class MonacoCodeEditorState extends State<MonacoCodeEditor> {
     bool isError = false,
     Widget? child,
   }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final foregroundColor = colorScheme.onSurfaceVariant;
-    final iconBackground = isError
-        ? colorScheme.errorContainer
-        : colorScheme.primaryContainer;
-    final iconColor = isError
-        ? colorScheme.onErrorContainer
-        : colorScheme.onPrimaryContainer;
-
-    return Card(
-      elevation: 2,
+    return AppStateCard(
       margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      clipBehavior: Clip.antiAlias,
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: iconBackground,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(icon, color: iconColor),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: isError ? colorScheme.onSurface : null,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          message,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: foregroundColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              if (child != null) child,
-            ],
-          ),
-        ),
-      ),
+      icon: icon,
+      title: title,
+      message: message,
+      isError: isError,
+      child: child,
     );
   }
 }

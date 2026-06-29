@@ -28,6 +28,7 @@ import '../providers/theme_provider.dart';
 import '../services/atcoder_service.dart';
 import '../services/code_history_service.dart';
 import '../utils/text_style_helper.dart';
+import '../utils/responsive_layout.dart';
 import '../widgets/monaco_code_editor.dart';
 import '../widgets/programming_language_icon.dart';
 import 'code_history_screen.dart';
@@ -778,20 +779,51 @@ class _EditorScreenState extends State<EditorScreen> {
                         color: colorScheme.surfaceContainerHighest.withValues(
                           alpha: 0.45,
                         ),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(8),
                         border: Border.all(
                           color: colorScheme.outlineVariant.withValues(
                             alpha: 0.7,
                           ),
                         ),
                       ),
-                      child: Text(
-                        reuseResults
-                            ? '${_currentProblem?.title ?? 'サンプルケース'} ・ 前回の結果'
-                            : _currentProblem?.title ?? 'サンプルケース',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            reuseResults
+                                ? Icons.history
+                                : Icons.fact_check_outlined,
+                            size: 18,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _currentProblem?.title ?? 'サンプルケース',
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                                if (reuseResults) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '前回の結果を再利用',
+                                    style: theme.textTheme.labelMedium
+                                        ?.copyWith(
+                                          color: colorScheme.primary,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -813,9 +845,9 @@ class _EditorScreenState extends State<EditorScreen> {
                           return Material(
                             color: colorScheme.surfaceContainerHighest
                                 .withValues(alpha: 0.35),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(8),
                             child: InkWell(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(8),
                               onTap: canOpenDetail
                                   ? () => _showResultDetailDialog(result)
                                   : null,
@@ -830,7 +862,7 @@ class _EditorScreenState extends State<EditorScreen> {
                                         color: statusColor.withValues(
                                           alpha: 0.16,
                                         ),
-                                        borderRadius: BorderRadius.circular(10),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
                                       child:
                                           result.status ==
@@ -895,7 +927,8 @@ class _EditorScreenState extends State<EditorScreen> {
               ),
               actions: <Widget>[
                 // 閉じるボタン
-                TextButton.icon(
+                ButtonM3E(
+                  style: ButtonM3EStyle.text,
                   onPressed: _isTesting
                       ? null
                       : () {
@@ -1451,7 +1484,6 @@ class _EditorScreenState extends State<EditorScreen> {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    final navigationInset = MediaQuery.paddingOf(context).bottom;
     final codeFontFamily = themeProvider.codeFontFamily;
     final bool isLoadingProblem =
         _isLoadingCode ||
@@ -1527,7 +1559,12 @@ class _EditorScreenState extends State<EditorScreen> {
         },
       ),
       body: Padding(
-        padding: EdgeInsets.only(bottom: navigationInset),
+        padding: EdgeInsets.only(
+          bottom: ResponsiveLayout.bottomNavigationClearance(
+            context,
+            spacing: 0,
+          ),
+        ),
         child: Consumer<ThemeProvider>(
           builder: (context, themeProvider, child) {
             return Column(
@@ -1742,7 +1779,7 @@ class _CodeEditor extends StatelessWidget {
       elevation: 2,
       margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16.0),
+        borderRadius: BorderRadius.circular(8.0),
         child: CodeTheme(
           data: CodeThemeData(
             styles: isDarkMode ? monokaiSublimeTheme : githubTheme,

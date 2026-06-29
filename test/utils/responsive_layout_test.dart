@@ -54,4 +54,53 @@ void main() {
 
     expect(padding.bottom, 48);
   });
+
+  testWidgets('keeps content above the bottom navigation bar', (tester) async {
+    late double clearance;
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(
+          size: Size(390, 800),
+          viewPadding: EdgeInsets.only(bottom: 24),
+        ),
+        child: Directionality(
+          textDirection: TextDirection.ltr,
+          child: Builder(
+            builder: (context) {
+              clearance = ResponsiveLayout.bottomNavigationClearance(context);
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+      ),
+    );
+
+    expect(clearance, 120);
+  });
+
+  testWidgets('releases navigation clearance while the keyboard is open', (
+    tester,
+  ) async {
+    late double clearance;
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(
+          size: Size(390, 800),
+          viewPadding: EdgeInsets.only(bottom: 24),
+          viewInsets: EdgeInsets.only(bottom: 300),
+        ),
+        child: Directionality(
+          textDirection: TextDirection.ltr,
+          child: Builder(
+            builder: (context) {
+              clearance = ResponsiveLayout.bottomNavigationClearance(context);
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+      ),
+    );
+
+    expect(clearance, 16);
+  });
 }

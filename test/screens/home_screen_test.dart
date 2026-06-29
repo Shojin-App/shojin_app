@@ -25,7 +25,7 @@ void main() {
 
     expect(find.text('表示中のウィジェットはありません'), findsOneWidget);
 
-    final customizeButton = find.text('ホームをカスタマイズ');
+    final customizeButton = find.text('表示を設定');
     expect(customizeButton, findsOneWidget);
     await tester.tap(customizeButton);
     await tester.pumpAndSettle();
@@ -61,5 +61,43 @@ void main() {
 
     expect(find.text('ホームを更新しました'), findsOneWidget);
     expect(find.text('元に戻す'), findsOneWidget);
+  });
+
+  testWidgets('home customizer supports enlarged text on a narrow screen', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({
+      'home_widget_order': ['next_abc', 'recommendation', 'clans'],
+      'home_hidden_widgets': ['next_abc', 'recommendation', 'clans'],
+    });
+    tester.view.physicalSize = const Size(320, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider(
+        create: (_) => ThemeProvider(),
+        child: MaterialApp(
+          builder: (context, child) {
+            return MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: const TextScaler.linear(1.5)),
+              child: child!,
+            );
+          },
+          home: const NewHomeScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('ホームをカスタマイズ'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ホームをカスタマイズ'), findsOneWidget);
+    expect(find.byType(Switch), findsNWidgets(3));
+    expect(tester.takeException(), isNull);
   });
 }

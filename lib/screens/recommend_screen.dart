@@ -8,6 +8,7 @@ import '../utils/atcoder_colors.dart';
 import '../utils/rating_utils.dart';
 import '../utils/responsive_layout.dart';
 import '../widgets/shared/app_loading_indicator.dart';
+import '../widgets/shared/app_state_card.dart';
 import 'problem_detail_screen.dart';
 
 class RecommendScreen extends StatefulWidget {
@@ -26,6 +27,7 @@ class _RecommendScreenState extends State<RecommendScreen> {
   bool _isLoading = false;
   String? _errorMessage;
   String? _savedUsername; // 設定済みユーザー名
+  bool _isEditingUsername = false;
   int? _currentRating; // 取得したレート（表示用: 最新レート）
   Map<String, String> _problemTitles = {};
 
@@ -171,9 +173,9 @@ class _RecommendScreenState extends State<RecommendScreen> {
       }
 
       // 事前に設定済みのユーザー名を優先
-      final username = (_savedUsername != null && _savedUsername!.isNotEmpty)
-          ? _savedUsername!
-          : _usernameController.text;
+      final username = (_savedUsername == null || _isEditingUsername)
+          ? _usernameController.text.trim()
+          : _savedUsername!;
       if (username.isEmpty) {
         throw Exception('ユーザー名を入力してください');
       }
@@ -183,7 +185,7 @@ class _RecommendScreenState extends State<RecommendScreen> {
         throw Exception('ユーザーが見つからないか、レーティングがありません');
       }
 
-      // レートを保存してUIに表示
+      // レートを先に表示
       if (mounted) {
         setState(() {
           _currentRating = ratingInfo.latestRating;
@@ -227,10 +229,18 @@ class _RecommendScreenState extends State<RecommendScreen> {
         return a.value.difficulty!.compareTo(b.value.difficulty!);
       });
 
+      if (username != _savedUsername) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('atcoder_username', username);
+      }
+
       if (!mounted) return;
       setState(() {
         _recommendedProblems = recommended;
         _problemTitles = problemTitles;
+        _savedUsername = username;
+        _isEditingUsername = false;
+        _usernameController.text = username;
       });
     } catch (e) {
       if (!mounted) return;
@@ -251,6 +261,7 @@ class _RecommendScreenState extends State<RecommendScreen> {
     required String labelText,
     String? hintText,
     required IconData prefixIcon,
+    Widget? suffixIcon,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final border = OutlineInputBorder(
@@ -262,6 +273,7 @@ class _RecommendScreenState extends State<RecommendScreen> {
       labelText: labelText,
       hintText: hintText,
       prefixIcon: Icon(prefixIcon),
+      suffixIcon: suffixIcon,
       filled: true,
       fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
       border: border,
@@ -273,6 +285,7 @@ class _RecommendScreenState extends State<RecommendScreen> {
   }
 
   Widget _buildRecommendationControls(BuildContext context) {
+    final isChoosingUsername = _savedUsername == null || _isEditingUsername;
     final lowerField = TextField(
       controller: _lowerDeltaController,
       keyboardType: const TextInputType.numberWithOptions(signed: true),
@@ -300,8 +313,8 @@ class _RecommendScreenState extends State<RecommendScreen> {
     );
     final submitButton = ButtonM3E(
       onPressed: _isLoading ? null : _getRecommendations,
-      icon: const Icon(Icons.tune),
-      label: const Text('条件を適用'),
+      icon: Icon(isChoosingUsername ? Icons.auto_awesome : Icons.tune),
+      label: Text(isChoosingUsername ? 'おすすめを取得' : '条件を適用'),
       style: ButtonM3EStyle.filled,
     );
 
@@ -343,7 +356,7 @@ class _RecommendScreenState extends State<RecommendScreen> {
 
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -393,15 +406,45 @@ class _RecommendScreenState extends State<RecommendScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            if (_savedUsername == null) ...[
-              TextField(
-                controller: _usernameController,
-                decoration: _inputDecoration(
-                  context,
-                  labelText: 'AtCoderユーザー名',
-                  prefixIcon: Icons.person_outline,
-                ),
+            if (_savedUsername == null || _isEditingUsername) ...[
+              ValueListenableBuilder<TextEditingValue>(
+                valueListenable: _usernameController,
+                builder: (context, value, child) {
+                  return TextField(
+                    controller: _usernameController,
+                    textInputAction: TextInputAction.next,
+                    decoration: _inputDecoration(
+                      context,
+                      labelText: 'AtCoderユーザー名',
+                      prefixIcon: Icons.person_outline,
+                      suffixIcon: value.text.isEmpty
+                          ? null
+                          : IconButton(
+                              tooltip: 'ユーザー名をクリア',
+                              icon: const Icon(Icons.clear),
+                              onPressed: _usernameController.clear,
+                            ),
+                    ),
+                  );
+                },
               ),
+              if (_isEditingUsername) ...[
+                const SizedBox(height: 4),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: ButtonM3E(
+                    style: ButtonM3EStyle.text,
+                    icon: const Icon(Icons.close),
+                    label: const Text('キャンセル'),
+                    onPressed: () {
+                      setState(() {
+                        _isEditingUsername = false;
+                        _usernameController.text = _savedUsername!;
+                      });
+                    },
+                  ),
+                ),
+              ],
               const SizedBox(height: 12),
             ] else ...[
               Container(
@@ -429,19 +472,16 @@ class _RecommendScreenState extends State<RecommendScreen> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    ButtonM3E(
-                      onPressed: () async {
-                        final prefs = await SharedPreferences.getInstance();
-                        await prefs.remove('atcoder_username');
-                        if (!mounted) return;
+                    IconButtonM3E(
+                      tooltip: 'ユーザー名を編集',
+                      semanticLabel: 'ユーザー名を編集',
+                      icon: const Icon(Icons.edit_outlined),
+                      onPressed: () {
                         setState(() {
-                          _savedUsername = null;
-                          _usernameController.clear();
-                          _currentRating = null;
+                          _isEditingUsername = true;
+                          _usernameController.text = _savedUsername!;
                         });
                       },
-                      label: const Text('変更'),
-                      style: ButtonM3EStyle.text,
                     ),
                   ],
                 ),
@@ -449,18 +489,6 @@ class _RecommendScreenState extends State<RecommendScreen> {
               const SizedBox(height: 12),
             ],
             _buildRecommendationControls(context),
-            if (_savedUsername == null) ...[
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: ButtonM3E(
-                  onPressed: _isLoading ? null : _getRecommendations,
-                  icon: const Icon(Icons.auto_awesome),
-                  label: const Text('おすすめを取得'),
-                  style: ButtonM3EStyle.filled,
-                ),
-              ),
-            ],
           ],
         ),
       ),
@@ -474,50 +502,12 @@ class _RecommendScreenState extends State<RecommendScreen> {
     required String message,
     bool isError = false,
   }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final backgroundColor = isError
-        ? colorScheme.errorContainer
-        : colorScheme.surfaceContainerHighest.withValues(alpha: 0.45);
-    final foregroundColor = isError
-        ? colorScheme.onErrorContainer
-        : colorScheme.onSurfaceVariant;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: foregroundColor),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: isError ? foregroundColor : null,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  message,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: foregroundColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    return AppStateCard(
+      margin: EdgeInsets.zero,
+      icon: icon,
+      title: title,
+      message: message,
+      isError: isError,
     );
   }
 
@@ -527,7 +517,7 @@ class _RecommendScreenState extends State<RecommendScreen> {
   ) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final borderRadius = BorderRadius.circular(16);
+    final borderRadius = BorderRadius.circular(8);
     final title = _problemTitles[problem.key] ?? problem.key;
 
     return Card(
@@ -577,15 +567,14 @@ class _RecommendScreenState extends State<RecommendScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              Column(
+              Row(
                 mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   _difficultyBadge(problem.value.difficulty),
-                  const SizedBox(height: 8),
+                  const SizedBox(width: 8),
                   Icon(
-                    Icons.open_in_new,
-                    size: 18,
+                    Icons.chevron_right,
+                    size: 20,
                     color: colorScheme.onSurfaceVariant,
                   ),
                 ],
