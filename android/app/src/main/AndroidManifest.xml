@@ -42,4 +42,7 @@
         </intent>
     </queries>
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- 再起動後もflutter_local_notificationsが予約通知を復元できるようにする。 -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>

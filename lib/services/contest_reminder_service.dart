@@ -24,8 +24,6 @@ class ContestReminderService {
 
   Future<void> synchronize() async {
     try {
-      await _cancelExistingContestReminders();
-
       final storedSettings = await _storageService.loadReminderSettings();
       // 未設定の新規ユーザーには通知を自動登録しない。権限要求と有効化は
       // リマインダー設定画面での明示操作に限定する。
@@ -37,7 +35,10 @@ class ContestReminderService {
       };
       if (enabledSettings.isEmpty) return;
 
+      // 通信失敗時に、まだ有効な既存通知まで失われないようにする。
+      // 新しい予定を取得できてから、このアプリが管理する通知だけを置換する。
       final contests = await _contestService.getUpcomingContests();
+      await _cancelExistingContestReminders();
       final now = DateTime.now();
 
       for (final contest in contests) {

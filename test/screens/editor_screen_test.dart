@@ -40,6 +40,8 @@ void main() {
 
     expect(find.text('Python'), findsOneWidget);
     expect(find.text('実行と提出'), findsOneWidget);
+    expect(find.text('サンプル'), findsNothing);
+    expect(find.text('提出'), findsNothing);
     expect(find.text('標準入力'), findsOneWidget);
     expect(find.byTooltip('実行結果をコピー'), findsOneWidget);
     expect(
@@ -106,6 +108,8 @@ void main() {
       matching: find.byType(ButtonM3E),
     );
     expect(runButton, findsOneWidget);
+    expect(find.text('サンプル'), findsNothing);
+    expect(find.text('提出'), findsNothing);
     expect(tester.getSize(runButton).width, 220);
     expect(tester.takeException(), isNull);
   });

@@ -17,15 +17,17 @@ import '../widgets/shared/app_loading_indicator.dart';
 import '../widgets/shared/responsive_action.dart';
 
 class NewHomeScreen extends StatefulWidget {
-  const NewHomeScreen({super.key, this.atCoderService});
+  const NewHomeScreen({super.key, this.atCoderService, this.isSelected = true});
 
   final AtCoderService? atCoderService;
+  final bool isSelected;
 
   @override
   State<NewHomeScreen> createState() => _NewHomeScreenState();
 }
 
-class _NewHomeScreenState extends State<NewHomeScreen> {
+class _NewHomeScreenState extends State<NewHomeScreen>
+    with WidgetsBindingObserver {
   static const _widgetOrderKey = 'home_widget_order';
   static const _hiddenWidgetsKey = 'home_hidden_widgets';
   static const _defaultWidgetOrder = ['next_abc', 'recommendation', 'clans'];
@@ -45,9 +47,33 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _atcoderService = widget.atCoderService ?? AtCoderService();
     _loadSavedUsernameAndFetchRecommendation();
     _loadWidgetPreferences();
+  }
+
+  @override
+  void didUpdateWidget(covariant NewHomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // タブは破棄されず保持されるため、設定タブから戻った時だけ永続値を
+    // 再読込する。これがないと保存済みユーザー名が次回起動まで反映されない。
+    if (widget.isSelected && !oldWidget.isSelected) {
+      _loadSavedUsernameAndFetchRecommendation();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadSavedUsernameAndFetchRecommendation();
+    }
   }
 
   Future<void> _loadWidgetPreferences() async {
@@ -189,7 +215,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                                   secondary: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      ReorderableDragStartListener(
+                                      ReorderableDelayedDragStartListener(
                                         key: ValueKey('home-drag-$id'),
                                         index: index,
                                         child: Tooltip(
@@ -341,7 +367,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
   Future<void> _loadSavedUsernameAndFetchRecommendation() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final saved = prefs.getString('atcoder_username');
+      final saved = prefs.getString('atcoder_username')?.trim();
       if (!mounted) return;
       setState(() {
         _savedUsername = (saved != null && saved.isNotEmpty) ? saved : null;

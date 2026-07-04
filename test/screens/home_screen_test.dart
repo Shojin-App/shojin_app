@@ -100,6 +100,7 @@ void main() {
 
     expect(find.text('ホームをカスタマイズ'), findsOneWidget);
     expect(find.byType(Switch), findsNWidgets(3));
+    expect(find.byType(ReorderableDelayedDragStartListener), findsNWidgets(3));
     expect(
       tester.getSize(find.byKey(const ValueKey('home-drag-next_abc'))),
       const Size(48, 48),

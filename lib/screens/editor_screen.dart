@@ -741,6 +741,9 @@ class _EditorScreenState extends State<EditorScreen> {
             // --- ダイアログUIの構築 ---
             final theme = Theme.of(context);
             final colorScheme = theme.colorScheme;
+            final allAccepted =
+                _testResults.isNotEmpty &&
+                _testResults.every((result) => result.status == JudgeStatus.ac);
 
             return AlertDialog(
               title: Row(
@@ -774,6 +777,10 @@ class _EditorScreenState extends State<EditorScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (allAccepted) ...[
+                      _buildAllAcceptedCelebration(colorScheme),
+                      const SizedBox(height: 12),
+                    ],
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
@@ -1245,10 +1252,17 @@ class _EditorScreenState extends State<EditorScreen> {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final stackVertically = constraints.maxWidth < 600;
+            final inputFlex = stackVertically && _stdinFocusNode.hasFocus
+                ? 4
+                : 1;
+            final outputFlex = stackVertically && _stdinFocusNode.hasFocus
+                ? 1
+                : 1;
             return Flex(
               direction: stackVertically ? Axis.vertical : Axis.horizontal,
               children: [
                 Expanded(
+                  flex: inputFlex,
                   child: _buildTextPanel(
                     title: '標準入力',
                     subtitle: 'stdin',
@@ -1284,6 +1298,7 @@ class _EditorScreenState extends State<EditorScreen> {
                   height: stackVertically ? 12 : 0,
                 ),
                 Expanded(
+                  flex: outputFlex,
                   child: _buildTextPanel(
                     title: '実行結果',
                     subtitle: 'stdout / stderr',
@@ -1468,6 +1483,55 @@ class _EditorScreenState extends State<EditorScreen> {
     ).showSnackBar(const SnackBar(content: Text('実行結果をコピーしました')));
   }
 
+  Widget _buildAllAcceptedCelebration(ColorScheme colorScheme) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 700),
+      curve: Curves.elasticOut,
+      builder: (context, value, child) => Transform.scale(
+        scale: value,
+        child: Opacity(opacity: value.clamp(0, 1), child: child),
+      ),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              colorScheme.primaryContainer,
+              colorScheme.tertiaryContainer,
+            ],
+          ),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.primary.withValues(alpha: 0.25),
+              blurRadius: 18,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.auto_awesome, color: colorScheme.primary),
+            const SizedBox(width: 10),
+            Text(
+              'ALL SAMPLES ACCEPTED!',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: colorScheme.onPrimaryContainer,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.8,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Icon(Icons.celebration, color: colorScheme.tertiary),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -1561,9 +1625,9 @@ class _EditorScreenState extends State<EditorScreen> {
                   const Expanded(
                     child: Center(child: CircularProgressIndicator()),
                   )
-                else
+                else if (!_stdinFocusNode.hasFocus)
                   Expanded(
-                    flex: _stdinFocusNode.hasFocus ? 1 : 3,
+                    flex: 3,
                     child: themeProvider.editorType == EditorType.monaco
                         ? MonacoCodeEditor(
                             key: _monacoEditorKey,
@@ -1585,7 +1649,9 @@ class _EditorScreenState extends State<EditorScreen> {
                 if (!isLoadingProblem) ...[
                   _buildExecutionControls(isButtonDisabled),
                   Expanded(
-                    flex: _stdinFocusNode.hasFocus ? 3 : 2,
+                    // キーボード表示中は入力欄へ利用可能な高さをすべて渡す。
+                    // 狭い端末でstdinが数行しか見えなくなるのを防ぐ。
+                    flex: _stdinFocusNode.hasFocus ? 1 : 2,
                     child: _buildIoPanel(codeFontFamily),
                   ),
                 ],
