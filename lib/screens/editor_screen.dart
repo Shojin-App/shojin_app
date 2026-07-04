@@ -1516,12 +1516,15 @@ class _EditorScreenState extends State<EditorScreen> {
           children: [
             Icon(Icons.auto_awesome, color: colorScheme.primary),
             const SizedBox(width: 10),
-            Text(
-              'ALL SAMPLES ACCEPTED!',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: colorScheme.onPrimaryContainer,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0.8,
+            Flexible(
+              child: Text(
+                'ALL SAMPLES ACCEPTED!',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: colorScheme.onPrimaryContainer,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.8,
+                ),
               ),
             ),
             const SizedBox(width: 10),

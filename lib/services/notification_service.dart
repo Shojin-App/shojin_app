@@ -25,9 +25,10 @@ class NotificationService {
     // iOS の初期化設定 (macOS も同様)
     const DarwinInitializationSettings
     initializationSettingsIOS = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
+      // 初回起動では要求せず、設定画面で有効化した時にだけ尋ねる。
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
       // onDidReceiveLocalNotification: onDidReceiveLocalNotification, // 古いiOSバージョン用
     );
 
@@ -74,8 +75,36 @@ class NotificationService {
             >();
     final granted = await androidImplementation
         ?.requestNotificationsPermission();
-    // Android 12以前では実行時権限がなくnullになる場合がある。
-    return granted ?? true;
+    if (androidImplementation != null) {
+      // Android 12以前では実行時権限がなくnullになる場合がある。
+      return granted ?? true;
+    }
+
+    final iosImplementation = flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >();
+    if (iosImplementation != null) {
+      return await iosImplementation.requestPermissions(
+            alert: true,
+            badge: true,
+            sound: true,
+          ) ??
+          false;
+    }
+    final macosImplementation = flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          MacOSFlutterLocalNotificationsPlugin
+        >();
+    if (macosImplementation != null) {
+      return await macosImplementation.requestPermissions(
+            alert: true,
+            badge: true,
+            sound: true,
+          ) ??
+          false;
+    }
+    return false;
   }
 
   Future<void> scheduleNotification({
