@@ -57,7 +57,7 @@ dependencies:
       ref: 5926e8e7bc56b8577900c0cc0d41c44e7947f6dc
       path: packages/share_plus/share_plus
   file_picker: 12.0.0-beta.7
-  open_file: ^3.5.10
+  open_file: ^4.0.0
   intl: ^0.20.2
   animations: ^2.2.0
   yaml: ^3.1.2
