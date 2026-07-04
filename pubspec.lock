@@ -439,10 +439,10 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_monaco
-      sha256: "25b713ac7e0c16afcbee79a38a0caa0a2a6819f079637cd59da89ed93e2fb32c"
+      sha256: "20bde36c57adba65d031d0f348b2fde50c39a54ffb26ec3b1497fecced65536f"
       url: "https://pub.dev"
     source: hosted
-    version: "1.7.0"
+    version: "2.1.1"
   flutter_oss_licenses:
     dependency: "direct dev"
     description:
@@ -1492,6 +1492,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.15.1"
+  webview_flutter_windows:
+    dependency: transitive
+    description:
+      name: webview_flutter_windows
+      sha256: "22e7fc21f834f988e81b057e2405f21bd03ef92cd1b893f14b6370a9b73cf91a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   webview_flutter_wkwebview:
     dependency: transitive
     description:
@@ -1500,14 +1508,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.26.0"
-  webview_windows:
-    dependency: transitive
-    description:
-      name: webview_windows
-      sha256: "47fcad5875a45db29dbb5c9e6709bf5c88dcc429049872701343f91ed7255730"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.4.0"
   win32:
     dependency: transitive
     description:
