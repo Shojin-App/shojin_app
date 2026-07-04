@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
@@ -11,6 +12,7 @@ import '../constants/browser_constants.dart';
 import '../models/browser_site.dart';
 import '../providers/theme_provider.dart';
 import '../services/browser_site_service.dart';
+import '../services/authenticated_contest_cache.dart';
 import '../utils/platform_support.dart';
 import '../widgets/browser_site_form_fields.dart';
 import '../widgets/browser_site_switcher.dart';
@@ -36,6 +38,8 @@ class _BrowserScreenState extends State<BrowserScreen>
   String _currentUrl = '';
   bool _isLoadingWebView = false;
   bool _embeddedBrowserUnavailable = false;
+  final AuthenticatedContestCache _authenticatedContestCache =
+      AuthenticatedContestCache();
 
   @override
   void initState() {
@@ -92,6 +96,7 @@ class _BrowserScreenState extends State<BrowserScreen>
                   _loadFailed = false;
                 });
               }
+              _cacheAuthenticatedContests(url);
             },
             onWebResourceError: (WebResourceError error) {
               if (mounted) {
@@ -124,6 +129,58 @@ class _BrowserScreenState extends State<BrowserScreen>
         stackTrace: stackTrace,
       );
       if (mounted) setState(() {});
+    }
+  }
+
+  Future<void> _cacheAuthenticatedContests(String currentUrl) async {
+    if (Uri.tryParse(currentUrl)?.host != BrowserConstants.atcoderHost) return;
+    try {
+      // fetchはWebViewのCookieストアを使う。HttpOnlyのセッションCookieを
+      // Dart側へ露出させず、ログイン中に見える一覧だけを受け取る。
+      final result = await _controller.runJavaScriptReturningResult(r'''
+        (async () => {
+          const response = await fetch('/contests/', {credentials: 'include'});
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const documentCopy = new DOMParser().parseFromString(
+            await response.text(), 'text/html');
+          const rows = documentCopy.querySelectorAll(
+            '#contest-table-upcoming tbody tr');
+          const contests = Array.from(rows).map((row) => {
+            const cells = row.querySelectorAll('td');
+            const link = row.querySelector('a[href^="/contests/"]');
+            const rawTime = row.querySelector('time')?.textContent?.trim() ?? '';
+            const normalizedTime = rawTime.replace(
+              /([+-]\d{2})(\d{2})$/, '$1:$2');
+            const durationParts = (cells[2]?.textContent?.trim() ?? '0:00')
+              .split(':').map(Number);
+            return {
+              name_ja: link?.textContent?.trim() ?? '',
+              name_en: link?.textContent?.trim() ?? '',
+              url: link ? new URL(link.href, location.origin).href : '',
+              start_time: new Date(normalizedTime).toISOString(),
+              duration_min: (durationParts[0] || 0) * 60 +
+                (durationParts[1] || 0),
+              rated_range: cells[3]?.textContent?.trim() ?? null,
+              status: 'Upcoming',
+            };
+          }).filter((contest) => contest.url && contest.name_ja);
+          return JSON.stringify(contests);
+        })()
+      ''');
+      var encoded = result.toString();
+      // プラットフォームによってJavaScriptの文字列結果がJSON文字列として
+      // さらにquoteされるため、必要な場合だけ一段decodeする。
+      if (encoded.startsWith('"')) {
+        encoded = jsonDecode(encoded) as String;
+      }
+      await _authenticatedContestCache.saveJson(encoded);
+    } catch (error, stackTrace) {
+      developer.log(
+        'Failed to cache authenticated contests',
+        name: 'BrowserScreenWebView',
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
   }
 
