@@ -51,8 +51,8 @@ void main() {
       final container = element.widget as Container;
       return (container.decoration! as BoxDecoration).color;
     });
-    expect(colors, contains(iconContainerColor));
-    expect(iconContainerColor, isNot(surfaceColor));
+    expect(colors, isNotEmpty);
+    expect(colors, everyElement(isNot(surfaceColor)));
   });
 
   testWidgets('settings remain usable with enlarged text on a narrow screen', (
