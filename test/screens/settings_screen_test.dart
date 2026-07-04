@@ -9,6 +9,52 @@ import 'package:shojin_app/providers/theme_provider.dart';
 import 'package:shojin_app/screens/settings_screen.dart';
 
 void main() {
+  testWidgets('Material You icon fields keep a distinct container color', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({'use_material_you': true});
+    const surfaceColor = Color(0xffeeeeee);
+    const iconContainerColor = Color(0xffcce5ff);
+    final scheme = ColorScheme.fromSeed(seedColor: Colors.blue).copyWith(
+      surfaceContainerLow: surfaceColor,
+      surfaceContainerHighest: surfaceColor,
+      secondaryContainer: iconContainerColor,
+      onSecondaryContainer: Colors.black,
+    );
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => ThemeProvider()),
+          ChangeNotifierProvider(create: (_) => TemplateProvider()),
+        ],
+        child: MaterialApp(
+          theme: ThemeData(colorScheme: scheme),
+          home: const Scaffold(body: SettingsScreen()),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(seconds: 1));
+    await tester.scrollUntilVisible(
+      find.byIcon(Icons.color_lens_outlined),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+
+    final decoratedAncestors = find.ancestor(
+      of: find.byIcon(Icons.color_lens_outlined),
+      matching: find.byWidgetPredicate(
+        (widget) => widget is Container && widget.decoration is BoxDecoration,
+      ),
+    );
+    final colors = decoratedAncestors.evaluate().map((element) {
+      final container = element.widget as Container;
+      return (container.decoration! as BoxDecoration).color;
+    });
+    expect(colors, contains(iconContainerColor));
+    expect(iconContainerColor, isNot(surfaceColor));
+  });
+
   testWidgets('settings remain usable with enlarged text on a narrow screen', (
     tester,
   ) async {
