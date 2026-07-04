@@ -4,13 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:m3e_collection/m3e_collection.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../constants/browser_constants.dart';
 import '../models/browser_site.dart';
 import '../providers/theme_provider.dart';
 import '../services/browser_site_service.dart';
+import '../utils/platform_support.dart';
+import '../widgets/browser_site_form_fields.dart';
+import '../widgets/browser_site_switcher.dart';
 import '../widgets/shared/app_loading_indicator.dart';
+import '../widgets/shared/responsive_action.dart';
 
 class BrowserScreen extends StatefulWidget {
   final Function(String) navigateToProblem;
@@ -30,6 +35,7 @@ class _BrowserScreenState extends State<BrowserScreen>
   bool _loadFailed = false;
   String _currentUrl = '';
   bool _isLoadingWebView = false;
+  bool _embeddedBrowserUnavailable = false;
 
   @override
   void initState() {
@@ -44,67 +50,106 @@ class _BrowserScreenState extends State<BrowserScreen>
   }
 
   Future<void> _initialize() async {
-    _sites = await BrowserSiteService.loadSites();
-    final prefs = await SharedPreferences.getInstance();
-    final atcoderUsername = prefs.getString('atcoder_username');
+    try {
+      _sites = await BrowserSiteService.loadSites();
+      final prefs = await SharedPreferences.getInstance();
+      final atcoderUsername = prefs.getString('atcoder_username');
 
-    // Initialize WebViewController
-    String initialUrl = BrowserConstants.defaultSites.first.url;
-    // If first site is Problems, append username
-    if (initialUrl == BrowserConstants.defaultSites[1].url &&
-        atcoderUsername != null &&
-        atcoderUsername.isNotEmpty) {
-      initialUrl = '${BrowserConstants.defaultSites[1].url}$atcoderUsername';
+      String initialUrl = BrowserConstants.defaultSites.first.url;
+      if (initialUrl == BrowserConstants.defaultSites[1].url &&
+          atcoderUsername != null &&
+          atcoderUsername.isNotEmpty) {
+        initialUrl = '${BrowserConstants.defaultSites[1].url}$atcoderUsername';
+      }
+      _currentUrl = initialUrl;
+
+      // webview_flutterが実装を持たない環境では、コントローラー生成を試みると
+      // 初期化Futureが失敗してローディング表示が残り続ける。
+      if (!supportsEmbeddedWebView) {
+        _embeddedBrowserUnavailable = true;
+        if (mounted) setState(() {});
+        _updateMissingMetadata();
+        return;
+      }
+
+      _controller = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..setBackgroundColor(const Color(0x00000000))
+        ..setNavigationDelegate(
+          NavigationDelegate(
+            onPageStarted: (String url) {
+              if (mounted) {
+                setState(() {
+                  _isLoadingWebView = true;
+                  _loadFailed = false;
+                });
+              }
+            },
+            onPageFinished: (String url) {
+              if (mounted) {
+                setState(() {
+                  _isLoadingWebView = false;
+                  _loadFailed = false;
+                });
+              }
+            },
+            onWebResourceError: (WebResourceError error) {
+              if (mounted) {
+                setState(() {
+                  _isLoadingWebView = false;
+                  _loadFailed = true;
+                });
+              }
+              developer.log(
+                'WebView load error: ${error.description}',
+                name: 'BrowserScreenWebView',
+              );
+            },
+            onNavigationRequest: _handleNavigationRequest,
+          ),
+        )
+        ..loadRequest(Uri.parse(initialUrl));
+
+      _isControllerReady = true;
+      if (mounted) setState(() {});
+      _updateMissingMetadata();
+    } catch (error, stackTrace) {
+      // 対応プラットフォームでもWebView実装が利用できない場合は、永久に
+      // 待たせず外部ブラウザへ退避できる状態を表示する。
+      _embeddedBrowserUnavailable = true;
+      developer.log(
+        'Failed to initialize embedded browser',
+        name: 'BrowserScreenWebView',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      if (mounted) setState(() {});
     }
+  }
 
-    _currentUrl = initialUrl;
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0x00000000))
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageStarted: (String url) {
-            if (mounted) {
-              setState(() {
-                _isLoadingWebView = true;
-                _loadFailed = false;
-              });
-            }
-          },
-          onPageFinished: (String url) {
-            if (mounted) {
-              setState(() {
-                _isLoadingWebView = false;
-                _loadFailed = false;
-              });
-            }
-          },
-          onWebResourceError: (WebResourceError error) {
-            if (mounted) {
-              setState(() {
-                _isLoadingWebView = false;
-                _loadFailed = true;
-              });
-            }
-            developer.log(
-              'WebView load error: ${error.description}',
-              name: 'BrowserScreenWebView',
-            );
-          },
-          onNavigationRequest: (NavigationRequest request) {
-            return _handleNavigationRequest(request);
-          },
-        ),
-      )
-      ..loadRequest(Uri.parse(initialUrl));
-
-    _isControllerReady = true;
-    if (mounted) {
-      setState(() {});
+  Future<void> _openSiteExternally(String url) async {
+    try {
+      final launched = await launchUrl(
+        Uri.parse(url),
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched && mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('サイトを開けませんでした')));
+      }
+    } catch (error) {
+      developer.log(
+        'Failed to open site externally: $url',
+        name: 'BrowserScreenWebView',
+        error: error,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('サイトを開けませんでした')));
+      }
     }
-
-    // Update missing metadata for user-added sites
-    _updateMissingMetadata();
   }
 
   NavigationDecision _handleNavigationRequest(NavigationRequest request) {
@@ -217,7 +262,7 @@ class _BrowserScreenState extends State<BrowserScreen>
           height: 40,
           decoration: BoxDecoration(
             color: containerColor ?? colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: iconColor ?? colorScheme.onPrimaryContainer),
         ),
@@ -247,7 +292,7 @@ class _BrowserScreenState extends State<BrowserScreen>
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: colorScheme.outlineVariant.withValues(alpha: 0.7),
         ),
@@ -271,41 +316,10 @@ class _BrowserScreenState extends State<BrowserScreen>
     );
   }
 
-  InputDecoration _buildDialogInputDecoration(
-    BuildContext context, {
-    required String labelText,
-    required IconData prefixIcon,
-    String? errorText,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final border = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: colorScheme.outlineVariant),
-    );
-
-    return InputDecoration(
-      labelText: labelText,
-      errorText: errorText,
-      prefixIcon: Icon(prefixIcon),
-      filled: true,
-      fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
-      border: border,
-      enabledBorder: border,
-      focusedBorder: border.copyWith(
-        borderSide: BorderSide(color: colorScheme.primary, width: 1.6),
-      ),
-      errorBorder: border.copyWith(
-        borderSide: BorderSide(color: colorScheme.error),
-      ),
-      focusedErrorBorder: border.copyWith(
-        borderSide: BorderSide(color: colorScheme.error, width: 1.6),
-      ),
-    );
-  }
-
   Future<void> _addSite() async {
     final titleController = TextEditingController();
     final urlController = TextEditingController();
+    String? titleErrorText;
     String? urlErrorText;
 
     final navigator = Navigator.of(context);
@@ -331,25 +345,19 @@ class _BrowserScreenState extends State<BrowserScreen>
                   text: 'よく使うサイトを登録すると、ブラウザ上部の切り替えからすぐに開けます。',
                 ),
                 const SizedBox(height: 16),
-                TextField(
-                  controller: titleController,
-                  decoration: _buildDialogInputDecoration(
-                    dialogContext,
-                    labelText: 'タイトル',
-                    prefixIcon: Icons.label_outline,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: urlController,
-                  decoration: _buildDialogInputDecoration(
-                    dialogContext,
-                    labelText: 'URL',
-                    prefixIcon: Icons.link,
-                    errorText: urlErrorText,
-                  ),
-                  keyboardType: TextInputType.url,
-                  onChanged: (_) {
+                BrowserSiteFormFields(
+                  titleController: titleController,
+                  urlController: urlController,
+                  titleErrorText: titleErrorText,
+                  urlErrorText: urlErrorText,
+                  onTitleChanged: (_) {
+                    if (titleErrorText != null) {
+                      setStateDialog(() {
+                        titleErrorText = null;
+                      });
+                    }
+                  },
+                  onUrlChanged: (_) {
                     if (urlErrorText != null) {
                       setStateDialog(() {
                         urlErrorText = null;
@@ -374,14 +382,20 @@ class _BrowserScreenState extends State<BrowserScreen>
                   bool isValid = true;
 
                   setStateDialog(() {
+                    titleErrorText = null;
                     urlErrorText = null;
                   });
 
-                  if (title.isEmpty || url.isEmpty) {
-                    scaffoldMessenger.showSnackBar(
-                      const SnackBar(content: Text('タイトルとURLを入力してください。')),
-                    );
+                  if (title.isEmpty) {
+                    titleErrorText = 'タイトルを入力してください';
                     isValid = false;
+                  }
+                  if (url.isEmpty) {
+                    urlErrorText = 'URLを入力してください';
+                    isValid = false;
+                  }
+                  if (!isValid) {
+                    setStateDialog(() {});
                   } else {
                     // Check if site already exists
                     final existingDefault = BrowserConstants.defaultSites.any(
@@ -467,6 +481,8 @@ class _BrowserScreenState extends State<BrowserScreen>
         },
       ),
     );
+    titleController.dispose();
+    urlController.dispose();
   }
 
   Future<void> _removeSite(int index) async {
@@ -488,7 +504,7 @@ class _BrowserScreenState extends State<BrowserScreen>
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: colorScheme.errorContainer.withValues(alpha: 0.55),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
               '\'${_sites[index].title}\' を削除しますか？',
@@ -501,11 +517,13 @@ class _BrowserScreenState extends State<BrowserScreen>
             ButtonM3E(
               style: ButtonM3EStyle.text,
               onPressed: () => Navigator.pop(context, false),
+              icon: const Icon(Icons.close),
               label: const Text('キャンセル'),
             ),
             ButtonM3E(
               style: ButtonM3EStyle.text,
               onPressed: () => Navigator.pop(context, true),
+              icon: Icon(Icons.delete_outline, color: colorScheme.error),
               label: Text(
                 '削除',
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -532,6 +550,7 @@ class _BrowserScreenState extends State<BrowserScreen>
     final site = _sites[index];
     final titleController = TextEditingController(text: site.title);
     final urlController = TextEditingController(text: site.url);
+    String? titleErrorText;
     String? urlErrorText;
 
     final navigator = Navigator.of(context);
@@ -556,25 +575,17 @@ class _BrowserScreenState extends State<BrowserScreen>
                   text: 'URLを変更した場合は、保存後にサイトのアイコンと色を再取得します。',
                 ),
                 const SizedBox(height: 16),
-                TextField(
-                  controller: titleController,
-                  decoration: _buildDialogInputDecoration(
-                    dialogContext,
-                    labelText: 'タイトル',
-                    prefixIcon: Icons.label_outline,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: urlController,
-                  decoration: _buildDialogInputDecoration(
-                    dialogContext,
-                    labelText: 'URL',
-                    prefixIcon: Icons.link,
-                    errorText: urlErrorText,
-                  ),
-                  keyboardType: TextInputType.url,
-                  onChanged: (_) {
+                BrowserSiteFormFields(
+                  titleController: titleController,
+                  urlController: urlController,
+                  titleErrorText: titleErrorText,
+                  urlErrorText: urlErrorText,
+                  onTitleChanged: (_) {
+                    if (titleErrorText != null) {
+                      setStateDialog(() => titleErrorText = null);
+                    }
+                  },
+                  onUrlChanged: (_) {
                     if (urlErrorText != null) {
                       setStateDialog(() => urlErrorText = null);
                     }
@@ -613,16 +624,19 @@ class _BrowserScreenState extends State<BrowserScreen>
                   final newTitle = titleController.text.trim();
                   final newUrl = urlController.text.trim();
 
-                  if (newTitle.isEmpty || newUrl.isEmpty) {
-                    setStateDialog(() {
-                      urlErrorText = 'タイトルとURLを入力してください。';
-                    });
+                  setStateDialog(() {
+                    titleErrorText = newTitle.isEmpty ? 'タイトルを入力してください' : null;
+                    urlErrorText = newUrl.isEmpty ? 'URLを入力してください' : null;
+                  });
+                  if (titleErrorText != null || urlErrorText != null) {
                     return;
                   }
 
                   final uri = Uri.tryParse(newUrl);
                   if (uri == null || !uri.hasScheme || !uri.hasAuthority) {
-                    setStateDialog(() => urlErrorText = '有効なURLを入力してください。');
+                    setStateDialog(() {
+                      urlErrorText = '有効なURLを入力してください。';
+                    });
                     return;
                   }
 
@@ -656,6 +670,8 @@ class _BrowserScreenState extends State<BrowserScreen>
         },
       ),
     );
+    titleController.dispose();
+    urlController.dispose();
   }
 
   bool _isCurrentSite(String url) {
@@ -683,7 +699,7 @@ class _BrowserScreenState extends State<BrowserScreen>
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isSelected = _isCurrentSite(url);
+    final isSelected = _isControllerReady && _isCurrentSite(url);
     Color? backgroundColor;
     Color textColor = colorScheme.onSurfaceVariant;
 
@@ -739,6 +755,11 @@ class _BrowserScreenState extends State<BrowserScreen>
                 if (username != null && username.isNotEmpty) {
                   targetUrl = '$url$username';
                 }
+              }
+
+              if (_embeddedBrowserUnavailable) {
+                await _openSiteExternally(targetUrl);
+                return;
               }
 
               if (_currentUrl != targetUrl) {
@@ -842,6 +863,10 @@ class _BrowserScreenState extends State<BrowserScreen>
                     ),
                   ),
                 ),
+                if (_embeddedBrowserUnavailable) ...[
+                  const SizedBox(width: 6),
+                  Icon(Icons.open_in_new, size: 15, color: textColor),
+                ],
               ],
             ),
           ),
@@ -851,61 +876,30 @@ class _BrowserScreenState extends State<BrowserScreen>
   }
 
   Widget _buildSiteSwitcher() {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      clipBehavior: Clip.antiAlias,
-      child: SizedBox(
-        height: 56,
-        child: Row(
-          children: [
-            Expanded(
-              child: Scrollbar(
-                controller: _siteScrollController,
-                scrollbarOrientation: ScrollbarOrientation.bottom,
-                child: ListView(
-                  controller: _siteScrollController,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    ...BrowserConstants.defaultSites.map(
-                      (defaultSite) => _buildSiteButton(
-                        title: defaultSite.title,
-                        url: defaultSite.url,
-                        faviconUrl: defaultSite.faviconUrl,
-                        colorHex: defaultSite.colorHex,
-                      ),
-                    ),
-                    ..._sites.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final site = entry.value;
-                      return _buildSiteButton(
-                        title: site.title,
-                        url: site.url,
-                        faviconUrl: site.faviconUrl,
-                        colorHex: site.colorHex,
-                        onLongPress: () => _editSite(index),
-                      );
-                    }),
-                  ],
-                ),
-              ),
-            ),
-            Container(width: 1, height: 28, color: colorScheme.outlineVariant),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: IconButtonM3E(
-                tooltip: 'サイトを追加',
-                icon: const Icon(Icons.add),
-                onPressed: _addSite,
-              ),
-            ),
-          ],
+    return BrowserSiteSwitcher(
+      scrollController: _siteScrollController,
+      onAdd: _addSite,
+      siteButtons: [
+        ...BrowserConstants.defaultSites.map(
+          (defaultSite) => _buildSiteButton(
+            title: defaultSite.title,
+            url: defaultSite.url,
+            faviconUrl: defaultSite.faviconUrl,
+            colorHex: defaultSite.colorHex,
+          ),
         ),
-      ),
+        ..._sites.asMap().entries.map((entry) {
+          final index = entry.key;
+          final site = entry.value;
+          return _buildSiteButton(
+            title: site.title,
+            url: site.url,
+            faviconUrl: site.faviconUrl,
+            colorHex: site.colorHex,
+            onLongPress: () => _editSite(index),
+          );
+        }),
+      ],
     );
   }
 
@@ -931,56 +925,61 @@ class _BrowserScreenState extends State<BrowserScreen>
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Card(
-            elevation: 3,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: iconBackground,
-                          borderRadius: BorderRadius.circular(12),
+          child: ConstrainedBox(
+            // 状態表示は短い説明と単一操作なので、デスクトップでも読み幅を
+            // 必要以上に広げない。狭い画面では親の制約まで自然に縮む。
+            constraints: const BoxConstraints(maxWidth: 640),
+            child: Card(
+              elevation: 3,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: iconBackground,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(icon, color: iconColor),
                         ),
-                        child: Icon(icon, color: iconColor),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              title,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                color: isError ? colorScheme.onSurface : null,
-                                fontWeight: FontWeight.w700,
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                title,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  color: isError ? colorScheme.onSurface : null,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              message,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: foregroundColor,
+                              const SizedBox(height: 2),
+                              Text(
+                                message,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: foregroundColor,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  if (action != null) ...[const SizedBox(height: 16), action],
-                ],
+                      ],
+                    ),
+                    if (action != null) ...[const SizedBox(height: 16), action],
+                  ],
+                ),
               ),
             ),
           ),
@@ -1001,7 +1000,21 @@ class _BrowserScreenState extends State<BrowserScreen>
         Expanded(
           child: Stack(
             children: [
-              if (_isControllerReady)
+              if (_embeddedBrowserUnavailable)
+                _buildBrowserStateOverlay(
+                  icon: Icons.open_in_browser,
+                  title: '埋め込み表示に対応していません',
+                  message: 'この環境では、サイトを外部ブラウザで開きます。',
+                  action: ResponsiveAction(
+                    child: ButtonM3E(
+                      style: ButtonM3EStyle.filled,
+                      onPressed: () => _openSiteExternally(_currentUrl),
+                      icon: const Icon(Icons.open_in_new),
+                      label: const Text('外部で開く'),
+                    ),
+                  ),
+                )
+              else if (_isControllerReady)
                 WebViewWidget(controller: _controller)
               else
                 const Center(
@@ -1014,8 +1027,7 @@ class _BrowserScreenState extends State<BrowserScreen>
                   title: 'ページを読み込めませんでした',
                   message: _currentUrl,
                   isError: true,
-                  action: SizedBox(
-                    width: double.infinity,
+                  action: ResponsiveAction(
                     child: ButtonM3E(
                       style: ButtonM3EStyle.filled,
                       onPressed: () {

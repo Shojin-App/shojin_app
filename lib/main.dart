@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:developer' as developer;
-import 'dart:ui';
 
 import 'package:dynamic_color/dynamic_color.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart'; // 追加
@@ -24,6 +24,8 @@ import 'services/contest_reminder_service.dart';
 import 'services/notification_service.dart'; // Import NotificationService
 import 'utils/app_fonts.dart'; // Import app fonts helper
 import 'utils/responsive_layout.dart';
+import 'widgets/shared/app_bottom_navigation.dart';
+import 'widgets/shared/custom_sliver_app_bar.dart';
 
 void main() async {
   // Flutter Engineの初期化を保証
@@ -41,23 +43,14 @@ void main() async {
     return true;
   }());
 
-  // NotificationServiceの初期化と権限リクエスト
-  final notificationService = NotificationService();
-  await notificationService.initialize();
-  await notificationService.requestPermissions();
-
   // Providerのインスタンスを作成
   final themeProvider = ThemeProvider();
   final templateProvider = TemplateProvider();
   final contestProvider = ContestProvider();
 
-  // 非同期でテーマとテンプレートの読み込みが完了するのを待つ
-  // 各プロバイダー内の_loadFromPrefsの完了を待つため、
-  // isLoadingがfalseになるまで短い遅延を入れて待機する
-  while (themeProvider.isLoading || templateProvider.isLoading) {
-    await Future.delayed(const Duration(milliseconds: 10));
-  }
-
+  // 永続設定や通知プラグインの応答が遅くても、最初のフレームは既定値で
+  // 描画する。各Providerは読み込み完了時にnotifyListenersするため、UIは
+  // 後から保存済み設定へ更新される。
   runApp(
     MultiProvider(
       providers: [
@@ -68,12 +61,60 @@ void main() async {
       child: const MyApp(),
     ),
   );
-  unawaited(ContestReminderService().synchronize());
+  unawaited(_initializeBackgroundServices());
   developer.log('App started successfully');
+}
+
+Future<void> _initializeBackgroundServices() async {
+  // flutter_local_notificationsはWeb、Windows、Linux向けの初期化設定を
+  // 持たない。未対応環境ではUI起動を妨げず、通知処理自体を実行しない。
+  if (kIsWeb ||
+      !const {
+        TargetPlatform.android,
+        TargetPlatform.iOS,
+        TargetPlatform.macOS,
+      }.contains(defaultTargetPlatform)) {
+    return;
+  }
+
+  try {
+    // 同じプラグインインスタンスを同期処理にも渡し、初期化済みであることを
+    // 保ったまま保留通知の確認と再登録を行う。
+    final notificationService = NotificationService();
+    await notificationService.initialize();
+    await ContestReminderService(
+      notificationService: notificationService,
+    ).synchronize();
+  } catch (error, stackTrace) {
+    developer.log(
+      'Failed to initialize background services',
+      name: 'AppStartup',
+      error: error,
+      stackTrace: stackTrace,
+    );
+  }
 }
 
 Color _onColorFor(Color color) {
   return color.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+}
+
+SystemUiOverlayStyle appSystemUiOverlayStyle(Brightness brightness) {
+  final iconBrightness = brightness == Brightness.dark
+      ? Brightness.light
+      : Brightness.dark;
+
+  return SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: iconBrightness,
+    statusBarBrightness: brightness,
+    // Androidのジェスチャー／3ボタン領域にもアプリ側の半透明
+    // ナビゲーション背景を連続させ、OSの追加scrimとの二重表示を防ぐ。
+    systemNavigationBarColor: Colors.transparent,
+    systemNavigationBarDividerColor: Colors.transparent,
+    systemNavigationBarIconBrightness: iconBrightness,
+    systemNavigationBarContrastEnforced: false,
+  );
 }
 
 // デフォルトのカラースキーム（MaterialYou ON時）
@@ -241,7 +282,7 @@ class MyApp extends StatelessWidget {
         );
 
         return MaterialApp(
-          title: 'Shojin App',
+          title: '精進アプリ',
           localizationsDelegates: const [
             AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
@@ -305,21 +346,21 @@ class MyApp extends StatelessWidget {
                 style: MenuStyle(
                   shape: WidgetStatePropertyAll(
                     RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                 ),
               ),
               popupMenuTheme: PopupMenuThemeData(
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
               dropdownMenuTheme: DropdownMenuThemeData(
                 menuStyle: MenuStyle(
                   shape: WidgetStatePropertyAll(
                     RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                 ),
@@ -329,7 +370,7 @@ class MyApp extends StatelessWidget {
                 backgroundColor: lightColorScheme.surfaceContainerHigh,
                 surfaceTintColor: Colors.transparent,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
               snackBarTheme: SnackBarThemeData(
@@ -341,7 +382,7 @@ class MyApp extends StatelessWidget {
                   color: lightColorScheme.onInverseSurface,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
               elevatedButtonTheme: ElevatedButtonThemeData(
@@ -402,21 +443,21 @@ class MyApp extends StatelessWidget {
                 style: MenuStyle(
                   shape: WidgetStatePropertyAll(
                     RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                 ),
               ),
               popupMenuTheme: PopupMenuThemeData(
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
               dropdownMenuTheme: DropdownMenuThemeData(
                 menuStyle: MenuStyle(
                   shape: WidgetStatePropertyAll(
                     RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                 ),
@@ -426,7 +467,7 @@ class MyApp extends StatelessWidget {
                 backgroundColor: darkColorScheme.surfaceContainerHigh,
                 surfaceTintColor: Colors.transparent,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
               snackBarTheme: SnackBarThemeData(
@@ -438,7 +479,7 @@ class MyApp extends StatelessWidget {
                   color: darkColorScheme.onInverseSurface,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
               cardTheme: CardThemeData(
@@ -631,13 +672,7 @@ class _MainScreenState extends State<MainScreen> {
     final screens = _buildScreens();
 
     final brightness = Theme.of(context).brightness;
-    final overlayStyle = SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: brightness == Brightness.dark
-          ? Brightness.light
-          : Brightness.dark,
-      statusBarBrightness: brightness,
-    );
+    final overlayStyle = appSystemUiOverlayStyle(brightness);
 
     return GestureDetector(
       onTap: () {
@@ -657,61 +692,20 @@ class _MainScreenState extends State<MainScreen> {
                 false, // allow content under BottomNavigationBar for BackdropFilter
             child: AnimatedTabStack(index: _selectedIndex, children: screens),
           ),
-          bottomNavigationBar: ClipRect(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(
-                sigmaX: Provider.of<ThemeProvider>(context).navBarOpacity * 24,
-                sigmaY: Provider.of<ThemeProvider>(context).navBarOpacity * 24,
-              ),
-              child: Container(
-                // Adjust opacity from settings
-                color: Theme.of(context).colorScheme.surface.withValues(
-                  alpha: Provider.of<ThemeProvider>(context).navBarOpacity,
-                ),
-                child: Material(
-                  color:
-                      Colors.transparent, // Let the translucent container show
-                  child: Center(
-                    heightFactor: 1,
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(
-                        maxWidth: ResponsiveLayout.maxContentWidth,
-                      ),
-                      child: NavigationBarM3E(
-                        backgroundColor: Colors.transparent,
-                        elevation: 0,
-                        semanticLabel: 'メインナビゲーション',
-                        onDestinationSelected: _onItemTapped,
-                        selectedIndex: _selectedIndex,
-                        destinations: const [
-                          NavigationDestinationM3E(
-                            icon: Icon(Icons.home_outlined),
-                            selectedIcon: Icon(Icons.home),
-                            label: 'ホーム',
-                          ),
-                          NavigationDestinationM3E(
-                            icon: Icon(Icons.public_outlined),
-                            selectedIcon: Icon(Icons.public),
-                            label: 'ブラウザ',
-                          ),
-                          NavigationDestinationM3E(
-                            icon: Icon(Icons.list_alt_outlined),
-                            selectedIcon: Icon(Icons.list_alt),
-                            label: '問題',
-                          ),
-                          NavigationDestinationM3E(
-                            icon: Icon(Icons.code_outlined),
-                            selectedIcon: Icon(Icons.code),
-                            label: 'エディタ',
-                          ),
-                          NavigationDestinationM3E(
-                            icon: Icon(Icons.settings_outlined),
-                            selectedIcon: Icon(Icons.settings),
-                            label: '設定',
-                          ),
-                        ],
-                      ),
-                    ),
+          bottomNavigationBar: TranslucentNavigationBackground(
+            opacity: context.watch<ThemeProvider>().navBarOpacity,
+            color: Theme.of(context).colorScheme.surface,
+            child: Material(
+              color: Colors.transparent,
+              child: Center(
+                heightFactor: 1,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: ResponsiveLayout.maxContentWidth,
+                  ),
+                  child: AppBottomNavigation(
+                    onDestinationSelected: _onItemTapped,
+                    selectedIndex: _selectedIndex,
                   ),
                 ),
               ),

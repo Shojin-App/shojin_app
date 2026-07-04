@@ -13,6 +13,7 @@ import '../utils/responsive_layout.dart';
 import '../utils/text_style_helper.dart';
 import '../widgets/tex_widget.dart';
 import '../widgets/shared/app_loading_indicator.dart';
+import '../widgets/shared/app_state_card.dart';
 import '../widgets/shared/custom_sliver_app_bar.dart';
 
 class ProblemDetailScreen extends StatefulWidget {
@@ -20,12 +21,14 @@ class ProblemDetailScreen extends StatefulWidget {
   final String?
   problemIdToLoad; // New: ID passed from MainScreen via ProblemsScreen
   final Function(String) onProblemChanged;
+  final AtCoderService? atCoderService;
 
   const ProblemDetailScreen({
     super.key,
     this.initialUrl,
     this.problemIdToLoad, // Add to constructor
     required this.onProblemChanged,
+    this.atCoderService,
   });
 
   @override
@@ -35,7 +38,7 @@ class ProblemDetailScreen extends StatefulWidget {
 class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
   final _urlController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  final _atCoderService = AtCoderService();
+  late final AtCoderService _atCoderService;
 
   Problem? _problem;
   bool _isLoading = false;
@@ -46,6 +49,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
   @override
   void initState() {
     super.initState();
+    _atCoderService = widget.atCoderService ?? AtCoderService();
     developer.log(
       'ProblemDetailScreen initState: initialUrl=${widget.initialUrl}, problemIdToLoad=${widget.problemIdToLoad}',
       name: 'ProblemDetailScreen',
@@ -239,7 +243,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
                   height: 44,
                   decoration: BoxDecoration(
                     color: colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     Icons.article_outlined,
@@ -275,13 +279,13 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   final inputBorder = OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(color: colorScheme.outlineVariant),
                   );
                   final urlField = TextFormField(
                     controller: _urlController,
                     decoration: InputDecoration(
-                      labelText: 'AtCoder 問題URL',
+                      labelText: 'AtCoder問題URL',
                       hintText:
                           'https://atcoder.jp/contests/abc000/tasks/abc000_a',
                       filled: true,
@@ -310,13 +314,13 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
                         icon: const Icon(Icons.content_paste),
                         onPressed: _pasteUrlFromClipboard,
                       ),
-                      suffixIcon: IconButton(
-                        tooltip: 'URLをクリア',
-                        icon: const Icon(Icons.clear),
-                        onPressed: _urlController.text.isEmpty
-                            ? null
-                            : _clearUrl,
-                      ),
+                      suffixIcon: _urlController.text.isEmpty
+                          ? null
+                          : IconButton(
+                              tooltip: 'URLをクリア',
+                              icon: const Icon(Icons.clear),
+                              onPressed: _clearUrl,
+                            ),
                     ),
                     onChanged: (_) => setState(() {}),
                     validator: (value) {
@@ -430,7 +434,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
               height: 40,
               decoration: BoxDecoration(
                 color: iconBackground,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Center(child: Icon(icon, color: iconColor)),
             ),
@@ -527,13 +531,21 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
                       )
                     : (_problem != null
                           ? _buildProblemView(_problem!)
-                          : Center(
-                              child: _buildMessagePanel(
-                                context,
-                                icon: Icons.link_outlined,
-                                title: '問題がまだ選択されていません',
-                                message:
-                                    '問題URLを入力するか、ブラウザやおすすめ問題から問題を選択してください。',
+                          : Align(
+                              alignment: Alignment.topCenter,
+                              child: ConstrainedBox(
+                                // 未選択状態は短い案内だけなので、広い画面で
+                                // 内容以上に大きな空の枠を作らない。
+                                constraints: const BoxConstraints(
+                                  maxWidth: 640,
+                                ),
+                                child: const AppStateCard(
+                                  margin: EdgeInsets.zero,
+                                  icon: Icons.link_outlined,
+                                  title: '問題がまだ選択されていません',
+                                  message:
+                                      '問題URLを入力するか、ブラウザやおすすめ問題から問題を選択してください。',
+                                ),
                               ),
                             )),
               ),
@@ -571,7 +583,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
                       height: 44,
                       decoration: BoxDecoration(
                         color: colorScheme.secondaryContainer,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
                         Icons.assignment_outlined,
@@ -669,7 +681,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: colorScheme.outlineVariant.withValues(alpha: 0.7),
             ),
@@ -703,7 +715,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
                 color: colorScheme.surfaceContainerHighest.withValues(
                   alpha: 0.55,
                 ),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: colorScheme.outlineVariant.withValues(alpha: 0.7),
                 ),
@@ -788,7 +800,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
       width: double.infinity,
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: colorScheme.outlineVariant.withValues(alpha: 0.7),
         ),

@@ -10,6 +10,7 @@ import '../screens/upcoming_contests_screen.dart';
 import '../services/reminder_storage_service.dart';
 import 'shared/app_loading_indicator.dart';
 import 'shared/app_state_card.dart';
+import 'shared/responsive_action.dart';
 
 class NextABCContestWidget extends StatefulWidget {
   const NextABCContestWidget({super.key});
@@ -69,8 +70,7 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
             isError: true,
             child: Padding(
               padding: const EdgeInsets.only(top: 16),
-              child: SizedBox(
-                width: double.infinity,
+              child: ResponsiveAction(
                 child: ButtonM3E(
                   onPressed: () => provider.fetchNextABC(),
                   label: const Text('再試行'),
@@ -144,7 +144,7 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
                     height: 44,
                     decoration: BoxDecoration(
                       color: colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
                       Icons.event_available,
@@ -211,7 +211,7 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
                   color: colorScheme.surfaceContainerHighest.withValues(
                     alpha: 0.45,
                   ),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: colorScheme.outlineVariant.withValues(alpha: 0.7),
                   ),
@@ -377,7 +377,7 @@ class _NextABCContestWidgetState extends State<NextABCContestWidget> {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: containerColor.withValues(alpha: 0.78),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(999),
         border: Border.all(
           color: foregroundColor.withValues(alpha: 0.18),
           width: 1,

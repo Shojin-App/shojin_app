@@ -8,18 +8,24 @@ import '../services/code_history_service.dart';
 import '../utils/responsive_layout.dart';
 import '../widgets/shared/app_loading_indicator.dart';
 import '../widgets/shared/app_state_card.dart';
+import '../widgets/shared/responsive_action.dart';
 
 class CodeHistoryScreen extends StatefulWidget {
   final String problemId;
+  final CodeHistoryService? codeHistoryService;
 
-  const CodeHistoryScreen({super.key, required this.problemId});
+  const CodeHistoryScreen({
+    super.key,
+    required this.problemId,
+    this.codeHistoryService,
+  });
 
   @override
   State<CodeHistoryScreen> createState() => _CodeHistoryScreenState();
 }
 
 class _CodeHistoryScreenState extends State<CodeHistoryScreen> {
-  final CodeHistoryService _codeHistoryService = CodeHistoryService();
+  late final CodeHistoryService _codeHistoryService;
   late Future<List<CodeHistory>> _historyFuture;
 
   String _formatTimestamp(DateTime timestamp) {
@@ -29,6 +35,7 @@ class _CodeHistoryScreenState extends State<CodeHistoryScreen> {
   @override
   void initState() {
     super.initState();
+    _codeHistoryService = widget.codeHistoryService ?? CodeHistoryService();
     _historyFuture = _codeHistoryService.getHistory(widget.problemId);
   }
 
@@ -55,8 +62,19 @@ class _CodeHistoryScreenState extends State<CodeHistoryScreen> {
               context,
               icon: Icons.error_outline,
               title: '履歴を読み込めませんでした',
-              message: snapshot.error.toString(),
+              message: '保存された履歴を開けませんでした。もう一度お試しください。',
               isError: true,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: ResponsiveAction(
+                  child: ButtonM3E(
+                    style: ButtonM3EStyle.tonal,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('再試行'),
+                    onPressed: _reloadHistory,
+                  ),
+                ),
+              ),
             );
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return _buildStateCard(
@@ -79,6 +97,12 @@ class _CodeHistoryScreenState extends State<CodeHistoryScreen> {
         },
       ),
     );
+  }
+
+  void _reloadHistory() {
+    setState(() {
+      _historyFuture = _codeHistoryService.getHistory(widget.problemId);
+    });
   }
 
   Widget _buildStateCard(
@@ -129,7 +153,7 @@ class _CodeHistoryScreenState extends State<CodeHistoryScreen> {
                 height: 44,
                 decoration: BoxDecoration(
                   color: colorScheme.secondaryContainer,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   Icons.restore,
@@ -162,7 +186,7 @@ class _CodeHistoryScreenState extends State<CodeHistoryScreen> {
                         color: colorScheme.surfaceContainerHighest.withValues(
                           alpha: 0.45,
                         ),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(8),
                         border: Border.all(
                           color: colorScheme.outlineVariant.withValues(
                             alpha: 0.7,
@@ -205,7 +229,7 @@ class _CodeHistoryScreenState extends State<CodeHistoryScreen> {
               height: 40,
               decoration: BoxDecoration(
                 color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(Icons.history, color: colorScheme.onPrimaryContainer),
             ),
@@ -231,7 +255,7 @@ class _CodeHistoryScreenState extends State<CodeHistoryScreen> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: colorScheme.secondaryContainer.withValues(alpha: 0.55),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   children: [
@@ -262,7 +286,7 @@ class _CodeHistoryScreenState extends State<CodeHistoryScreen> {
                       color: colorScheme.surfaceContainerHighest.withValues(
                         alpha: 0.45,
                       ),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: colorScheme.outlineVariant.withValues(
                           alpha: 0.7,

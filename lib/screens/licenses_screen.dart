@@ -1,16 +1,20 @@
 import 'package:flutter/foundation.dart'
-    show LicenseRegistry; // for potential custom additions
+    show LicenseEntry, LicenseRegistry; // for potential custom additions
 import 'package:flutter/material.dart';
+import 'package:m3e_collection/m3e_collection.dart';
 
 import '../generated/manual_licenses.dart';
 import '../generated/oss_licenses.dart';
 import '../utils/responsive_layout.dart';
 import '../widgets/shared/app_loading_indicator.dart';
 import '../widgets/shared/app_state_card.dart';
+import '../widgets/shared/responsive_action.dart';
 
 /// ライセンス一覧（生成データ利用）
 class LicensesScreen extends StatelessWidget {
-  const LicensesScreen({super.key});
+  const LicensesScreen({super.key, this.standardLicenseStreamBuilder});
+
+  final Stream<LicenseEntry> Function()? standardLicenseStreamBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +39,10 @@ class LicensesScreen extends StatelessWidget {
             _LicenseList(packages: [...dependencies, ...extraPackages]),
             // All (direct + transitive) + manual extras (kept separate from generator)
             _LicenseList(packages: [...allDependencies, ...extraPackages]),
-            _StandardLicensePane(currentVersion: _extractAppVersion()),
+            _StandardLicensePane(
+              currentVersion: _extractAppVersion(),
+              licenseStreamBuilder: standardLicenseStreamBuilder,
+            ),
           ],
         ),
       ),
@@ -91,7 +98,7 @@ class _LicensePackageCard extends StatelessWidget {
           height: 40,
           decoration: BoxDecoration(
             color: colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(8),
           ),
           child: Center(
             child: Icon(
@@ -124,7 +131,7 @@ class _LicensePackageCard extends StatelessWidget {
                   color: colorScheme.surfaceContainerHighest.withValues(
                     alpha: 0.45,
                   ),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   link,
@@ -141,7 +148,7 @@ class _LicensePackageCard extends StatelessWidget {
               color: colorScheme.surfaceContainerHighest.withValues(
                 alpha: 0.35,
               ),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: colorScheme.outlineVariant.withValues(alpha: 0.7),
               ),
@@ -163,7 +170,9 @@ class _LicensePackageCard extends StatelessWidget {
 /// 標準 Flutter ライセンスページをタブ内に埋め込む簡易版
 class _StandardLicensePane extends StatefulWidget {
   final String? currentVersion;
-  const _StandardLicensePane({this.currentVersion});
+  final Stream<LicenseEntry> Function()? licenseStreamBuilder;
+
+  const _StandardLicensePane({this.currentVersion, this.licenseStreamBuilder});
 
   @override
   State<_StandardLicensePane> createState() => _StandardLicensePaneState();
@@ -181,7 +190,10 @@ class _StandardLicensePaneState extends State<_StandardLicensePane> {
   Future<List<_CollectedLicense>> _collect() async {
     final entries = <_CollectedLicense>[];
     // LicenseRegistry は Stream でライセンスエントリを返す
-    final stream = LicenseRegistry.licenses;
+    // 再試行時にも新しいsingle-subscription streamを購読できるよう、
+    // Streamそのものではなく生成関数を受け取る。
+    final stream =
+        widget.licenseStreamBuilder?.call() ?? LicenseRegistry.licenses;
     await for (final l in stream) {
       final paragraphs = <String>[];
       for (final p in l.paragraphs) {
@@ -218,8 +230,19 @@ class _StandardLicensePaneState extends State<_StandardLicensePane> {
           return _CenteredStateCard(
             icon: Icons.error_outline,
             title: '読み込みに失敗しました',
-            message: snapshot.error.toString(),
+            message: '標準ライセンスを収集できませんでした。もう一度お試しください。',
             isError: true,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: ResponsiveAction(
+                child: ButtonM3E(
+                  style: ButtonM3EStyle.tonal,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('再試行'),
+                  onPressed: _reload,
+                ),
+              ),
+            ),
           );
         }
         final data = snapshot.data ?? [];
@@ -263,7 +286,7 @@ class _StandardLicensePaneState extends State<_StandardLicensePane> {
                   height: 40,
                   decoration: BoxDecoration(
                     color: colorScheme.secondaryContainer,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Center(
                     child: Icon(
@@ -295,7 +318,7 @@ class _StandardLicensePaneState extends State<_StandardLicensePane> {
                       color: colorScheme.surfaceContainerHighest.withValues(
                         alpha: 0.35,
                       ),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: colorScheme.outlineVariant.withValues(
                           alpha: 0.7,
@@ -317,6 +340,12 @@ class _StandardLicensePaneState extends State<_StandardLicensePane> {
         );
       },
     );
+  }
+
+  void _reload() {
+    setState(() {
+      _future = _collect();
+    });
   }
 }
 

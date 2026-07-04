@@ -4,8 +4,8 @@ import 'dart:developer' as developer; // developerログのために追加
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:m3e_collection/m3e_collection.dart';
-import 'package:flutter/services.dart'; // Clipboardのために追加
 import 'package:flutter_code_editor/flutter_code_editor.dart';
 import 'package:flutter_highlight/themes/github.dart';
 import 'package:flutter_highlight/themes/monokai-sublime.dart';
@@ -31,6 +31,8 @@ import '../utils/text_style_helper.dart';
 import '../utils/responsive_layout.dart';
 import '../widgets/monaco_code_editor.dart';
 import '../widgets/programming_language_icon.dart';
+import '../widgets/shared/copyable_code_section.dart';
+import '../widgets/shared/responsive_action.dart';
 import 'code_history_screen.dart';
 import 'submit_screen.dart'; // 提出画面を表示するWebViewスクリーン
 
@@ -748,7 +750,7 @@ class _EditorScreenState extends State<EditorScreen> {
                     height: 40,
                     decoration: BoxDecoration(
                       color: colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
                       Icons.fact_check_outlined,
@@ -972,7 +974,7 @@ class _EditorScreenState extends State<EditorScreen> {
                 height: 40,
                 decoration: BoxDecoration(
                   color: statusColor.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(Icons.terminal, color: statusColor),
               ),
@@ -997,7 +999,7 @@ class _EditorScreenState extends State<EditorScreen> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     result.statusLabel,
@@ -1027,17 +1029,8 @@ class _EditorScreenState extends State<EditorScreen> {
           ),
           actions: [
             ButtonM3E(
-              style: ButtonM3EStyle.text,
-              label: const Text('コピー (入力)'),
-              onPressed: () {
-                Clipboard.setData(ClipboardData(text: result.input));
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('入力をコピーしました')));
-              },
-            ),
-            ButtonM3E(
               onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.close),
               label: const Text('閉じる'),
               style: ButtonM3EStyle.text,
             ),
@@ -1053,50 +1046,11 @@ class _EditorScreenState extends State<EditorScreen> {
     bool isError = false,
   }) {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    final theme = Theme.of(context);
-    final colorScheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: theme.textTheme.titleSmall?.copyWith(
-              color: isError ? colorScheme.onErrorContainer : null,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Container(
-            padding: const EdgeInsets.all(8),
-            width: double.infinity,
-            constraints: const BoxConstraints(maxHeight: 150), // 高さに制限
-            decoration: BoxDecoration(
-              color: isError
-                  ? colorScheme.errorContainer.withValues(alpha: 0.55)
-                  : colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isError
-                    ? colorScheme.error.withValues(alpha: 0.25)
-                    : colorScheme.outlineVariant.withValues(alpha: 0.7),
-              ),
-            ),
-            child: SingleChildScrollView(
-              // 内容が長い場合にスクロール可能に
-              child: SelectableText(
-                content.isEmpty ? '(空)' : content,
-                style: getMonospaceTextStyle(
-                  themeProvider.codeFontFamily,
-                  fontSize: 13,
-                  color: isError ? colorScheme.onErrorContainer : null,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+    return CopyableCodeSection(
+      title: title,
+      content: content,
+      codeFontFamily: themeProvider.codeFontFamily,
+      isError: isError,
     );
   }
 
@@ -1240,7 +1194,7 @@ class _EditorScreenState extends State<EditorScreen> {
             LayoutBuilder(
               builder: (context, constraints) {
                 if (_currentProblem == null) {
-                  return SizedBox(width: double.infinity, child: runButton);
+                  return ResponsiveAction(maxWidth: 220, child: runButton);
                 }
 
                 if (constraints.maxWidth < 420) {
@@ -1334,6 +1288,13 @@ class _EditorScreenState extends State<EditorScreen> {
                     title: '実行結果',
                     subtitle: 'stdout / stderr',
                     icon: Icons.output_outlined,
+                    trailing: IconButton(
+                      tooltip: '実行結果をコピー',
+                      icon: const Icon(Icons.copy_outlined, size: 18),
+                      onPressed: _output.isEmpty && _error.isEmpty
+                          ? null
+                          : _copyExecutionResult,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -1424,6 +1385,7 @@ class _EditorScreenState extends State<EditorScreen> {
     required Widget child,
     required ScrollController scrollController,
     bool scrollChild = true,
+    Widget? trailing,
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -1435,19 +1397,30 @@ class _EditorScreenState extends State<EditorScreen> {
           children: [
             Icon(icon, size: 18, color: colorScheme.onSurfaceVariant),
             const SizedBox(width: 8),
-            Text(
-              title,
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(width: 8),
-            Text(
-              subtitle,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
+            if (trailing != null) ...[const SizedBox(width: 8), trailing],
           ],
         ),
         const SizedBox(height: 8),
@@ -1458,7 +1431,7 @@ class _EditorScreenState extends State<EditorScreen> {
               color: colorScheme.surfaceContainerHighest.withValues(
                 alpha: 0.45,
               ),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: colorScheme.outlineVariant.withValues(alpha: 0.7),
               ),
@@ -1479,6 +1452,20 @@ class _EditorScreenState extends State<EditorScreen> {
         ),
       ],
     );
+  }
+
+  Future<void> _copyExecutionResult() async {
+    final sections = <String>[
+      if (_output.isNotEmpty) '標準出力\n$_output',
+      if (_error.isNotEmpty) 'エラー出力\n$_error',
+    ];
+    if (sections.isEmpty) return;
+
+    await Clipboard.setData(ClipboardData(text: sections.join('\n\n')));
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('実行結果をコピーしました')));
   }
 
   @override
@@ -1640,7 +1627,10 @@ class _EditorAppBar extends StatelessWidget implements PreferredSizeWidget {
             child: Semantics(
               label: 'プログラミング言語',
               child: Container(
-                height: 40,
+                key: const Key('editor-language-selector'),
+                // Androidの最小タップ領域を満たし、片手操作でも
+                // ドロップダウンを開きやすくする。
+                height: 48,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
                   color: colorScheme.surfaceContainerHighest.withValues(
@@ -1654,7 +1644,7 @@ class _EditorAppBar extends StatelessWidget implements PreferredSizeWidget {
                     value: selectedLanguage,
                     isDense: true,
                     isExpanded: true,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(8),
                     icon: const Icon(Icons.expand_more, size: 20),
                     onChanged: onLanguageChanged,
                     items: languages.map<DropdownMenuItem<String>>((
@@ -1692,9 +1682,7 @@ class _EditorAppBar extends StatelessWidget implements PreferredSizeWidget {
         PopupMenuButton<_ToolbarAction>(
           icon: const Icon(Icons.more_vert),
           tooltip: 'その他',
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           onSelected: onSelected,
           itemBuilder: (context) => [
             PopupMenuItem<_ToolbarAction>(
@@ -1742,7 +1730,7 @@ class _EditorAppBar extends StatelessWidget implements PreferredSizeWidget {
           height: 32,
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(8),
           ),
           child: Center(
             child: Icon(icon, size: 18, color: colorScheme.onSurfaceVariant),

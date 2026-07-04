@@ -4,12 +4,22 @@ import 'package:m3e_collection/m3e_collection.dart';
 import '../models/reminder_setting.dart';
 import '../services/reminder_storage_service.dart';
 import '../services/contest_reminder_service.dart';
+import '../services/notification_service.dart';
 import '../utils/responsive_layout.dart';
 import '../widgets/shared/app_loading_indicator.dart';
 import '../widgets/shared/app_state_card.dart';
 
 class ReminderSettingsScreen extends StatefulWidget {
-  const ReminderSettingsScreen({super.key});
+  const ReminderSettingsScreen({
+    super.key,
+    this.notificationService,
+    this.storageService,
+    this.reminderService,
+  });
+
+  final NotificationService? notificationService;
+  final ReminderStorageService? storageService;
+  final ContestReminderService? reminderService;
 
   @override
   State<ReminderSettingsScreen> createState() => _ReminderSettingsScreenState();
@@ -23,7 +33,9 @@ class _NotificationTimeOption {
 }
 
 class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
-  final ReminderStorageService _storageService = ReminderStorageService();
+  late final NotificationService _notificationService;
+  late final ReminderStorageService _storageService;
+  late final ContestReminderService _reminderService;
   List<ReminderSetting> _reminderSettings = [];
   bool _isLoading = true;
 
@@ -55,6 +67,14 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
   @override
   void initState() {
     super.initState();
+    _notificationService = widget.notificationService ?? NotificationService();
+    _storageService = widget.storageService ?? ReminderStorageService();
+    _reminderService =
+        widget.reminderService ??
+        ContestReminderService(
+          notificationService: _notificationService,
+          storageService: _storageService,
+        );
     _loadSettings();
   }
 
@@ -72,7 +92,7 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
           ReminderSetting(
             contestType: type,
             minutesBefore: [15],
-            isEnabled: true,
+            isEnabled: false,
           ),
         );
       }
@@ -96,7 +116,31 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
       }
     }
     await _storageService.saveReminderSettings(_reminderSettings);
-    await ContestReminderService().synchronize();
+    await _reminderService.synchronize();
+  }
+
+  Future<void> _setReminderEnabled(int index, bool value) async {
+    if (value) {
+      var granted = false;
+      try {
+        granted = await _notificationService.requestPermissions();
+      } catch (_) {
+        // プラグインが権限状態を返せない端末でも、有効表示だけが先行して
+        // 実際には通知されない状態を作らない。
+      }
+      if (!mounted) return;
+      if (!granted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('通知が許可されなかったため、リマインダーは有効にできませんでした')),
+        );
+        return;
+      }
+    }
+
+    setState(() {
+      _reminderSettings[index].isEnabled = value;
+    });
+    await _saveSettings();
   }
 
   Future<void> _showCustomTimeInputDialog(int settingIndex) async {
@@ -115,7 +159,7 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
                 height: 40,
                 decoration: BoxDecoration(
                   color: colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   Icons.timer_outlined,
@@ -144,7 +188,7 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
                   color: colorScheme.surfaceContainerHighest.withValues(
                     alpha: 0.45,
                   ),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: colorScheme.outlineVariant.withValues(alpha: 0.7),
                   ),
@@ -171,15 +215,15 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
                     alpha: 0.35,
                   ),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(color: colorScheme.outlineVariant),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(color: colorScheme.outlineVariant),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
                       color: colorScheme.primary,
                       width: 1.6,
@@ -238,9 +282,7 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
 
         return AlertDialog(
           scrollable: true,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           title: Row(
             children: [
               Icon(Icons.add_alarm_outlined, color: colorScheme.primary),
@@ -262,11 +304,11 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
                     color: isSelected
                         ? colorScheme.primaryContainer.withValues(alpha: 0.6)
                         : Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                     child: ListTile(
                       dense: true,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       leading: Icon(
                         option.value == null
@@ -351,17 +393,31 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
     final setting = _reminderSettings[index];
     final contestName = _contestTypeNames[setting.contestType] ?? 'その他';
     final label = _contestTypeLabels[setting.contestType] ?? 'OTHER';
+    final typeColors = _contestTypeColors(context, setting.contestType);
     final labelColor = setting.isEnabled
-        ? colorScheme.primaryContainer
+        ? typeColors.container
         : colorScheme.surfaceContainerHighest;
     final onLabelColor = setting.isEnabled
-        ? colorScheme.onPrimaryContainer
+        ? typeColors.foreground
         : colorScheme.onSurfaceVariant;
 
     return Card(
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      color: setting.isEnabled
+          ? Color.alphaBlend(
+              typeColors.container.withValues(alpha: 0.12),
+              colorScheme.surface,
+            )
+          : null,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(
+          color: setting.isEnabled
+              ? typeColors.foreground.withValues(alpha: 0.14)
+              : colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+      ),
       clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -375,7 +431,7 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
                   height: 44,
                   decoration: BoxDecoration(
                     color: labelColor,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Center(
                     child: Text(
@@ -417,12 +473,7 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
                   label: '$contestNameのリマインダー',
                   child: Switch(
                     value: setting.isEnabled,
-                    onChanged: (bool value) {
-                      setState(() {
-                        setting.isEnabled = value;
-                      });
-                      _saveSettings();
-                    },
+                    onChanged: (value) => _setReminderEnabled(index, value),
                   ),
                 ),
               ],
@@ -434,7 +485,7 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
                 color: colorScheme.surfaceContainerHighest.withValues(
                   alpha: 0.45,
                 ),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: colorScheme.outlineVariant.withValues(alpha: 0.7),
                 ),
@@ -492,6 +543,41 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
         ),
       ),
     );
+  }
+
+  ({Color container, Color foreground}) _contestTypeColors(
+    BuildContext context,
+    ContestType type,
+  ) {
+    final colors = Theme.of(context).colorScheme;
+
+    switch (type) {
+      case ContestType.abc:
+        return (
+          container: colors.primaryContainer,
+          foreground: colors.onPrimaryContainer,
+        );
+      case ContestType.arc:
+        return (
+          container: colors.tertiaryContainer,
+          foreground: colors.onTertiaryContainer,
+        );
+      case ContestType.agc:
+        return (
+          container: colors.errorContainer,
+          foreground: colors.onErrorContainer,
+        );
+      case ContestType.ahc:
+        return (
+          container: colors.secondaryContainer,
+          foreground: colors.onSecondaryContainer,
+        );
+      case ContestType.other:
+        return (
+          container: colors.surfaceContainerHighest,
+          foreground: colors.onSurfaceVariant,
+        );
+    }
   }
 
   @override

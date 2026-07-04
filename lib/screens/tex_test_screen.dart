@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:m3e_collection/m3e_collection.dart';
 
+import '../utils/responsive_layout.dart';
 import '../widgets/tex_widget.dart';
 
 class TexTestScreen extends StatelessWidget {
@@ -13,7 +14,9 @@ class TexTestScreen extends StatelessWidget {
       body: SafeArea(
         top: false,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          // 数式やコードの一行が広がりすぎないよう、他の一覧画面と
+          // 同じ最大読み幅に揃える。
+          padding: ResponsiveLayout.listPadding(context),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -86,7 +89,7 @@ class TexTestScreen extends StatelessWidget {
               height: 44,
               decoration: BoxDecoration(
                 color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 Icons.functions,
@@ -146,7 +149,7 @@ class TexTestScreen extends StatelessWidget {
                   height: 40,
                   decoration: BoxDecoration(
                     color: colorScheme.secondaryContainer,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Center(
                     child: Icon(icon, color: colorScheme.onSecondaryContainer),
@@ -171,7 +174,7 @@ class TexTestScreen extends StatelessWidget {
                 color: colorScheme.surfaceContainerHighest.withValues(
                   alpha: 0.35,
                 ),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: colorScheme.outlineVariant.withValues(alpha: 0.7),
                 ),

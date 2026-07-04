@@ -27,15 +27,10 @@ class ContestReminderService {
       await _cancelExistingContestReminders();
 
       final storedSettings = await _storageService.loadReminderSettings();
-      final settings = storedSettings.isEmpty
-          ? ContestType.values
-                .where((type) => type != ContestType.other)
-                .map(
-                  (type) =>
-                      ReminderSetting(contestType: type, minutesBefore: [15]),
-                )
-                .toList()
-          : storedSettings;
+      // 未設定の新規ユーザーには通知を自動登録しない。権限要求と有効化は
+      // リマインダー設定画面での明示操作に限定する。
+      if (storedSettings.isEmpty) return;
+      final settings = storedSettings;
       final enabledSettings = {
         for (final setting in settings)
           if (setting.isEnabled) setting.contestType: setting,

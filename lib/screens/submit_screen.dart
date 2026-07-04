@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:m3e_collection/m3e_collection.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
+import '../widgets/shared/web_content_status_header.dart';
+
 class SubmitScreen extends StatefulWidget {
   final String url;
   final String initialCode;
@@ -126,9 +128,7 @@ class _SubmitScreenState extends State<SubmitScreen> {
           IconButtonM3E(
             tooltip: '再読み込み',
             icon: const Icon(Icons.refresh),
-            onPressed: () {
-              _controller.reload();
-            },
+            onPressed: _reload,
           ),
         ],
       ),
@@ -136,7 +136,17 @@ class _SubmitScreenState extends State<SubmitScreen> {
         top: false,
         child: Column(
           children: [
-            _buildStatusHeader(context),
+            WebContentStatusHeader(
+              statusMessage: _statusMessage,
+              detail:
+                  '${widget.initialLanguage} / ${widget.initialCode.length}文字',
+              icon: Icons.cloud_upload_outlined,
+              loadingProgress: _loadingProgress,
+              isLoading: !_hasPageError && _loadingProgress < 100,
+              hasError: _hasPageError,
+              progressSemanticsLabel: '提出ページの読み込み進捗',
+              onRetry: _reload,
+            ),
             Expanded(child: WebViewWidget(controller: _controller)),
           ],
         ),
@@ -144,104 +154,12 @@ class _SubmitScreenState extends State<SubmitScreen> {
     );
   }
 
-  Widget _buildStatusHeader(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final progress = (_loadingProgress / 100).clamp(0.0, 1.0);
-    final foregroundColor = colorScheme.onSurfaceVariant;
-    final iconBackground = _hasPageError
-        ? colorScheme.errorContainer
-        : colorScheme.primaryContainer;
-    final iconColor = _hasPageError
-        ? colorScheme.onErrorContainer
-        : colorScheme.onPrimaryContainer;
-
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-      color: _hasPageError
-          ? Color.alphaBlend(
-              colorScheme.errorContainer.withValues(alpha: 0.18),
-              colorScheme.surface,
-            )
-          : null,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: _hasPageError
-              ? colorScheme.error.withValues(alpha: 0.35)
-              : colorScheme.outlineVariant.withValues(alpha: 0.5),
-        ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: iconBackground,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    _hasPageError
-                        ? Icons.error_outline
-                        : Icons.cloud_upload_outlined,
-                    color: iconColor,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _statusMessage,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          color: _hasPageError ? colorScheme.onSurface : null,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${widget.initialLanguage} / ${widget.initialCode.length}文字',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: foregroundColor,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  '$_loadingProgress%',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: foregroundColor,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-            if (!_hasPageError && _loadingProgress < 100) ...[
-              const SizedBox(height: 12),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(999),
-                child: LinearProgressIndicator(
-                  value: progress,
-                  minHeight: 6,
-                  backgroundColor: colorScheme.surfaceContainerHighest,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
+  void _reload() {
+    setState(() {
+      _loadingProgress = 0;
+      _hasPageError = false;
+      _statusMessage = '提出ページを読み込んでいます';
+    });
+    _controller.reload();
   }
 }

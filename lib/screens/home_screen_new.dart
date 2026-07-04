@@ -8,15 +8,18 @@ import 'package:shojin_app/screens/recommend_screen.dart';
 import '../models/problem_difficulty.dart';
 import '../screens/problem_detail_screen.dart';
 import '../services/atcoder_service.dart';
-import '../utils/atcoder_colors.dart';
 import '../utils/rating_utils.dart';
 import '../utils/responsive_layout.dart';
 import '../widgets/next_abc_contest_widget.dart';
+import '../widgets/recommendation_problem_card.dart';
 import '../widgets/shared/custom_sliver_app_bar.dart';
 import '../widgets/shared/app_loading_indicator.dart';
+import '../widgets/shared/responsive_action.dart';
 
 class NewHomeScreen extends StatefulWidget {
-  const NewHomeScreen({super.key});
+  const NewHomeScreen({super.key, this.atCoderService});
+
+  final AtCoderService? atCoderService;
 
   @override
   State<NewHomeScreen> createState() => _NewHomeScreenState();
@@ -27,7 +30,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
   static const _hiddenWidgetsKey = 'home_hidden_widgets';
   static const _defaultWidgetOrder = ['next_abc', 'recommendation', 'clans'];
 
-  final _atcoderService = AtCoderService();
+  late final AtCoderService _atcoderService;
 
   String? _savedUsername;
   int? _currentRating;
@@ -42,6 +45,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
   @override
   void initState() {
     super.initState();
+    _atcoderService = widget.atCoderService ?? AtCoderService();
     _loadSavedUsernameAndFetchRecommendation();
     _loadWidgetPreferences();
   }
@@ -117,170 +121,186 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
               draftHidden.isEmpty;
 
           return SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
+            child: Center(
+              child: ConstrainedBox(
+                // ボトムシートはデスクトップでも設定項目同士の視線移動が
+                // 大きくなりすぎない幅に留める。
+                constraints: const BoxConstraints(maxWidth: 640),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Expanded(
-                        child: Text(
-                          'ホームをカスタマイズ',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'ホームをカスタマイズ',
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ),
+                          IconButtonM3E(
+                            tooltip: '初期状態に戻す',
+                            icon: const Icon(Icons.restart_alt),
+                            onPressed: isDefault
+                                ? null
+                                : () {
+                                    setSheetState(() {
+                                      draftOrder = [..._defaultWidgetOrder];
+                                      draftHidden.clear();
+                                    });
+                                  },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Flexible(
+                        child: ReorderableListView.builder(
+                          shrinkWrap: true,
+                          buildDefaultDragHandles: false,
+                          itemCount: draftOrder.length,
+                          onReorderItem: (oldIndex, newIndex) {
+                            setSheetState(() {
+                              final item = draftOrder.removeAt(oldIndex);
+                              draftOrder.insert(newIndex, item);
+                            });
+                          },
+                          itemBuilder: (context, index) {
+                            final id = draftOrder[index];
+                            final visible = !draftHidden.contains(id);
+                            return Padding(
+                              key: ValueKey(id),
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Material(
+                                color: visible
+                                    ? colorScheme.primaryContainer.withValues(
+                                        alpha: 0.22,
+                                      )
+                                    : colorScheme.surfaceContainerHighest
+                                          .withValues(alpha: 0.45),
+                                borderRadius: BorderRadius.circular(8),
+                                child: SwitchListTile(
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 2,
+                                  ),
+                                  secondary: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      ReorderableDragStartListener(
+                                        key: ValueKey('home-drag-$id'),
+                                        index: index,
+                                        child: Tooltip(
+                                          message: '並べ替え',
+                                          child: SizedBox(
+                                            // アイコンは控えめなまま、Androidで
+                                            // 掴みやすい48dpの操作領域を確保する。
+                                            width: 48,
+                                            height: 48,
+                                            child: Icon(
+                                              Icons.drag_handle,
+                                              color:
+                                                  colorScheme.onSurfaceVariant,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Container(
+                                        width: 40,
+                                        height: 40,
+                                        decoration: BoxDecoration(
+                                          color: visible
+                                              ? colorScheme.primaryContainer
+                                              : colorScheme
+                                                    .surfaceContainerHighest,
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: Center(
+                                          child: Icon(
+                                            _widgetIcon(id),
+                                            color: visible
+                                                ? colorScheme.onPrimaryContainer
+                                                : colorScheme.onSurfaceVariant,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  title: Text(
+                                    _widgetLabel(id),
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      fontWeight: visible
+                                          ? FontWeight.w700
+                                          : FontWeight.w500,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    visible ? 'ホームに表示中' : '非表示',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                  value: visible,
+                                  onChanged: (visible) {
+                                    setSheetState(() {
+                                      visible
+                                          ? draftHidden.remove(id)
+                                          : draftHidden.add(id);
+                                    });
+                                  },
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ),
-                      IconButtonM3E(
-                        tooltip: '初期状態に戻す',
-                        icon: const Icon(Icons.restart_alt),
-                        onPressed: isDefault
-                            ? null
-                            : () {
-                                setSheetState(() {
-                                  draftOrder = [..._defaultWidgetOrder];
-                                  draftHidden.clear();
-                                });
-                              },
+                      const SizedBox(height: 12),
+                      ResponsiveAction(
+                        child: ButtonM3E(
+                          style: ButtonM3EStyle.filled,
+                          label: const Text('保存'),
+                          onPressed: !hasChanges
+                              ? null
+                              : () async {
+                                  setState(() {
+                                    _widgetOrder = [...draftOrder];
+                                    _hiddenWidgets = {...draftHidden};
+                                  });
+                                  await _saveWidgetPreferences();
+                                  if (!mounted || !context.mounted) return;
+                                  Navigator.pop(context);
+                                  final messenger = ScaffoldMessenger.of(
+                                    this.context,
+                                  );
+                                  messenger.hideCurrentSnackBar();
+                                  messenger.showSnackBar(
+                                    SnackBar(
+                                      content: const Text('ホームを更新しました'),
+                                      action: SnackBarAction(
+                                        label: '元に戻す',
+                                        onPressed: () async {
+                                          setState(() {
+                                            _widgetOrder = [...originalOrder];
+                                            _hiddenWidgets = {
+                                              ...originalHidden,
+                                            };
+                                          });
+                                          await _saveWidgetPreferences();
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                },
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  Flexible(
-                    child: ReorderableListView.builder(
-                      shrinkWrap: true,
-                      buildDefaultDragHandles: false,
-                      itemCount: draftOrder.length,
-                      onReorderItem: (oldIndex, newIndex) {
-                        setSheetState(() {
-                          final item = draftOrder.removeAt(oldIndex);
-                          draftOrder.insert(newIndex, item);
-                        });
-                      },
-                      itemBuilder: (context, index) {
-                        final id = draftOrder[index];
-                        final visible = !draftHidden.contains(id);
-                        return Padding(
-                          key: ValueKey(id),
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Material(
-                            color: visible
-                                ? colorScheme.primaryContainer.withValues(
-                                    alpha: 0.22,
-                                  )
-                                : colorScheme.surfaceContainerHighest
-                                      .withValues(alpha: 0.45),
-                            borderRadius: BorderRadius.circular(8),
-                            child: SwitchListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 2,
-                              ),
-                              secondary: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  ReorderableDragStartListener(
-                                    index: index,
-                                    child: Tooltip(
-                                      message: '並べ替え',
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(8),
-                                        child: Icon(
-                                          Icons.drag_handle,
-                                          color: colorScheme.onSurfaceVariant,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Container(
-                                    width: 40,
-                                    height: 40,
-                                    decoration: BoxDecoration(
-                                      color: visible
-                                          ? colorScheme.primaryContainer
-                                          : colorScheme.surfaceContainerHighest,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Center(
-                                      child: Icon(
-                                        _widgetIcon(id),
-                                        color: visible
-                                            ? colorScheme.onPrimaryContainer
-                                            : colorScheme.onSurfaceVariant,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              title: Text(
-                                _widgetLabel(id),
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: visible
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
-                                ),
-                              ),
-                              subtitle: Text(
-                                visible ? 'ホームに表示中' : '非表示',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                              value: visible,
-                              onChanged: (visible) {
-                                setSheetState(() {
-                                  visible
-                                      ? draftHidden.remove(id)
-                                      : draftHidden.add(id);
-                                });
-                              },
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ButtonM3E(
-                      style: ButtonM3EStyle.filled,
-                      label: const Text('保存'),
-                      onPressed: !hasChanges
-                          ? null
-                          : () async {
-                              setState(() {
-                                _widgetOrder = [...draftOrder];
-                                _hiddenWidgets = {...draftHidden};
-                              });
-                              await _saveWidgetPreferences();
-                              if (!mounted || !context.mounted) return;
-                              Navigator.pop(context);
-                              final messenger = ScaffoldMessenger.of(
-                                this.context,
-                              );
-                              messenger.hideCurrentSnackBar();
-                              messenger.showSnackBar(
-                                SnackBar(
-                                  content: const Text('ホームを更新しました'),
-                                  action: SnackBarAction(
-                                    label: '元に戻す',
-                                    onPressed: () async {
-                                      setState(() {
-                                        _widgetOrder = [...originalOrder];
-                                        _hiddenWidgets = {...originalHidden};
-                                      });
-                                      await _saveWidgetPreferences();
-                                    },
-                                  ),
-                                ),
-                              );
-                            },
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           );
@@ -404,10 +424,12 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
             ? null
             : problemTitles[_topRecommendation!.key];
       });
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         setState(() {
-          _recommendationErrorMessage = e.toString();
+          // 通信ライブラリの例外文は長く不安定なので、カードには次の操作が
+          // 分かる固定文だけを表示する。
+          _recommendationErrorMessage = '通信状態を確認して、もう一度お試しください。';
         });
       }
     } finally {
@@ -417,42 +439,6 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
         });
       }
     }
-  }
-
-  Widget _difficultyBadge(int? difficulty) {
-    final theme = Theme.of(context);
-    int? mappedInt;
-    if (difficulty != null) {
-      final mapped = difficulty <= 400
-          ? RatingUtils.mapRating(difficulty)
-          : difficulty.toDouble();
-      mappedInt = mapped.round();
-    }
-    final color = (mappedInt != null)
-        ? atcoderRatingToColor(mappedInt)
-        : const Color(0xFF808080);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        border: Border.all(color: color, width: 1),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.bolt, size: 14, color: color),
-          const SizedBox(width: 6),
-          Text(
-            mappedInt?.toString() ?? 'N/A',
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _quickLinkCard({
@@ -483,7 +469,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                 height: 44,
                 decoration: BoxDecoration(
                   color: colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: colorScheme.onPrimaryContainer),
               ),
@@ -541,7 +527,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -595,7 +581,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                   height: 40,
                   decoration: BoxDecoration(
                     color: colorScheme.secondaryContainer,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     Icons.auto_awesome,
@@ -651,18 +637,20 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                 message: 'ユーザー名を設定すると、今のレートに近い問題をすぐ確認できます。',
               ),
               const SizedBox(height: 12),
-              ButtonM3E(
-                icon: const Icon(Icons.recommend),
-                label: const Text('おすすめ問題を開く'),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const RecommendScreen(),
-                    ),
-                  );
-                },
-                style: ButtonM3EStyle.filled,
+              ResponsiveAction(
+                child: ButtonM3E(
+                  icon: const Icon(Icons.recommend),
+                  label: const Text('おすすめ問題を開く'),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const RecommendScreen(),
+                      ),
+                    );
+                  },
+                  style: ButtonM3EStyle.filled,
+                ),
               ),
             ] else if (_isLoadingRecommendation) ...[
               const Padding(
@@ -679,6 +667,15 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                 message: _recommendationErrorMessage!,
                 isError: true,
               ),
+              const SizedBox(height: 12),
+              ResponsiveAction(
+                child: ButtonM3E(
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('再試行'),
+                  onPressed: _fetchTopRecommendation,
+                  style: ButtonM3EStyle.tonal,
+                ),
+              ),
             ] else if (_topRecommendation == null) ...[
               _messagePanel(
                 context,
@@ -688,7 +685,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
               ),
             ] else ...[
               InkWell(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
                 onTap: () {
                   Navigator.push(
                     context,
@@ -706,56 +703,16 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                     color: colorScheme.surfaceContainerHighest.withValues(
                       alpha: 0.45,
                     ),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: colorScheme.outlineVariant.withValues(alpha: 0.7),
                     ),
                   ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _topRecommendationTitle ??
-                                  _topRecommendation!.key,
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _topRecommendation!.key,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          _difficultyBadge(
-                            _topRecommendation!.value.difficulty,
-                          ),
-                          const SizedBox(height: 8),
-                          Icon(
-                            Icons.open_in_new,
-                            size: 18,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ],
-                      ),
-                    ],
+                  child: RecommendationProblemSummary(
+                    problemId: _topRecommendation!.key,
+                    title: _topRecommendationTitle ?? _topRecommendation!.key,
+                    difficulty: _topRecommendation!.value.difficulty,
+                    navigationIcon: Icons.open_in_new,
                   ),
                 ),
               ),
@@ -787,7 +744,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                   height: 44,
                   decoration: BoxDecoration(
                     color: colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     Icons.space_dashboard_outlined,
@@ -806,11 +763,13 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            ButtonM3E(
-              style: ButtonM3EStyle.filled,
-              icon: const Icon(Icons.dashboard_customize_outlined),
-              label: const Text('表示を設定'),
-              onPressed: _showWidgetManager,
+            ResponsiveAction(
+              child: ButtonM3E(
+                style: ButtonM3EStyle.filled,
+                icon: const Icon(Icons.dashboard_customize_outlined),
+                label: const Text('表示を設定'),
+                onPressed: _showWidgetManager,
+              ),
             ),
           ],
         ),

@@ -41,7 +41,7 @@ class CustomSliverAppBar extends StatelessWidget {
             ),
       backgroundColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
-      flexibleSpace: _TranslucentBarBackground(
+      flexibleSpace: TranslucentNavigationBackground(
         opacity: opacity,
         color: colorScheme.surface,
       ),
@@ -82,7 +82,7 @@ class TranslucentAppBar extends StatelessWidget implements PreferredSizeWidget {
       scrolledUnderElevation: 0,
       backgroundColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
-      flexibleSpace: _TranslucentBarBackground(
+      flexibleSpace: TranslucentNavigationBackground(
         opacity: opacity,
         color: colorScheme.surface,
       ),
@@ -90,18 +90,27 @@ class TranslucentAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 }
 
-class _TranslucentBarBackground extends StatelessWidget {
-  const _TranslucentBarBackground({required this.opacity, required this.color});
+class TranslucentNavigationBackground extends StatelessWidget {
+  const TranslucentNavigationBackground({
+    super.key,
+    required this.opacity,
+    required this.color,
+    this.child,
+  });
 
   final double opacity;
   final Color color;
+  final Widget? child;
 
   @override
   Widget build(BuildContext context) {
     return ClipRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: opacity * 24, sigmaY: opacity * 24),
-        child: ColoredBox(color: color.withValues(alpha: opacity)),
+        child: ColoredBox(
+          color: color.withValues(alpha: opacity),
+          child: child,
+        ),
       ),
     );
   }

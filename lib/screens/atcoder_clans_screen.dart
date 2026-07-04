@@ -5,6 +5,9 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../widgets/shared/app_loading_indicator.dart';
 import '../widgets/shared/app_state_card.dart';
+import '../widgets/shared/responsive_action.dart';
+import '../widgets/shared/web_content_status_header.dart';
+import '../utils/platform_support.dart';
 
 class AtCoderClansScreen extends StatefulWidget {
   const AtCoderClansScreen({super.key});
@@ -14,64 +17,82 @@ class AtCoderClansScreen extends StatefulWidget {
 }
 
 class _AtCoderClansScreenState extends State<AtCoderClansScreen> {
-  late final WebViewController _controller;
+  static final _clansUri = Uri.parse(
+    'https://kato-hiro.github.io/AtCoderClans/',
+  );
+
+  WebViewController? _controller;
   bool _isLoading = true;
   bool _hasError = false;
+  bool _embeddedBrowserUnavailable = false;
   int _loadingProgress = 0;
 
   @override
   void initState() {
     super.initState();
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0x00000000))
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onProgress: (progress) {
-            if (mounted) {
-              setState(() {
-                _loadingProgress = progress;
-              });
-            }
-          },
-          onPageStarted: (String url) {
-            if (mounted) {
-              setState(() {
-                _isLoading = true;
-                _hasError = false;
-              });
-            }
-          },
-          onPageFinished: (String url) {
-            if (mounted) {
-              setState(() {
-                _isLoading = false;
-                _loadingProgress = 100;
-              });
-            }
-          },
-          onWebResourceError: (WebResourceError error) {
-            if (mounted) {
-              setState(() {
-                _isLoading = false;
-                _hasError = true;
-              });
-            }
-          },
-          onNavigationRequest: (NavigationRequest request) async {
-            final uri = Uri.parse(request.url);
-            // kato-hiro.github.io 以外は外部ブラウザで開く
-            if (uri.authority != 'kato-hiro.github.io') {
-              if (await canLaunchUrl(uri)) {
-                await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!supportsEmbeddedWebView) {
+      _embeddedBrowserUnavailable = true;
+      _isLoading = false;
+      return;
+    }
+
+    try {
+      _controller = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..setBackgroundColor(const Color(0x00000000))
+        ..setNavigationDelegate(
+          NavigationDelegate(
+            onProgress: (progress) {
+              if (mounted) {
+                setState(() {
+                  _loadingProgress = progress;
+                });
               }
-              return NavigationDecision.prevent;
-            }
-            return NavigationDecision.navigate;
-          },
-        ),
-      )
-      ..loadRequest(Uri.parse('https://kato-hiro.github.io/AtCoderClans/'));
+            },
+            onPageStarted: (String url) {
+              if (mounted) {
+                setState(() {
+                  _isLoading = true;
+                  _hasError = false;
+                });
+              }
+            },
+            onPageFinished: (String url) {
+              if (mounted) {
+                setState(() {
+                  _isLoading = false;
+                  _loadingProgress = 100;
+                });
+              }
+            },
+            onWebResourceError: (WebResourceError error) {
+              if (mounted) {
+                setState(() {
+                  _isLoading = false;
+                  _hasError = true;
+                });
+              }
+            },
+            onNavigationRequest: (NavigationRequest request) async {
+              final uri = Uri.parse(request.url);
+              // kato-hiro.github.io 以外は外部ブラウザで開く
+              if (uri.authority != 'kato-hiro.github.io') {
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
+                return NavigationDecision.prevent;
+              }
+              return NavigationDecision.navigate;
+            },
+          ),
+        )
+        ..loadRequest(_clansUri);
+    } catch (_) {
+      // 対応対象でも実装が利用できない場合は、永久ローディングではなく
+      // 外部ブラウザへ退避できる状態にする。
+      _embeddedBrowserUnavailable = true;
+      _isLoading = false;
+    }
   }
 
   @override
@@ -81,11 +102,11 @@ class _AtCoderClansScreenState extends State<AtCoderClansScreen> {
         title: const Text('AtCoder Clans'),
         actions: [
           IconButtonM3E(
-            tooltip: '再読み込み',
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              _controller.reload();
-            },
+            tooltip: _embeddedBrowserUnavailable ? '外部ブラウザで開く' : '再読み込み',
+            icon: Icon(
+              _embeddedBrowserUnavailable ? Icons.open_in_new : Icons.refresh,
+            ),
+            onPressed: _embeddedBrowserUnavailable ? _openExternally : _reload,
           ),
         ],
       ),
@@ -93,46 +114,74 @@ class _AtCoderClansScreenState extends State<AtCoderClansScreen> {
         top: false,
         child: Column(
           children: [
-            _buildStatusHeader(context),
+            WebContentStatusHeader(
+              statusMessage: _embeddedBrowserUnavailable
+                  ? '外部ブラウザで開きます'
+                  : _hasError
+                  ? '読み込みに失敗しました'
+                  : _isLoading
+                  ? 'ページを読み込んでいます'
+                  : 'AtCoder Clans',
+              detail: _embeddedBrowserUnavailable
+                  ? '埋め込み表示に対応していない環境です'
+                  : '外部リンクはブラウザで開きます',
+              icon: Icons.travel_explore,
+              loadingProgress: _loadingProgress,
+              isLoading: !_embeddedBrowserUnavailable && _isLoading,
+              hasError: _hasError,
+              progressSemanticsLabel: 'AtCoder Clansの読み込み進捗',
+              onRetry: _embeddedBrowserUnavailable ? _openExternally : _reload,
+              showProgress: !_embeddedBrowserUnavailable,
+            ),
             Expanded(
               child: Stack(
                 children: [
-                  WebViewWidget(controller: _controller),
-                  if (_hasError)
+                  if (_embeddedBrowserUnavailable)
                     _buildStateOverlay(
                       context,
-                      icon: Icons.error_outline,
-                      title: 'AtCoder Clansを読み込めませんでした',
-                      message: '通信状況を確認して再試行してください。',
-                      isError: true,
-                      action: SizedBox(
-                        width: double.infinity,
+                      icon: Icons.open_in_browser,
+                      title: '埋め込み表示に対応していません',
+                      message: 'この環境では、AtCoder Clansを外部ブラウザで開きます。',
+                      action: ResponsiveAction(
                         child: ButtonM3E(
                           style: ButtonM3EStyle.filled,
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('再試行'),
-                          onPressed: () {
-                            setState(() {
-                              _isLoading = true;
-                              _hasError = false;
-                            });
-                            _controller.reload();
-                          },
+                          icon: const Icon(Icons.open_in_new),
+                          label: const Text('外部で開く'),
+                          onPressed: _openExternally,
                         ),
                       ),
                     )
-                  else if (_isLoading)
-                    _buildStateOverlay(
-                      context,
-                      icon: Icons.travel_explore,
-                      title: 'AtCoder Clansを読み込み中',
-                      message: 'コンテスト情報や関連リンクを準備しています。',
-                      action: const Center(
-                        child: AppLoadingIndicator(
-                          semanticsLabel: 'AtCoder Clansを読み込み中',
+                  else ...[
+                    WebViewWidget(controller: _controller!),
+                    if (_hasError)
+                      _buildStateOverlay(
+                        context,
+                        icon: Icons.error_outline,
+                        title: 'AtCoder Clansを読み込めませんでした',
+                        message: '通信状況を確認して再試行してください。',
+                        isError: true,
+                        action: ResponsiveAction(
+                          child: ButtonM3E(
+                            style: ButtonM3EStyle.filled,
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('再試行'),
+                            onPressed: _reload,
+                          ),
+                        ),
+                      )
+                    else if (_isLoading)
+                      _buildStateOverlay(
+                        context,
+                        icon: Icons.travel_explore,
+                        title: 'AtCoder Clansを読み込み中',
+                        message: 'コンテスト情報や関連リンクを準備しています。',
+                        action: const Center(
+                          child: AppLoadingIndicator(
+                            semanticsLabel: 'AtCoder Clansを読み込み中',
+                          ),
                         ),
                       ),
-                    ),
+                  ],
                 ],
               ),
             ),
@@ -142,105 +191,30 @@ class _AtCoderClansScreenState extends State<AtCoderClansScreen> {
     );
   }
 
-  Widget _buildStatusHeader(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final progress = (_loadingProgress / 100).clamp(0.0, 1.0);
-    final foregroundColor = colorScheme.onSurfaceVariant;
-    final iconBackground = _hasError
-        ? colorScheme.errorContainer
-        : colorScheme.primaryContainer;
-    final iconColor = _hasError
-        ? colorScheme.onErrorContainer
-        : colorScheme.onPrimaryContainer;
+  void _reload() {
+    setState(() {
+      _loadingProgress = 0;
+      _isLoading = true;
+      _hasError = false;
+    });
+    _controller?.reload();
+  }
 
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-      color: _hasError
-          ? Color.alphaBlend(
-              colorScheme.errorContainer.withValues(alpha: 0.18),
-              colorScheme.surface,
-            )
-          : null,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: _hasError
-              ? colorScheme.error.withValues(alpha: 0.35)
-              : colorScheme.outlineVariant.withValues(alpha: 0.5),
-        ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: iconBackground,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    _hasError ? Icons.error_outline : Icons.travel_explore,
-                    color: iconColor,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _hasError
-                            ? '読み込みに失敗しました'
-                            : _isLoading
-                            ? 'ページを読み込んでいます'
-                            : 'AtCoder Clans',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          color: _hasError ? colorScheme.onSurface : null,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '外部リンクはブラウザで開きます',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: foregroundColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  '$_loadingProgress%',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: foregroundColor,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-            if (!_hasError && _isLoading) ...[
-              const SizedBox(height: 12),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(999),
-                child: LinearProgressIndicator(
-                  value: progress,
-                  minHeight: 6,
-                  backgroundColor: colorScheme.surfaceContainerHighest,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
+  Future<void> _openExternally() async {
+    var launched = false;
+    try {
+      launched = await launchUrl(
+        _clansUri,
+        mode: LaunchMode.externalApplication,
+      );
+    } catch (_) {
+      // launchUrl may throw when no external handler is registered.
+    }
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('AtCoder Clansを開けませんでした')));
+    }
   }
 
   Widget _buildStateOverlay(
@@ -258,18 +232,21 @@ class _AtCoderClansScreenState extends State<AtCoderClansScreen> {
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: AppStateCard(
-            margin: EdgeInsets.zero,
-            icon: icon,
-            title: title,
-            message: message,
-            isError: isError,
-            child: action == null
-                ? null
-                : Padding(
-                    padding: const EdgeInsets.only(top: 16),
-                    child: action,
-                  ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 640),
+            child: AppStateCard(
+              margin: EdgeInsets.zero,
+              icon: icon,
+              title: title,
+              message: message,
+              isError: isError,
+              child: action == null
+                  ? null
+                  : Padding(
+                      padding: const EdgeInsets.only(top: 16),
+                      child: action,
+                    ),
+            ),
           ),
         ),
       ),

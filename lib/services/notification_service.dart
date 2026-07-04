@@ -3,14 +3,24 @@ import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
 class NotificationService {
+  static const androidSmallIcon = 'ic_launcher_monochrome';
+  static const reminderChannelId = 'shojin_app_channel_id';
+  static const reminderChannelName = 'コンテスト通知';
+  static const reminderChannelDescription = 'AtCoderコンテスト開始前のリマインダー';
+
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
+  bool _isInitialized = false;
 
   Future<void> initialize() async {
+    if (_isInitialized) return;
+
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings(
-          '@mipmap/ic_launcher',
-        ); // TODO: アプリアイコンを確認・設定
+          // Android通知バーは単色マスクを前提とするため、
+          // フルカラーのランチャーアイコンとは分ける。
+          androidSmallIcon,
+        );
 
     // iOS の初期化設定 (macOS も同様)
     const DarwinInitializationSettings
@@ -33,6 +43,7 @@ class NotificationService {
       settings: initializationSettings,
       // onDidReceiveNotificationResponse: onDidReceiveNotificationResponse, // 通知タップ時の処理
     );
+    _isInitialized = true;
 
     // タイムゾーンの初期化
     tz_data.initializeTimeZones(); // tz.initializeTimeZones(); から変更
@@ -54,27 +65,17 @@ class NotificationService {
   //   // display a dialog with the notification details, tap ok to go to another page
   // }
 
-  Future<void> requestPermissions() async {
+  Future<bool> requestPermissions() async {
+    await initialize();
     final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
         flutterLocalNotificationsPlugin
             .resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin
             >();
-    await androidImplementation
-        ?.requestNotificationsPermission(); // requestPermission から requestNotificationsPermission に修正
-
-    // iOS の通知許可
-    await flutterLocalNotificationsPlugin
-        .resolvePlatformSpecificImplementation<
-          IOSFlutterLocalNotificationsPlugin
-        >()
-        ?.requestPermissions(alert: true, badge: true, sound: true);
-    // macOS の通知許可
-    await flutterLocalNotificationsPlugin
-        .resolvePlatformSpecificImplementation<
-          MacOSFlutterLocalNotificationsPlugin
-        >()
-        ?.requestPermissions(alert: true, badge: true, sound: true);
+    final granted = await androidImplementation
+        ?.requestNotificationsPermission();
+    // Android 12以前では実行時権限がなくnullになる場合がある。
+    return granted ?? true;
   }
 
   Future<void> scheduleNotification({
@@ -84,6 +85,7 @@ class NotificationService {
     required DateTime scheduledTime,
     String? payload,
   }) async {
+    await initialize();
     await flutterLocalNotificationsPlugin.zonedSchedule(
       id: id,
       title: title,
@@ -91,9 +93,9 @@ class NotificationService {
       scheduledDate: tz.TZDateTime.from(scheduledTime.toUtc(), tz.UTC),
       notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
-          'shojin_app_channel_id',
-          'Shojin App Notifications',
-          channelDescription: 'Notifications for Shojin App contests',
+          reminderChannelId,
+          reminderChannelName,
+          channelDescription: reminderChannelDescription,
           importance: Importance.max,
           priority: Priority.high,
         ),

@@ -17,6 +17,7 @@ import '../utils/responsive_layout.dart';
 import '../utils/text_style_helper.dart';
 import '../widgets/shared/custom_sliver_app_bar.dart'; // Import CustomSliverAppBar
 import '../widgets/shared/app_loading_indicator.dart';
+import '../widgets/shared/responsive_action.dart';
 import '../widgets/programming_language_icon.dart';
 import 'licenses_screen.dart'; // Third-party licenses screen
 import 'template_edit_screen.dart';
@@ -24,7 +25,9 @@ import 'package:m3e_collection/m3e_collection.dart';
 import 'tex_test_screen.dart'; // TeX表示テスト画面をインポート
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  const SettingsScreen({super.key, this.aboutInfoLoader});
+
+  final Future<Map<String, dynamic>> Function()? aboutInfoLoader;
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -218,7 +221,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadAboutInfo() async {
     try {
-      final info = await AboutInfo.getInfo();
+      final info =
+          await (widget.aboutInfoLoader?.call() ?? AboutInfo.getInfo());
       if (mounted) {
         setState(() {
           _aboutInfo = info;
@@ -322,10 +326,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _buildEditorSection(),
               const SizedBox(height: 12),
 
-              // 言語設定セクション
-              _buildLanguageSection(),
-              const SizedBox(height: 12),
-
               // テンプレート設定セクション
               _buildTemplateSection(),
               const SizedBox(height: 12),
@@ -334,7 +334,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _buildUpdateSection(),
               const SizedBox(height: 12),
 
-              // エクスポート/インポート設定セクション
+              // バックアップ設定セクション
               _buildExportSection(),
               const SizedBox(height: 12),
 
@@ -360,7 +360,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final border = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(8),
       borderSide: BorderSide(color: colorScheme.outlineVariant),
     );
 
@@ -403,12 +403,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SizedBox(height: 12),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          child: SizedBox(
-            width: double.infinity,
+          child: ResponsiveAction(
+            maxWidth: 200,
             child: ValueListenableBuilder<TextEditingValue>(
               valueListenable: _atcoderUsernameController,
               builder: (context, value, child) {
                 final hasChanges = value.text.trim() != _savedAtCoderUsername;
+                final isSaved = !hasChanges && !_isSavingAtCoderUsername;
                 return ButtonM3E(
                   onPressed: hasChanges && !_isSavingAtCoderUsername
                       ? _saveAtCoderUsername
@@ -418,9 +419,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           size: 18,
                           semanticsLabel: 'AtCoderユーザー名を保存中',
                         )
-                      : const Icon(Icons.save_outlined),
-                  label: Text(_isSavingAtCoderUsername ? '保存中' : '保存'),
-                  style: ButtonM3EStyle.filled,
+                      : Icon(
+                          isSaved
+                              ? Icons.check_circle_outline
+                              : Icons.save_outlined,
+                        ),
+                  label: Text(
+                    _isSavingAtCoderUsername
+                        ? '保存中'
+                        : isSaved
+                        ? '保存済み'
+                        : '保存',
+                  ),
+                  style: isSaved ? ButtonM3EStyle.tonal : ButtonM3EStyle.filled,
                 );
               },
             ),
@@ -584,7 +595,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               padding: const EdgeInsets.fromLTRB(20.0, 16.0, 20.0, 8.0),
               child: DropdownButtonFormField<String>(
                 initialValue: themeProvider.codeFontFamily,
-                borderRadius: BorderRadius.circular(16),
+                isExpanded: true,
+                borderRadius: BorderRadius.circular(8),
                 decoration: _settingsInputDecoration(
                   labelText: 'コードブロックのフォント',
                   prefixIcon: Icons.font_download_outlined,
@@ -596,6 +608,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     value: fontFamily,
                     child: Text(
                       fontFamily,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: getMonospaceTextStyle(fontFamily),
                     ),
                   );
@@ -682,12 +696,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             child: Column(
               children: [
-                SizedBox(
-                  width: double.infinity,
+                ResponsiveAction(
                   child: ButtonM3E(
                     onPressed: _isLoadingUpdate ? null : _checkForUpdates,
                     icon: const Icon(Icons.update),
-                    label: const Text('アップデートを手動で確認'),
+                    label: const Text('更新を確認'),
                     style: ButtonM3EStyle.filled,
                   ),
                 ),
@@ -716,7 +729,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 color: colorScheme.surfaceContainerHighest.withValues(
                   alpha: 0.45,
                 ),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: colorScheme.outlineVariant.withValues(alpha: 0.7),
                 ),
@@ -748,50 +761,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildLanguageSection() {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return _SettingsSection(
-      title: '言語設定',
-      icon: Icons.language,
-      children: [
-        _SettingsActionListTile(
-          title: '日本語',
-          subtitle: 'Japanese',
-          icon: Icons.language,
-          trailing: Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
-              Icons.check,
-              size: 20,
-              color: colorScheme.onPrimaryContainer,
-            ),
-          ),
-          onTap: () {
-            HapticFeedback.lightImpact();
-            // 将来的に多言語対応する際の実装場所
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('現在は日本語のみサポートしています')));
-          },
-        ),
-      ],
-    );
-  }
-
   Widget _buildExportSection() {
     return _SettingsSection(
-      title: 'エクスポート/インポート',
-      icon: Icons.import_export,
+      title: 'バックアップ',
+      icon: Icons.cloud_sync_outlined,
       children: [
         _SettingsActionListTile(
-          title: '設定をクリップボードにコピー',
-          subtitle: '現在の設定をクリップボードにコピーします',
+          title: '設定をコピー',
+          subtitle: 'クリップボードにバックアップ',
           icon: Icons.copy_all_outlined,
           onTap: () async {
             HapticFeedback.lightImpact();
@@ -799,8 +776,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           },
         ),
         _SettingsActionListTile(
-          title: 'クリップボードから設定をインポート',
-          subtitle: 'クリップボードから設定を復元します',
+          title: 'コピーした設定を復元',
+          subtitle: 'クリップボードから読み込み',
           icon: Icons.paste_outlined,
           onTap: () async {
             HapticFeedback.lightImpact();
@@ -809,40 +786,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         const Divider(),
         _SettingsActionListTile(
-          title: '設定をファイルにエクスポート',
-          subtitle: '現在の設定をファイルに保存/共有',
-          icon: Icons.upload_file,
+          title: '設定ファイルを共有',
+          subtitle: 'ファイルとして保存または送信',
+          icon: Icons.ios_share_outlined,
           onTap: () async {
             HapticFeedback.lightImpact();
             await _exportSettings();
           },
         ),
         _SettingsActionListTile(
-          title: 'ファイルから設定をインポート',
-          subtitle: 'ファイルから設定を復元',
-          icon: Icons.file_download,
+          title: '設定ファイルから復元',
+          subtitle: '保存したファイルを読み込み',
+          icon: Icons.file_open_outlined,
           onTap: () async {
             HapticFeedback.lightImpact();
             await _importSettings();
-          },
-        ),
-        const Divider(),
-        _SettingsActionListTile(
-          title: 'テンプレートをエクスポート',
-          subtitle: 'カスタムテンプレートをファイルに保存',
-          icon: Icons.code_rounded,
-          onTap: () async {
-            HapticFeedback.lightImpact();
-            await _exportTemplates();
-          },
-        ),
-        _SettingsActionListTile(
-          title: 'テンプレートをインポート',
-          subtitle: 'ファイルからテンプレートを復元',
-          icon: Icons.code_outlined,
-          onTap: () async {
-            HapticFeedback.lightImpact();
-            await _importTemplates();
           },
         ),
       ],
@@ -927,7 +885,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: _aboutInfo!['error'],
             )
           else
-            ..._buildAboutDetails(),
+            _buildAboutDetailsExpansion(),
         ] else
           const _SettingsActionListTile(
             title: '情報の読み込み中...',
@@ -999,6 +957,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
     ];
   }
 
+  Widget _buildAboutDetailsExpansion() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return ExpansionTile(
+      tilePadding: const EdgeInsets.symmetric(horizontal: 20),
+      shape: const Border(),
+      collapsedShape: const Border(),
+      iconColor: colorScheme.onSurfaceVariant,
+      collapsedIconColor: colorScheme.onSurfaceVariant,
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(Icons.data_object, color: colorScheme.onSurfaceVariant),
+      ),
+      title: Text(
+        '詳細情報',
+        style: theme.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      subtitle: Text(
+        '端末・パッケージ・ビルド情報',
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: colorScheme.onSurfaceVariant,
+        ),
+      ),
+      children: _buildAboutDetails(),
+    );
+  }
+
   Widget _buildDeveloperSection() {
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -1019,7 +1012,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         height: 40,
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: Center(
           child: Icon(Icons.code, color: colorScheme.onSurfaceVariant),
@@ -1125,33 +1118,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await settingsService.importSettingsFromClipboard();
   }
 
-  Future<void> _exportTemplates() async {
-    try {
-      // TemplateProvider からテンプレート取得しファイル保存する処理を今後実装予定。
-      // 将来的にテンプレートをファイルとして保存する実装を追加
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('テンプレートのエクスポート機能は開発中です')));
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('テンプレートのエクスポートに失敗しました: $e')));
-    }
-  }
-
-  Future<void> _importTemplates() async {
-    try {
-      // 将来的にファイルからテンプレートを読み込む実装を追加
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('テンプレートのインポート機能は開発中です')));
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('テンプレートのインポートに失敗しました: $e')));
-    }
-  }
-
   String _getAllAppInfo() {
     List<String> infoLines = [];
 
@@ -1219,7 +1185,8 @@ class _SettingsSection extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8.0),
         side: BorderSide(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.6),
+          // 暗色テーマでも枠線が本文より先に目立たない強さに留める。
+          color: colorScheme.outlineVariant.withValues(alpha: 0.35),
         ),
       ),
       clipBehavior: Clip.antiAlias,
@@ -1295,7 +1262,7 @@ class _HapticSwitchListTile extends StatelessWidget {
           color: value
               ? colorScheme.primaryContainer
               : colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: Center(
           child: Icon(
@@ -1366,7 +1333,7 @@ class _HapticRadioListTile<T> extends StatelessWidget {
           color: isSelected
               ? colorScheme.primaryContainer
               : colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: Center(
           child: IconTheme(
@@ -1439,7 +1406,7 @@ class _SettingsActionListTile extends StatelessWidget {
         height: 40,
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: Center(child: leadingChild),
       ),
@@ -1480,6 +1447,11 @@ class _CopyableListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    void copy() {
+      HapticFeedback.lightImpact();
+      onCopy(context);
+    }
+
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20.0),
       leading: Container(
@@ -1487,7 +1459,7 @@ class _CopyableListTile extends StatelessWidget {
         height: 40,
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: Center(child: Icon(icon, color: colorScheme.onSurfaceVariant)),
       ),
@@ -1502,18 +1474,13 @@ class _CopyableListTile extends StatelessWidget {
           color: colorScheme.onSurfaceVariant,
         ),
       ),
-      onLongPress: () => onCopy(context),
-      onTap: () {
-        HapticFeedback.lightImpact();
-        // 短いタップでも説明を表示
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('長押しでアプリ情報をすべてコピーします'),
-            duration: const Duration(seconds: 1),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      },
+      trailing: IconButton(
+        tooltip: '$titleをコピー',
+        icon: const Icon(Icons.copy_outlined),
+        onPressed: copy,
+      ),
+      onLongPress: copy,
+      onTap: copy,
     );
   }
 }
@@ -1584,7 +1551,7 @@ class _SocialMediaItem extends StatelessWidget {
         height: 40,
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: Center(
           child: icon is IconData

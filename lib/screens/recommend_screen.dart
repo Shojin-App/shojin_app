@@ -4,22 +4,25 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/problem_difficulty.dart';
 import '../services/atcoder_service.dart';
-import '../utils/atcoder_colors.dart';
 import '../utils/rating_utils.dart';
 import '../utils/responsive_layout.dart';
+import '../widgets/recommendation_problem_card.dart';
 import '../widgets/shared/app_loading_indicator.dart';
 import '../widgets/shared/app_state_card.dart';
+import '../widgets/shared/responsive_action.dart';
 import 'problem_detail_screen.dart';
 
 class RecommendScreen extends StatefulWidget {
-  const RecommendScreen({super.key});
+  const RecommendScreen({super.key, this.atCoderService});
+
+  final AtCoderService? atCoderService;
 
   @override
   State<RecommendScreen> createState() => _RecommendScreenState();
 }
 
 class _RecommendScreenState extends State<RecommendScreen> {
-  final _atcoderService = AtCoderService();
+  late final AtCoderService _atcoderService;
   final _usernameController = TextEditingController();
   final _lowerDeltaController = TextEditingController();
   final _upperDeltaController = TextEditingController();
@@ -71,46 +74,10 @@ class _RecommendScreenState extends State<RecommendScreen> {
     );
   }
 
-  // Difficulty 表示用バッジ（補正後diffで表示。色も補正後ベース）
-  Widget _difficultyBadge(int? difficulty) {
-    final theme = Theme.of(context);
-    int? mappedInt;
-    if (difficulty != null) {
-      final mapped = difficulty <= 400
-          ? RatingUtils.mapRating(difficulty)
-          : difficulty.toDouble();
-      mappedInt = mapped.round();
-    }
-    final color = (mappedInt != null)
-        ? atcoderRatingToColor(mappedInt)
-        : const Color(0xFF808080);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        border: Border.all(color: color, width: 1),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.bolt, size: 14, color: color),
-          const SizedBox(width: 6),
-          Text(
-            mappedInt?.toString() ?? 'N/A',
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   void initState() {
     super.initState();
+    _atcoderService = widget.atCoderService ?? AtCoderService();
     // 推薦条件のデフォルト（±100）
     _lowerDeltaController.text = '-100';
     _upperDeltaController.text = '100';
@@ -177,12 +144,14 @@ class _RecommendScreenState extends State<RecommendScreen> {
           ? _usernameController.text.trim()
           : _savedUsername!;
       if (username.isEmpty) {
-        throw Exception('ユーザー名を入力してください');
+        throw const _RecommendationInputException('AtCoderユーザー名を入力してください。');
       }
 
       final ratingInfo = await _atcoderService.fetchAtcoderRatingInfo(username);
       if (ratingInfo == null) {
-        throw Exception('ユーザーが見つからないか、レーティングがありません');
+        throw const _RecommendationInputException(
+          'ユーザーが見つからないか、レーティング情報がありません。',
+        );
       }
 
       // レートを先に表示
@@ -242,10 +211,17 @@ class _RecommendScreenState extends State<RecommendScreen> {
         _isEditingUsername = false;
         _usernameController.text = username;
       });
-    } catch (e) {
+    } on _RecommendationInputException catch (e) {
       if (!mounted) return;
       setState(() {
-        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+        _errorMessage = e.message;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        // 通信ライブラリ由来の長い例外は狭いAndroid画面へ露出させず、
+        // 次に取れる操作が分かる安定した文言へ置き換える。
+        _errorMessage = '通信状態を確認して、もう一度お試しください。';
       });
     } finally {
       if (mounted) {
@@ -265,7 +241,7 @@ class _RecommendScreenState extends State<RecommendScreen> {
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final border = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(8),
       borderSide: BorderSide(color: colorScheme.outlineVariant),
     );
 
@@ -287,6 +263,7 @@ class _RecommendScreenState extends State<RecommendScreen> {
   Widget _buildRecommendationControls(BuildContext context) {
     final isChoosingUsername = _savedUsername == null || _isEditingUsername;
     final lowerField = TextField(
+      key: const Key('recommend-lower-delta'),
       controller: _lowerDeltaController,
       keyboardType: const TextInputType.numberWithOptions(signed: true),
       textInputAction: TextInputAction.next,
@@ -298,6 +275,7 @@ class _RecommendScreenState extends State<RecommendScreen> {
       ),
     );
     final upperField = TextField(
+      key: const Key('recommend-upper-delta'),
       controller: _upperDeltaController,
       keyboardType: const TextInputType.numberWithOptions(signed: true),
       textInputAction: TextInputAction.done,
@@ -320,6 +298,19 @@ class _RecommendScreenState extends State<RecommendScreen> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        if (constraints.maxWidth < 400) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              lowerField,
+              const SizedBox(height: 12),
+              upperField,
+              const SizedBox(height: 12),
+              submitButton,
+            ],
+          );
+        }
+
         if (constraints.maxWidth < 560) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -370,7 +361,7 @@ class _RecommendScreenState extends State<RecommendScreen> {
                   height: 44,
                   decoration: BoxDecoration(
                     color: colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     Icons.manage_search,
@@ -453,7 +444,7 @@ class _RecommendScreenState extends State<RecommendScreen> {
                   color: colorScheme.surfaceContainerHighest.withValues(
                     alpha: 0.45,
                   ),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   children: [
@@ -501,87 +492,18 @@ class _RecommendScreenState extends State<RecommendScreen> {
     required String title,
     required String message,
     bool isError = false,
+    Widget? child,
   }) {
-    return AppStateCard(
-      margin: EdgeInsets.zero,
-      icon: icon,
-      title: title,
-      message: message,
-      isError: isError,
-    );
-  }
-
-  Widget _buildProblemCard(
-    BuildContext context,
-    MapEntry<String, ProblemDifficulty> problem,
-  ) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final borderRadius = BorderRadius.circular(8);
-    final title = _problemTitles[problem.key] ?? problem.key;
-
-    return Card(
-      elevation: 1,
-      margin: const EdgeInsets.only(bottom: 10),
-      shape: RoundedRectangleBorder(borderRadius: borderRadius),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        borderRadius: borderRadius,
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ProblemDetailScreen(
-                problemIdToLoad: problem.key,
-                onProblemChanged: (_) {},
-              ),
-            ),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      problem.key,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _difficultyBadge(problem.value.difficulty),
-                  const SizedBox(width: 8),
-                  Icon(
-                    Icons.chevron_right,
-                    size: 20,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+    return ConstrainedBox(
+      // 短い状態説明は読み幅を抑え、広い画面で横長になりすぎないようにする。
+      constraints: const BoxConstraints(maxWidth: 640),
+      child: AppStateCard(
+        margin: EdgeInsets.zero,
+        icon: icon,
+        title: title,
+        message: message,
+        isError: isError,
+        child: child,
       ),
     );
   }
@@ -622,6 +544,17 @@ class _RecommendScreenState extends State<RecommendScreen> {
                       title: 'おすすめ問題を取得できませんでした',
                       message: _errorMessage!,
                       isError: true,
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 16),
+                        child: ResponsiveAction(
+                          child: ButtonM3E(
+                            style: ButtonM3EStyle.tonal,
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('再試行'),
+                            onPressed: _getRecommendations,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 )
@@ -644,7 +577,22 @@ class _RecommendScreenState extends State<RecommendScreen> {
                     itemCount: _recommendedProblems.length,
                     itemBuilder: (context, index) {
                       final problem = _recommendedProblems[index];
-                      return _buildProblemCard(context, problem);
+                      return RecommendationProblemCard(
+                        problemId: problem.key,
+                        title: _problemTitles[problem.key] ?? problem.key,
+                        difficulty: problem.value.difficulty,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ProblemDetailScreen(
+                                problemIdToLoad: problem.key,
+                                onProblemChanged: (_) {},
+                              ),
+                            ),
+                          );
+                        },
+                      );
                     },
                   ),
                 ),
@@ -654,4 +602,10 @@ class _RecommendScreenState extends State<RecommendScreen> {
       ),
     );
   }
+}
+
+class _RecommendationInputException implements Exception {
+  const _RecommendationInputException(this.message);
+
+  final String message;
 }

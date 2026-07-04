@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:m3e_collection/m3e_collection.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../services/enhanced_update_service.dart';
@@ -256,7 +257,7 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
                 height: 40,
                 decoration: BoxDecoration(
                   color: colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   Icons.download_done,
@@ -283,7 +284,7 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
                     children: [
@@ -316,7 +317,7 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
                     color: colorScheme.surfaceContainerHighest.withValues(
                       alpha: 0.45,
                     ),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: colorScheme.outlineVariant.withValues(alpha: 0.7),
                     ),
@@ -360,7 +361,7 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
                     color: colorScheme.tertiaryContainer.withValues(
                       alpha: 0.55,
                     ),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -470,7 +471,7 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
               height: 40,
               decoration: BoxDecoration(
                 color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 Icons.download,
@@ -503,7 +504,7 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
                     color: colorScheme.surfaceContainerHighest.withValues(
                       alpha: 0.45,
                     ),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: colorScheme.outlineVariant.withValues(alpha: 0.7),
                     ),
@@ -587,7 +588,7 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: colorScheme.errorContainer,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -637,7 +638,7 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
                       children: [
@@ -730,7 +731,7 @@ class EnhancedUpdateDialog extends StatelessWidget {
             height: 40,
             decoration: BoxDecoration(
               color: colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               Icons.system_update_alt,
@@ -748,132 +749,161 @@ class EnhancedUpdateDialog extends StatelessWidget {
           ),
         ],
       ),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Version info card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "新しいバージョン",
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: colorScheme.onPrimaryContainer,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  Text(
-                    "v${updateInfo.version}",
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      color: colorScheme.onPrimaryContainer,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  if (updateInfo.releaseDate != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      "リリース日: ${updateInfo.releaseDate!.year}/${updateInfo.releaseDate!.month}/${updateInfo.releaseDate!.day}",
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onPrimaryContainer,
-                      ),
-                    ),
-                  ],
-                  if (updateInfo.fileSize != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      "ファイルサイズ: ${(updateInfo.fileSize! / 1024 / 1024).toStringAsFixed(1)} MB",
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onPrimaryContainer,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Release notes
-            if (updateInfo.releaseNotes != null &&
-                updateInfo.releaseNotes!.isNotEmpty) ...[
+      content: SingleChildScrollView(
+        child: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Version info card
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest.withValues(
-                    alpha: 0.45,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: colorScheme.outlineVariant.withValues(alpha: 0.7),
-                  ),
+                  color: colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.notes_outlined,
-                          size: 18,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          "リリースノート",
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 200),
-                      child: SingleChildScrollView(
-                        child: Text(
-                          updateInfo.releaseNotes!,
-                          style: theme.textTheme.bodyMedium,
-                        ),
+                    Text(
+                      "新しいバージョン",
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
+                    Text(
+                      "v${updateInfo.version}",
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        color: colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (updateInfo.releaseDate != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        "リリース日: ${updateInfo.releaseDate!.year}/${updateInfo.releaseDate!.month}/${updateInfo.releaseDate!.day}",
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                    ],
+                    if (updateInfo.fileSize != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        "ファイルサイズ: ${(updateInfo.fileSize! / 1024 / 1024).toStringAsFixed(1)} MB",
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
-            ] else ...[
+
+              const SizedBox(height: 16),
+
+              // Release notes
+              if (updateInfo.releaseNotes != null &&
+                  updateInfo.releaseNotes!.isNotEmpty) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.45,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.notes_outlined,
+                            size: 18,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            "リリースノート",
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 200),
+                        child: SingleChildScrollView(
+                          child: Text(
+                            updateInfo.releaseNotes!,
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ] else ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.45,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.notes_outlined,
+                        size: 18,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          "リリースノートはありません。",
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest.withValues(
-                    alpha: 0.45,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
+                  color: colorScheme.secondaryContainer.withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   children: [
                     Icon(
-                      Icons.notes_outlined,
+                      Icons.info_outline,
                       size: 18,
-                      color: colorScheme.onSurfaceVariant,
+                      color: colorScheme.onSecondaryContainer,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        "リリースノートはありません。",
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                          fontStyle: FontStyle.italic,
+                        'アップデートを開始するとダウンロード画面へ進みます。',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSecondaryContainer,
                         ),
                       ),
                     ),
@@ -881,39 +911,13 @@ class EnhancedUpdateDialog extends StatelessWidget {
                 ),
               ),
             ],
-            const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: colorScheme.secondaryContainer.withValues(alpha: 0.55),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    size: 18,
-                    color: colorScheme.onSecondaryContainer,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'アップデートを開始するとダウンロード画面へ進みます。',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSecondaryContainer,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
       actions: [
         // Later button
-        TextButton.icon(
+        ButtonM3E(
+          style: ButtonM3EStyle.text,
           onPressed: () {
             Navigator.of(context).pop();
             onLaterPressed?.call();
@@ -921,28 +925,41 @@ class EnhancedUpdateDialog extends StatelessWidget {
           icon: const Icon(Icons.schedule),
           label: const Text('後で'),
         ),
+        if (onSkipPressed != null)
+          ButtonM3E(
+            style: ButtonM3EStyle.text,
+            onPressed: () {
+              Navigator.of(context).pop();
+              onSkipPressed?.call();
+            },
+            icon: const Icon(Icons.skip_next_outlined),
+            label: const Text('スキップ'),
+          ),
         // View on GitHub button
-        TextButton.icon(
+        ButtonM3E(
+          style: ButtonM3EStyle.text,
           onPressed: () async {
-            Navigator.of(context).pop();
             final String releaseUrl =
                 "https://github.com/Shojin-App/Shojin_App/releases/tag/$versionTag";
-            // You can use url_launcher here if available
-            // await launchUrl(Uri.parse(releaseUrl));
-            debugPrint('GitHub URL: $releaseUrl');
+            await launchUrl(
+              Uri.parse(releaseUrl),
+              mode: LaunchMode.externalApplication,
+            );
+            if (context.mounted) Navigator.of(context).pop();
           },
           icon: const Icon(Icons.open_in_new),
-          label: const Text('GitHubで見る'),
+          label: const Text('GitHub'),
         ),
 
         // Update button
-        FilledButton.icon(
+        ButtonM3E(
+          style: ButtonM3EStyle.filled,
           onPressed: () {
             Navigator.of(context).pop();
             onUpdatePressed?.call();
           },
           icon: const Icon(Icons.download),
-          label: const Text('アップデート'),
+          label: const Text('更新'),
         ),
       ],
     );

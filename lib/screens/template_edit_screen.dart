@@ -69,7 +69,7 @@ class _TemplateEditScreenState extends State<TemplateEditScreen> {
                 height: 40,
                 decoration: BoxDecoration(
                   color: colorScheme.tertiaryContainer,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   Icons.restart_alt,
@@ -92,7 +92,7 @@ class _TemplateEditScreenState extends State<TemplateEditScreen> {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: colorScheme.tertiaryContainer.withValues(alpha: 0.55),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
               '${widget.language}のテンプレートをデフォルトに戻しますか？',
@@ -131,41 +131,118 @@ class _TemplateEditScreenState extends State<TemplateEditScreen> {
     );
   }
 
+  Future<void> _confirmDiscardChanges() async {
+    final shouldDiscard = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
+
+        return AlertDialog(
+          title: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.warning_amber_rounded,
+                  color: colorScheme.onErrorContainer,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  '変更を破棄しますか？',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: colorScheme.errorContainer.withValues(alpha: 0.45),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              '保存していないテンプレートの変更は元に戻せません。',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onErrorContainer,
+              ),
+            ),
+          ),
+          actions: [
+            ButtonM3E(
+              style: ButtonM3EStyle.text,
+              onPressed: () => Navigator.of(context).pop(false),
+              label: const Text('編集を続ける'),
+            ),
+            ButtonM3E(
+              style: ButtonM3EStyle.text,
+              onPressed: () => Navigator.of(context).pop(true),
+              icon: const Icon(Icons.delete_outline),
+              label: const Text('破棄'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldDiscard != true || !mounted) return;
+    setState(() {
+      _isEdited = false;
+    });
+    Navigator.of(context).pop();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBarM3E(
-        title: Text(
-          '${widget.language}のテンプレート編集',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+    return PopScope(
+      canPop: !_isEdited,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _confirmDiscardChanges();
+      },
+      child: Scaffold(
+        appBar: AppBarM3E(
+          title: Text(
+            '${widget.language}のテンプレート編集',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          actions: [
+            IconButtonM3E(
+              onPressed: _resetTemplate,
+              icon: const Icon(Icons.refresh),
+              tooltip: 'デフォルトに戻す',
+              semanticLabel: 'デフォルトに戻す',
+            ),
+            IconButtonM3E(
+              onPressed: _isEdited ? _saveTemplate : null,
+              icon: const Icon(Icons.save_outlined),
+              tooltip: '保存',
+              semanticLabel: '保存',
+            ),
+          ],
         ),
-        actions: [
-          IconButtonM3E(
-            onPressed: _resetTemplate,
-            icon: const Icon(Icons.refresh),
-            tooltip: 'デフォルトに戻す',
-            semanticLabel: 'デフォルトに戻す',
-          ),
-          IconButtonM3E(
-            onPressed: _isEdited ? _saveTemplate : null,
-            icon: const Icon(Icons.save_outlined),
-            tooltip: '保存',
-            semanticLabel: '保存',
-          ),
-        ],
-      ),
-      body: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildTemplateHeader(context),
-              const SizedBox(height: 12),
-              Expanded(child: _buildEditorCard(context)),
-            ],
+        body: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildTemplateHeader(context),
+                const SizedBox(height: 12),
+                Expanded(child: _buildEditorCard(context)),
+              ],
+            ),
           ),
         ),
       ),
@@ -192,7 +269,7 @@ class _TemplateEditScreenState extends State<TemplateEditScreen> {
               height: 44,
               decoration: BoxDecoration(
                 color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Center(
                 child: ProgrammingLanguageIcon(

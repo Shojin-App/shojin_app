@@ -8,6 +8,7 @@ import '../providers/contest_provider.dart';
 import '../utils/responsive_layout.dart';
 import '../widgets/shared/app_loading_indicator.dart';
 import '../widgets/shared/app_state_card.dart';
+import '../widgets/shared/responsive_action.dart';
 
 class UpcomingContestsScreen extends StatefulWidget {
   const UpcomingContestsScreen({super.key});
@@ -77,10 +78,7 @@ class _UpcomingContestsScreenState extends State<UpcomingContestsScreen>
         }
 
         if (provider.error != null) {
-          return _buildErrorState(
-            provider.error!,
-            () => provider.fetchUpcomingABCs(),
-          );
+          return _buildErrorState(() => provider.fetchUpcomingABCs());
         }
 
         final contests = provider.upcomingABCs;
@@ -107,10 +105,7 @@ class _UpcomingContestsScreenState extends State<UpcomingContestsScreen>
         }
 
         if (provider.error != null) {
-          return _buildErrorState(
-            provider.error!,
-            () => provider.fetchUpcomingContests(),
-          );
+          return _buildErrorState(() => provider.fetchUpcomingContests());
         }
 
         final contests = provider.upcomingContests;
@@ -171,21 +166,23 @@ class _UpcomingContestsScreenState extends State<UpcomingContestsScreen>
     );
   }
 
-  Widget _buildErrorState(String error, VoidCallback onRetry) {
+  Widget _buildErrorState(VoidCallback onRetry) {
     return Center(
       child: _buildStateCard(
         icon: Icons.error_outline,
-        title: 'エラーが発生しました',
-        message: error,
+        title: 'コンテスト情報を取得できませんでした',
+        // 通信層の例外文は環境依存で長くなるため、次の操作が分かる
+        // 固定メッセージだけを状態カードに表示する。
+        message: '通信状態を確認して、もう一度お試しください。',
         isError: true,
         child: Padding(
-          padding: const EdgeInsets.only(top: 16),
-          child: SizedBox(
-            width: double.infinity,
+          padding: const EdgeInsets.only(top: 12),
+          child: ResponsiveAction(
             child: ButtonM3E(
               onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
               label: const Text('再試行'),
-              style: ButtonM3EStyle.filled,
+              style: ButtonM3EStyle.tonal,
             ),
           ),
         ),
@@ -202,12 +199,15 @@ class _UpcomingContestsScreenState extends State<UpcomingContestsScreen>
   }) {
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: AppStateCard(
-        icon: icon,
-        title: title,
-        message: message,
-        isError: isError,
-        child: child,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 640),
+        child: AppStateCard(
+          icon: icon,
+          title: title,
+          message: message,
+          isError: isError,
+          child: child,
+        ),
       ),
     );
   }
@@ -247,7 +247,7 @@ class _UpcomingContestsScreenState extends State<UpcomingContestsScreen>
                     height: 44,
                     decoration: BoxDecoration(
                       color: contestColors.container,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
                       Icons.event_available,
@@ -268,18 +268,24 @@ class _UpcomingContestsScreenState extends State<UpcomingContestsScreen>
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 2),
-                        Text(
-                          contest.status,
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: contestColors.foreground,
-                            fontWeight: FontWeight.w700,
-                          ),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Text(
+                              _contestStatusLabel(contest.status),
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: contestColors.foreground,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            _buildContestTypeChip(context, contest),
+                          ],
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  _buildContestTypeChip(context, contest),
                   const SizedBox(width: 8),
                   Icon(
                     Icons.open_in_new,
@@ -315,7 +321,7 @@ class _UpcomingContestsScreenState extends State<UpcomingContestsScreen>
                   color: colorScheme.surfaceContainerHighest.withValues(
                     alpha: 0.45,
                   ),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: colorScheme.outlineVariant.withValues(alpha: 0.7),
                   ),
@@ -349,7 +355,7 @@ class _UpcomingContestsScreenState extends State<UpcomingContestsScreen>
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: colors.container.withValues(alpha: 0.88),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(999),
         border: Border.all(
           color: colors.foreground.withValues(alpha: 0.22),
           width: 1,
@@ -363,6 +369,19 @@ class _UpcomingContestsScreenState extends State<UpcomingContestsScreen>
         ),
       ),
     );
+  }
+
+  String _contestStatusLabel(String status) {
+    switch (status.toLowerCase()) {
+      case 'upcoming':
+        return '開催予定';
+      case 'running':
+        return '開催中';
+      case 'finished':
+        return '終了';
+      default:
+        return status;
+    }
   }
 
   ({String label, Color container, Color foreground}) _contestColors(
