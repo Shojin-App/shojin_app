@@ -1238,7 +1238,7 @@ class _EditorScreenState extends State<EditorScreen> {
     );
   }
 
-  Widget _buildIoPanel(String codeFontFamily) {
+  Widget _buildIoPanel(String codeFontFamily, bool isKeyboardVisible) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -1252,12 +1252,8 @@ class _EditorScreenState extends State<EditorScreen> {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final stackVertically = constraints.maxWidth < 600;
-            final inputFlex = stackVertically && _stdinFocusNode.hasFocus
-                ? 4
-                : 1;
-            final outputFlex = stackVertically && _stdinFocusNode.hasFocus
-                ? 1
-                : 1;
+            final inputFlex = stackVertically && isKeyboardVisible ? 4 : 1;
+            final outputFlex = 1;
             return Flex(
               direction: stackVertically ? Axis.vertical : Axis.horizontal,
               children: [
@@ -1539,6 +1535,7 @@ class _EditorScreenState extends State<EditorScreen> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final codeFontFamily = themeProvider.codeFontFamily;
+    final isKeyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     final bool isLoadingProblem =
         _isLoadingCode ||
         (widget.problemId != 'default_problem' && _currentProblem == null);
@@ -1628,8 +1625,9 @@ class _EditorScreenState extends State<EditorScreen> {
                   const Expanded(
                     child: Center(child: CircularProgressIndicator()),
                   )
-                else if (!_stdinFocusNode.hasFocus)
+                else if (!isKeyboardVisible)
                   Expanded(
+                    key: const Key('editor-code-area'),
                     flex: 3,
                     child: themeProvider.editorType == EditorType.monaco
                         ? MonacoCodeEditor(
@@ -1652,10 +1650,11 @@ class _EditorScreenState extends State<EditorScreen> {
                 if (!isLoadingProblem) ...[
                   _buildExecutionControls(isButtonDisabled),
                   Expanded(
+                    key: const Key('editor-io-area'),
                     // キーボード表示中は入力欄へ利用可能な高さをすべて渡す。
                     // 狭い端末でstdinが数行しか見えなくなるのを防ぐ。
-                    flex: _stdinFocusNode.hasFocus ? 1 : 2,
-                    child: _buildIoPanel(codeFontFamily),
+                    flex: isKeyboardVisible ? 1 : 2,
+                    child: _buildIoPanel(codeFontFamily, isKeyboardVisible),
                   ),
                 ],
               ],

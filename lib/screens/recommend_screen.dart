@@ -10,12 +10,16 @@ import '../widgets/recommendation_problem_card.dart';
 import '../widgets/shared/app_loading_indicator.dart';
 import '../widgets/shared/app_state_card.dart';
 import '../widgets/shared/responsive_action.dart';
-import 'problem_detail_screen.dart';
 
 class RecommendScreen extends StatefulWidget {
-  const RecommendScreen({super.key, this.atCoderService});
+  const RecommendScreen({
+    super.key,
+    this.atCoderService,
+    this.onProblemSelected,
+  });
 
   final AtCoderService? atCoderService;
+  final ValueChanged<String>? onProblemSelected;
 
   @override
   State<RecommendScreen> createState() => _RecommendScreenState();
@@ -582,15 +586,10 @@ class _RecommendScreenState extends State<RecommendScreen> {
                         title: _problemTitles[problem.key] ?? problem.key,
                         difficulty: problem.value.difficulty,
                         onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ProblemDetailScreen(
-                                problemIdToLoad: problem.key,
-                                onProblemChanged: (_) {},
-                              ),
-                            ),
-                          );
+                          final onProblemSelected = widget.onProblemSelected;
+                          if (onProblemSelected == null) return;
+                          onProblemSelected(problem.key);
+                          Navigator.pop(context);
                         },
                       );
                     },

@@ -626,6 +626,7 @@ class _MainScreenState extends State<MainScreen> {
       NewHomeScreen(
         key: const ValueKey('home'),
         isSelected: _selectedIndex == 0,
+        onProblemSelected: _navigateToProblemTabWithId,
       ), // Index 0
       BrowserScreen(
         key: const ValueKey('browser'),

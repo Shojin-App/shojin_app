@@ -6,7 +6,6 @@ import 'package:shojin_app/screens/atcoder_clans_screen.dart';
 import 'package:shojin_app/screens/recommend_screen.dart';
 
 import '../models/problem_difficulty.dart';
-import '../screens/problem_detail_screen.dart';
 import '../services/atcoder_service.dart';
 import '../utils/rating_utils.dart';
 import '../utils/responsive_layout.dart';
@@ -17,10 +16,16 @@ import '../widgets/shared/app_loading_indicator.dart';
 import '../widgets/shared/responsive_action.dart';
 
 class NewHomeScreen extends StatefulWidget {
-  const NewHomeScreen({super.key, this.atCoderService, this.isSelected = true});
+  const NewHomeScreen({
+    super.key,
+    this.atCoderService,
+    this.isSelected = true,
+    this.onProblemSelected,
+  });
 
   final AtCoderService? atCoderService;
   final bool isSelected;
+  final ValueChanged<String>? onProblemSelected;
 
   @override
   State<NewHomeScreen> createState() => _NewHomeScreenState();
@@ -196,89 +201,95 @@ class _NewHomeScreenState extends State<NewHomeScreen>
                           itemBuilder: (context, index) {
                             final id = draftOrder[index];
                             final visible = !draftHidden.contains(id);
-                            return Padding(
+                            return ReorderableDelayedDragStartListener(
                               key: ValueKey(id),
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: Material(
-                                color: visible
-                                    ? colorScheme.primaryContainer.withValues(
-                                        alpha: 0.22,
-                                      )
-                                    : colorScheme.surfaceContainerHighest
-                                          .withValues(alpha: 0.45),
-                                borderRadius: BorderRadius.circular(8),
-                                child: SwitchListTile(
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 2,
-                                  ),
-                                  secondary: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      ReorderableDelayedDragStartListener(
-                                        key: ValueKey('home-drag-$id'),
-                                        index: index,
-                                        child: Tooltip(
-                                          message: '並べ替え',
-                                          child: SizedBox(
-                                            // アイコンは控えめなまま、Androidで
-                                            // 掴みやすい48dpの操作領域を確保する。
-                                            width: 48,
-                                            height: 48,
-                                            child: Icon(
-                                              Icons.drag_handle,
-                                              color:
-                                                  colorScheme.onSurfaceVariant,
+                              index: index,
+                              child: Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Material(
+                                  color: visible
+                                      ? colorScheme.primaryContainer.withValues(
+                                          alpha: 0.22,
+                                        )
+                                      : colorScheme.surfaceContainerHighest
+                                            .withValues(alpha: 0.45),
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: SwitchListTile(
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 2,
+                                    ),
+                                    secondary: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        SizedBox(
+                                          key: ValueKey('home-drag-$id'),
+                                          child: Tooltip(
+                                            message: '並べ替え',
+                                            child: SizedBox(
+                                              // アイコンは控えめなまま、Androidで
+                                              // 掴みやすい48dpの操作領域を確保する。
+                                              width: 48,
+                                              height: 48,
+                                              child: Icon(
+                                                Icons.drag_handle,
+                                                color: colorScheme
+                                                    .onSurfaceVariant,
+                                              ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Container(
-                                        width: 40,
-                                        height: 40,
-                                        decoration: BoxDecoration(
-                                          color: visible
-                                              ? colorScheme.primaryContainer
-                                              : colorScheme
-                                                    .surfaceContainerHighest,
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                        ),
-                                        child: Center(
-                                          child: Icon(
-                                            _widgetIcon(id),
+                                        const SizedBox(width: 4),
+                                        Container(
+                                          width: 40,
+                                          height: 40,
+                                          decoration: BoxDecoration(
                                             color: visible
-                                                ? colorScheme.onPrimaryContainer
-                                                : colorScheme.onSurfaceVariant,
+                                                ? colorScheme.primaryContainer
+                                                : colorScheme
+                                                      .surfaceContainerHighest,
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
+                                          child: Center(
+                                            child: Icon(
+                                              _widgetIcon(id),
+                                              color: visible
+                                                  ? colorScheme
+                                                        .onPrimaryContainer
+                                                  : colorScheme
+                                                        .onSurfaceVariant,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  title: Text(
-                                    _widgetLabel(id),
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      fontWeight: visible
-                                          ? FontWeight.w700
-                                          : FontWeight.w500,
+                                      ],
                                     ),
-                                  ),
-                                  subtitle: Text(
-                                    visible ? 'ホームに表示中' : '非表示',
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: colorScheme.onSurfaceVariant,
+                                    title: Text(
+                                      _widgetLabel(id),
+                                      style: theme.textTheme.bodyMedium
+                                          ?.copyWith(
+                                            fontWeight: visible
+                                                ? FontWeight.w700
+                                                : FontWeight.w500,
+                                          ),
                                     ),
+                                    subtitle: Text(
+                                      visible ? 'ホームに表示中' : '非表示',
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                            color: colorScheme.onSurfaceVariant,
+                                          ),
+                                    ),
+                                    value: visible,
+                                    onChanged: (visible) {
+                                      setSheetState(() {
+                                        visible
+                                            ? draftHidden.remove(id)
+                                            : draftHidden.add(id);
+                                      });
+                                    },
                                   ),
-                                  value: visible,
-                                  onChanged: (visible) {
-                                    setSheetState(() {
-                                      visible
-                                          ? draftHidden.remove(id)
-                                          : draftHidden.add(id);
-                                    });
-                                  },
                                 ),
                               ),
                             );
@@ -586,6 +597,25 @@ class _NewHomeScreenState extends State<NewHomeScreen>
     );
   }
 
+  void _openRecommendations() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            RecommendScreen(onProblemSelected: widget.onProblemSelected),
+      ),
+    );
+  }
+
+  void _openProblem(String problemId) {
+    final onProblemSelected = widget.onProblemSelected;
+    if (onProblemSelected != null) {
+      onProblemSelected(problemId);
+      return;
+    }
+    _openRecommendations();
+  }
+
   Widget _recommendationSection(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -643,14 +673,7 @@ class _NewHomeScreenState extends State<NewHomeScreen>
                     size: 16,
                     color: colorScheme.onSurfaceVariant,
                   ),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const RecommendScreen(),
-                      ),
-                    );
-                  },
+                  onPressed: _openRecommendations,
                 ),
               ],
             ),
@@ -667,14 +690,7 @@ class _NewHomeScreenState extends State<NewHomeScreen>
                 child: ButtonM3E(
                   icon: const Icon(Icons.recommend),
                   label: const Text('おすすめ問題を開く'),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const RecommendScreen(),
-                      ),
-                    );
-                  },
+                  onPressed: _openRecommendations,
                   style: ButtonM3EStyle.filled,
                 ),
               ),
@@ -712,17 +728,7 @@ class _NewHomeScreenState extends State<NewHomeScreen>
             ] else ...[
               InkWell(
                 borderRadius: BorderRadius.circular(8),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ProblemDetailScreen(
-                        problemIdToLoad: _topRecommendation!.key,
-                        onProblemChanged: (_) {},
-                      ),
-                    ),
-                  );
-                },
+                onTap: () => _openProblem(_topRecommendation!.key),
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(

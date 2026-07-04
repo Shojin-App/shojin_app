@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shojin_app/models/atcoder_rating_info.dart';
+import 'package:shojin_app/models/problem_difficulty.dart';
 import 'package:shojin_app/screens/recommend_screen.dart';
 import 'package:shojin_app/services/atcoder_service.dart';
 import 'package:shojin_app/widgets/shared/app_state_card.dart';
@@ -118,6 +119,46 @@ void main() {
     expect(service.requestCount, 2);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('opens a recommendation in the main problem tab', (tester) async {
+    SharedPreferences.setMockInitialValues({'atcoder_username': 'tourist'});
+    String? selectedProblem;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: RecommendScreen(
+          atCoderService: _SuccessfulAtCoderService(),
+          onProblemSelected: (problemId) => selectedProblem = problemId,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('A - Test Problem'));
+    await tester.pumpAndSettle();
+
+    expect(selectedProblem, 'abc999_a');
+    expect(find.text('おすすめ問題'), findsNothing);
+  });
+}
+
+class _SuccessfulAtCoderService extends AtCoderService {
+  @override
+  Future<AtcoderRatingInfo?> fetchAtcoderRatingInfo(String name) async {
+    return const AtcoderRatingInfo(latestRating: 1000, contestCount: 100);
+  }
+
+  @override
+  Future<Map<String, ProblemDifficulty>> fetchProblemDifficulties() async {
+    return {
+      'abc999_a': ProblemDifficulty(difficulty: 1000, isExperimental: false),
+    };
+  }
+
+  @override
+  Future<Map<String, String>> fetchProblemTitles() async {
+    return {'abc999_a': 'A - Test Problem'};
+  }
 }
 
 class _FailingAtCoderService extends AtCoderService {

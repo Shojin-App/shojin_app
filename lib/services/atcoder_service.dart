@@ -1,4 +1,5 @@
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 import 'package:html/parser.dart' as parser;
 import 'package:html/dom.dart';
 import '../models/atcoder_rating_info.dart';
@@ -19,6 +20,16 @@ class AtCoderService {
   static const String _userAgent =
       'ShojinApp/1.0 (+https://github.com/Shojin-App/shojin_app)';
   static const _headers = {'User-Agent': _userAgent};
+
+  @visibleForTesting
+  String extractSectionContentFromHtml(
+    String taskStatementHtml,
+    List<String> headingTexts,
+  ) {
+    final fragment = parser.parseFragment(taskStatementHtml);
+    final root = fragment.querySelector('#task-statement');
+    return root == null ? '' : _extractSectionContent(root, headingTexts);
+  }
 
   Future<int?> fetchAtCoderRate(String name) async {
     final info = await fetchAtcoderRatingInfo(name);
@@ -299,20 +310,12 @@ class AtCoderService {
           // preタグの内容をログ出力する
           developer.log("preタグの内容: ${currentElement.text}");
 
-          // 入力セクションの場合はTeX形式で表示、それ以外はコードブロック
-          if (headingTexts.contains('入力') || headingTexts.contains('Input')) {
-            // 入力形式の場合はTeX表示（コードブロック化しない）
-            // preタグ内のテキストも数式として処理
-            final processedText = _processTextWithMath(currentElement);
-            contentBuffer.write('\n\n');
-            contentBuffer.write(processedText);
-            contentBuffer.write('\n\n');
-          } else {
-            // その他（出力形式など）の場合はコードブロック
-            contentBuffer.write('\n\n```\n');
-            contentBuffer.write(currentElement.text.trim());
-            contentBuffer.write('\n```\n\n');
-          }
+          // 説明文と形式をUIで別表示できるよう、pre要素の境界を保持する。
+          // 平文化すると「標準入力から与えられる」という説明まで
+          // コード用の背景に取り込まれてしまう。
+          contentBuffer.write('\n\n```\n');
+          contentBuffer.write(currentElement.text.trim());
+          contentBuffer.write('\n```\n\n');
         } else {
           // テキストノードの内容を追加し、数式を自動検出
           final text = _processTextWithMath(currentElement);

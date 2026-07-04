@@ -101,7 +101,7 @@ void main() {
       contestName: 'AtCoder Beginner Contest 999 Extended Name',
       statement: '整数 A と整数 B が与えられます。条件を満たす答えを求めてください。',
       constraints: '1 <= A, B <= 1000000000',
-      inputFormat: 'A B',
+      inputFormat: '入力は以下の形式で標準入力から与えられる。\n\n```\nA B\n```',
       outputFormat: '答えを出力してください。',
       samples: [SampleIO(input: '1 2', output: '3', index: 1)],
       url: 'https://atcoder.jp/contests/abc999/tasks/abc999_a',
@@ -133,6 +133,9 @@ void main() {
     expect(find.text('入力例 1'), findsOneWidget);
     expect(find.text('出力例 1'), findsOneWidget);
     expect(find.byTooltip('入力例 1をコピー'), findsOneWidget);
+    // 入力の説明は形式のコード背景とは別のTexWidgetとして描画される。
+    expect(find.byKey(const Key('problem-input-description')), findsOneWidget);
+    expect(find.byKey(const Key('problem-input-format')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

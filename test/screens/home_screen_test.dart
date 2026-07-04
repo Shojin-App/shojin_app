@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3e_collection/m3e_collection.dart';
 import 'package:provider/provider.dart';
@@ -137,6 +138,40 @@ void main() {
     expect(saveButton, findsOneWidget);
     expect(tester.getSize(saveButton).width, 240);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('long pressing the whole widget row reorders it', (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'home_widget_order': ['next_abc', 'recommendation', 'clans'],
+      'home_hidden_widgets': ['next_abc', 'recommendation', 'clans'],
+    });
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider(
+        create: (_) => ThemeProvider(),
+        child: const MaterialApp(home: NewHomeScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('ホームをカスタマイズ'));
+    await tester.pumpAndSettle();
+
+    final firstRow = find.byKey(const ValueKey('next_abc'));
+    final lastRow = find.byKey(const ValueKey('clans'));
+    final gesture = await tester.startGesture(tester.getCenter(firstRow));
+    await tester.pump(kLongPressTimeout + const Duration(milliseconds: 100));
+    await gesture.moveTo(tester.getCenter(lastRow));
+    await tester.pumpAndSettle();
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('保存'));
+    await tester.pumpAndSettle();
+    final prefs = await SharedPreferences.getInstance();
+    expect(
+      prefs.getStringList('home_widget_order'),
+      isNot(['next_abc', 'recommendation', 'clans']),
+    );
   });
 
   testWidgets('recommendation error offers a concise retry action', (

@@ -971,10 +971,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+          color: colorScheme.secondaryContainer,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(Icons.data_object, color: colorScheme.onSurfaceVariant),
+        child: Icon(Icons.data_object, color: colorScheme.onSecondaryContainer),
       ),
       title: Text(
         '詳細情報',
@@ -1011,11 +1011,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+          color: colorScheme.secondaryContainer,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Center(
-          child: Icon(Icons.code, color: colorScheme.onSurfaceVariant),
+          child: Icon(Icons.code, color: colorScheme.onSecondaryContainer),
         ),
       ),
       iconColor: colorScheme.onSurfaceVariant,
@@ -1261,7 +1261,7 @@ class _HapticSwitchListTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: value
               ? colorScheme.primaryContainer
-              : colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+              : colorScheme.secondaryContainer,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Center(
@@ -1269,7 +1269,7 @@ class _HapticSwitchListTile extends StatelessWidget {
             icon,
             color: value
                 ? colorScheme.onPrimaryContainer
-                : colorScheme.onSurfaceVariant,
+                : colorScheme.onSecondaryContainer,
           ),
         ),
       ),
@@ -1332,7 +1332,7 @@ class _HapticRadioListTile<T> extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? colorScheme.primaryContainer
-              : colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+              : colorScheme.secondaryContainer,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Center(
@@ -1340,7 +1340,7 @@ class _HapticRadioListTile<T> extends StatelessWidget {
             data: IconThemeData(
               color: isSelected
                   ? colorScheme.onPrimaryContainer
-                  : colorScheme.onSurfaceVariant,
+                  : colorScheme.onSecondaryContainer,
             ),
             child: secondary,
           ),
@@ -1397,7 +1397,7 @@ class _SettingsActionListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final leadingChild =
-        leading ?? Icon(icon, color: colorScheme.onSurfaceVariant);
+        leading ?? Icon(icon, color: colorScheme.onSecondaryContainer);
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -1405,10 +1405,15 @@ class _SettingsActionListTile extends StatelessWidget {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+          color: colorScheme.secondaryContainer,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Center(child: leadingChild),
+        child: Center(
+          child: IconTheme(
+            data: IconThemeData(color: colorScheme.onSecondaryContainer),
+            child: leadingChild,
+          ),
+        ),
       ),
       title: Text(
         title,
@@ -1458,10 +1463,12 @@ class _CopyableListTile extends StatelessWidget {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+          color: colorScheme.secondaryContainer,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Center(child: Icon(icon, color: colorScheme.onSurfaceVariant)),
+        child: Center(
+          child: Icon(icon, color: colorScheme.onSecondaryContainer),
+        ),
       ),
       title: Text(
         title,
@@ -1550,12 +1557,12 @@ class _SocialMediaItem extends StatelessWidget {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+          color: colorScheme.secondaryContainer,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Center(
           child: icon is IconData
-              ? Icon(icon as IconData, color: colorScheme.onSurfaceVariant)
+              ? Icon(icon as IconData, color: colorScheme.onSecondaryContainer)
               : icon as Widget,
         ),
       ),

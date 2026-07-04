@@ -701,6 +701,9 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
         if (i % 2 == 0) {
           contentWidgets.add(
             TexWidget(
+              key: title == '入力'
+                  ? const Key('problem-input-description')
+                  : null,
               content: parts[i].trim(),
               textStyle: theme.textTheme.bodyMedium,
             ),
@@ -708,6 +711,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
         } else {
           contentWidgets.add(
             Container(
+              key: title == '入力' ? const Key('problem-input-format') : null,
               width: double.infinity,
               margin: const EdgeInsets.symmetric(vertical: 8),
               padding: const EdgeInsets.all(12),
@@ -766,7 +770,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 16),
+        const SizedBox(height: 8),
         _buildSampleBlock(
           title: '入力例 ${sample.index}',
           content: sample.input,
@@ -775,7 +779,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
           colorScheme: colorScheme,
           copiedMessage: '入力例をコピーしました',
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
         _buildSampleBlock(
           title: '出力例 ${sample.index}',
           content: sample.output,
@@ -809,7 +813,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 8, 4),
+            padding: const EdgeInsets.fromLTRB(12, 0, 4, 0),
             child: Row(
               children: [
                 Expanded(

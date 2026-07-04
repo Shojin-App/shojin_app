@@ -113,4 +113,47 @@ void main() {
     expect(tester.getSize(runButton).width, 220);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('restores editor height when the keyboard closes', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(() => tester.view.viewInsets = FakeViewPadding.zero);
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => ThemeProvider()),
+          ChangeNotifierProvider(create: (_) => TemplateProvider()),
+        ],
+        child: const MaterialApp(
+          home: EditorScreen(problemId: 'default_problem'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('editor-code-area')), findsOneWidget);
+
+    await tester.tap(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField &&
+            widget.decoration?.hintText == 'プログラムへの入力をここに入力します',
+      ),
+    );
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    await tester.pump();
+    expect(find.byKey(const Key('editor-code-area')), findsNothing);
+
+    // Androidの戻る操作はTextFieldのフォーカスを残したまま、キーボードだけ
+    // 閉じることがある。この状態でもコード領域が元に戻ることを確認する。
+    tester.view.viewInsets = FakeViewPadding.zero;
+    await tester.pump();
+    expect(find.byKey(const Key('editor-code-area')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }
