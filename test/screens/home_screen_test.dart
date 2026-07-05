@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3e_collection/m3e_collection.dart';
 import 'package:provider/provider.dart';
@@ -140,7 +139,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('long pressing the whole widget row reorders it', (tester) async {
+  testWidgets('long pressing a widget title reorders it', (tester) async {
     SharedPreferences.setMockInitialValues({
       'home_widget_order': ['next_abc', 'recommendation', 'clans'],
       'home_hidden_widgets': ['next_abc', 'recommendation', 'clans'],
@@ -156,12 +155,50 @@ void main() {
     await tester.tap(find.byTooltip('ホームをカスタマイズ'));
     await tester.pumpAndSettle();
 
-    final firstRow = find.byKey(const ValueKey('next_abc'));
+    final firstRow = find.byKey(const ValueKey('home-long-press-next_abc'));
     final lastRow = find.byKey(const ValueKey('clans'));
     final gesture = await tester.startGesture(tester.getCenter(firstRow));
-    await tester.pump(kLongPressTimeout + const Duration(milliseconds: 100));
+    // 認識直後だけでなく、長く保持してから動かしてもドラッグを維持する。
+    await tester.pump(const Duration(seconds: 2));
     await gesture.moveTo(tester.getCenter(lastRow));
     await tester.pumpAndSettle();
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('保存'));
+    await tester.pumpAndSettle();
+    final prefs = await SharedPreferences.getInstance();
+    expect(
+      prefs.getStringList('home_widget_order'),
+      isNot(['next_abc', 'recommendation', 'clans']),
+    );
+  });
+
+  testWidgets('dragging the handle reorders without a long press', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({
+      'home_widget_order': ['next_abc', 'recommendation', 'clans'],
+      'home_hidden_widgets': ['next_abc', 'recommendation', 'clans'],
+    });
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider(
+        create: (_) => ThemeProvider(),
+        child: const MaterialApp(home: NewHomeScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('ホームをカスタマイズ'));
+    await tester.pumpAndSettle();
+
+    final handle = find.byKey(const ValueKey('home-drag-next_abc'));
+    final lastRow = find.byKey(const ValueKey('clans'));
+    final gesture = await tester.startGesture(tester.getCenter(handle));
+    await gesture.moveBy(const Offset(0, 8));
+    await tester.pump();
+    await gesture.moveTo(tester.getCenter(lastRow));
+    await tester.pump(const Duration(milliseconds: 500));
     await gesture.up();
     await tester.pumpAndSettle();
 

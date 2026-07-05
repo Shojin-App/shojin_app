@@ -1254,41 +1254,45 @@ class _EditorScreenState extends State<EditorScreen> {
             final stackVertically = constraints.maxWidth < 600;
             final inputFlex = stackVertically && isKeyboardVisible ? 4 : 1;
             final outputFlex = 1;
+            final inputPanel = KeyedSubtree(
+              key: const Key('editor-stdin-panel'),
+              child: _buildTextPanel(
+                title: '標準入力',
+                subtitle: 'stdin',
+                icon: Icons.keyboard_alt_outlined,
+                child: TextField(
+                  controller: _stdinController,
+                  focusNode: _stdinFocusNode,
+                  scrollController: _stdinScrollController,
+                  expands: true,
+                  minLines: null,
+                  maxLines: null,
+                  keyboardType: TextInputType.multiline,
+                  onTap: () => _stdinFocusNode.requestFocus(),
+                  decoration: InputDecoration(
+                    hintText: 'プログラムへの入力をここに入力します',
+                    hintStyle: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    border: InputBorder.none,
+                    isDense: true,
+                  ),
+                  style: getMonospaceTextStyle(codeFontFamily, fontSize: 13),
+                ),
+                scrollController: _stdinScrollController,
+                scrollChild: false,
+              ),
+            );
+
+            // ソフトウェアキーボードで縦幅が狭くなる間は、操作ボタンや出力を
+            // 同居させずstdinへ全領域を渡す。フォーカスだけを判定すると、
+            // Androidの戻る操作でキーボードが閉じた後も縮小状態が残る。
+            if (isKeyboardVisible) return inputPanel;
+
             return Flex(
               direction: stackVertically ? Axis.vertical : Axis.horizontal,
               children: [
-                Expanded(
-                  flex: inputFlex,
-                  child: _buildTextPanel(
-                    title: '標準入力',
-                    subtitle: 'stdin',
-                    icon: Icons.keyboard_alt_outlined,
-                    child: TextField(
-                      controller: _stdinController,
-                      focusNode: _stdinFocusNode,
-                      scrollController: _stdinScrollController,
-                      expands: true,
-                      minLines: null,
-                      maxLines: null,
-                      keyboardType: TextInputType.multiline,
-                      onTap: () => _stdinFocusNode.requestFocus(),
-                      decoration: InputDecoration(
-                        hintText: 'プログラムへの入力をここに入力します',
-                        hintStyle: theme.textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                        border: InputBorder.none,
-                        isDense: true,
-                      ),
-                      style: getMonospaceTextStyle(
-                        codeFontFamily,
-                        fontSize: 13,
-                      ),
-                    ),
-                    scrollController: _stdinScrollController,
-                    scrollChild: false,
-                  ),
-                ),
+                Expanded(flex: inputFlex, child: inputPanel),
                 SizedBox(
                   width: stackVertically ? 0 : 12,
                   height: stackVertically ? 12 : 0,
@@ -1648,7 +1652,8 @@ class _EditorScreenState extends State<EditorScreen> {
 
                 // 入出力エリア: ボタン行 + 左右分割 (stdin | stdout/stderr)
                 if (!isLoadingProblem) ...[
-                  _buildExecutionControls(isButtonDisabled),
+                  if (!isKeyboardVisible)
+                    _buildExecutionControls(isButtonDisabled),
                   Expanded(
                     key: const Key('editor-io-area'),
                     // キーボード表示中は入力欄へ利用可能な高さをすべて渡す。

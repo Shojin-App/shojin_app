@@ -148,6 +148,11 @@ void main() {
     tester.view.viewInsets = const FakeViewPadding(bottom: 300);
     await tester.pump();
     expect(find.byKey(const Key('editor-code-area')), findsNothing);
+    expect(find.text('実行と提出'), findsNothing);
+    expect(
+      tester.getSize(find.byKey(const Key('editor-stdin-panel'))).height,
+      greaterThan(250),
+    );
 
     // Androidの戻る操作はTextFieldのフォーカスを残したまま、キーボードだけ
     // 閉じることがある。この状態でもコード領域が元に戻ることを確認する。
