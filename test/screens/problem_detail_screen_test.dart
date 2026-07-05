@@ -99,7 +99,9 @@ void main() {
       title: 'A - とても長いタイトルを持つ競技プログラミング問題',
       contestId: 'abc999',
       contestName: 'AtCoder Beginner Contest 999 Extended Name',
-      statement: '整数 A と整数 B が与えられます。条件を満たす答えを求めてください。',
+      statement:
+          '整数 A と整数 B が与えられます。\n'
+          '[[[DETAILS:補足説明]]]\n補足の本文です。\n[[[/DETAILS]]]',
       constraints: '1 <= A, B <= 1000000000',
       inputFormat: '入力は以下の形式で標準入力から与えられる。\n\n```\nA B\n```',
       outputFormat: '答えを出力してください。',
@@ -136,6 +138,47 @@ void main() {
     // 入力の説明は形式のコード背景とは別のTexWidgetとして描画される。
     expect(find.byKey(const Key('problem-input-description')), findsOneWidget);
     expect(find.byKey(const Key('problem-input-format')), findsOneWidget);
+    expect(find.byKey(const ValueKey('problem-details-補足説明')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('problem-details-content-補足説明')),
+      findsNothing,
+    );
+    await tester.tap(find.text('補足説明'));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('problem-details-content-補足説明')),
+      findsOneWidget,
+    );
+
+    final appBarBottom = tester.getBottomLeft(find.text('問題詳細')).dy;
+    final problemCard = find.byKey(const Key('problem-content-card'));
+    expect(tester.getTopLeft(problemCard).dy - appBarBottom, lessThan(12));
+
+    final inputBlock = tester.getRect(
+      find.byKey(const ValueKey('sample-block-入力例 1')),
+    );
+    final outputBlock = tester.getRect(
+      find.byKey(const ValueKey('sample-block-出力例 1')),
+    );
+    expect(outputBlock.top - inputBlock.bottom, 0);
+    expect(
+      tester.getSize(find.byKey(const ValueKey('sample-header-入力例 1'))).height,
+      40,
+    );
+
+    final problemScrollView = find.byType(SingleChildScrollView).first;
+    expect(tester.getBottomLeft(problemScrollView).dy, 800);
+    await tester.scrollUntilVisible(
+      find.text('出典: AtCoder'),
+      300,
+      scrollable: find
+          .descendant(of: problemScrollView, matching: find.byType(Scrollable))
+          .first,
+    );
+    expect(
+      tester.getBottomLeft(find.text('出典: AtCoder')).dy,
+      lessThanOrEqualTo(720),
+    );
     expect(tester.takeException(), isNull);
   });
 }

@@ -305,23 +305,7 @@ class AtCoderService {
           }
         }
 
-        // preタグの場合は特別処理（入力形式のフォーマットなど）
-        if (currentElement.localName == 'pre') {
-          // preタグの内容をログ出力する
-          developer.log("preタグの内容: ${currentElement.text}");
-
-          // 説明文と形式をUIで別表示できるよう、pre要素の境界を保持する。
-          // 平文化すると「標準入力から与えられる」という説明まで
-          // コード用の背景に取り込まれてしまう。
-          contentBuffer.write('\n\n```\n');
-          contentBuffer.write(currentElement.text.trim());
-          contentBuffer.write('\n```\n\n');
-        } else {
-          // テキストノードの内容を追加し、数式を自動検出
-          final text = _processTextWithMath(currentElement);
-          contentBuffer.write(text);
-          contentBuffer.write('\n');
-        }
+        _appendSectionElement(contentBuffer, currentElement);
 
         currentElement = currentElement.nextElementSibling;
       }
@@ -396,6 +380,44 @@ class AtCoderService {
       developer.log("セクション内容抽出中にエラーが発生しました: $e");
       return '';
     }
+  }
+
+  void _appendSectionElement(StringBuffer buffer, Element element) {
+    if (element.localName == 'pre') {
+      // 説明文と形式をUIで別表示できるよう、pre要素の境界を保持する。
+      buffer
+        ..write('\n\n```\n')
+        ..write(element.text.trim())
+        ..write('\n```\n\n');
+      return;
+    }
+
+    if (element.localName == 'details') {
+      Element? summary;
+      for (final child in element.children) {
+        if (child.localName == 'summary') {
+          summary = child;
+          break;
+        }
+      }
+      final title = (summary?.text.trim().isNotEmpty ?? false)
+          ? summary!.text.trim()
+          : '詳細';
+      final body = StringBuffer();
+      for (final child in element.children) {
+        if (identical(child, summary)) continue;
+        _appendSectionElement(body, child);
+      }
+      buffer
+        ..write('\n[[[DETAILS:${title.replaceAll(']]]', '')}]]]\n')
+        ..write(body.toString().trim())
+        ..write('\n[[[/DETAILS]]]\n');
+      return;
+    }
+
+    buffer
+      ..write(_processTextWithMath(element))
+      ..write('\n');
   }
 
   /// 入力セクションの内容をクリーンアップする

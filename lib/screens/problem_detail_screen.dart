@@ -500,9 +500,9 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
         child: Padding(
           padding: EdgeInsets.fromLTRB(
             horizontalPadding,
-            16,
+            0,
             horizontalPadding,
-            ResponsiveLayout.bottomNavigationClearance(context),
+            0,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -523,7 +523,10 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
                     onCopy: _copyErrorMessage,
                   ),
                 ),
-              const SizedBox(height: 12),
+              if (_problem == null ||
+                  _isFetchPanelExpanded ||
+                  _errorMessage != null)
+                const SizedBox(height: 12),
               Expanded(
                 child: _isLoading
                     ? const Center(
@@ -563,99 +566,101 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
     final colorScheme = theme.colorScheme;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.only(top: 16),
-        child: Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          clipBehavior: Clip.antiAlias,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: colorScheme.secondaryContainer,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        Icons.assignment_outlined,
-                        color: colorScheme.onSecondaryContainer,
-                      ),
+      // Viewportはナビゲーションの背後まで使い、末尾余白だけで最後の行を
+      // バーより上へスクロールできるようにする。
+      padding: EdgeInsets.only(
+        bottom: ResponsiveLayout.bottomNavigationClearance(context),
+      ),
+      child: Card(
+        key: const Key('problem-content-card'),
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        clipBehavior: Clip.antiAlias,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: colorScheme.secondaryContainer,
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (problem.contestName.isNotEmpty &&
-                              problem.contestName != 'コンテスト名が見つかりません') ...[
-                            Text(
-                              problem.contestName,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                    child: Icon(
+                      Icons.assignment_outlined,
+                      color: colorScheme.onSecondaryContainer,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (problem.contestName.isNotEmpty &&
+                            problem.contestName != 'コンテスト名が見つかりません') ...[
+                          Text(
+                            problem.contestName,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
                             ),
-                            const SizedBox(height: 2),
-                          ],
-                          TexWidget(
-                            content: problem.title,
-                            textStyle: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
+                          const SizedBox(height: 2),
                         ],
-                      ),
+                        TexWidget(
+                          content: problem.title,
+                          textStyle: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    IconButtonM3E(
-                      icon: const Icon(Icons.open_in_new),
-                      tooltip: '元ページを開く',
-                      onPressed: () => launchUrl(
-                        Uri.parse(problem.url),
-                        mode: LaunchMode.externalApplication,
-                      ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButtonM3E(
+                    icon: const Icon(Icons.open_in_new),
+                    tooltip: '元ページを開く',
+                    onPressed: () => launchUrl(
+                      Uri.parse(problem.url),
+                      mode: LaunchMode.externalApplication,
                     ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Divider(color: colorScheme.outlineVariant),
-                _buildSection('問題文', problem.statement, codeFontFamily),
-                _buildSection('制約', problem.constraints, codeFontFamily),
-                _buildSection('入力', problem.inputFormat, codeFontFamily),
-                _buildSection('出力', problem.outputFormat, codeFontFamily),
-                ...problem.samples.map(
-                  (sample) => _buildSampleIO(sample, codeFontFamily),
-                ),
-                const SizedBox(height: 16),
-                Divider(color: colorScheme.outlineVariant),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      size: 16,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Divider(color: colorScheme.outlineVariant),
+              _buildSection('問題文', problem.statement, codeFontFamily),
+              _buildSection('制約', problem.constraints, codeFontFamily),
+              _buildSection('入力', problem.inputFormat, codeFontFamily),
+              _buildSection('出力', problem.outputFormat, codeFontFamily),
+              ...problem.samples.map(
+                (sample) => _buildSampleIO(sample, codeFontFamily),
+              ),
+              const SizedBox(height: 16),
+              Divider(color: colorScheme.outlineVariant),
+              Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 16,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '出典: AtCoder',
+                    style: theme.textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '出典: AtCoder',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
@@ -669,7 +674,83 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    List<Widget> contentWidgets = [];
+    final contentWidgets = _buildSectionContent(content, title, codeFontFamily);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withValues(alpha: 0.65),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            title,
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: colorScheme.onPrimaryContainer,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        ...contentWidgets,
+      ],
+    );
+  }
+
+  List<Widget> _buildSectionContent(
+    String content,
+    String sectionTitle,
+    String codeFontFamily,
+  ) {
+    final widgets = <Widget>[];
+    final detailsPattern = RegExp(
+      r'\[\[\[DETAILS:(.*?)\]\]\]\s*(.*?)\s*\[\[\[/DETAILS\]\]\]',
+      dotAll: true,
+    );
+    var offset = 0;
+    for (final match in detailsPattern.allMatches(content)) {
+      widgets.addAll(
+        _buildPlainSectionContent(
+          content.substring(offset, match.start),
+          sectionTitle,
+          codeFontFamily,
+          useInputKeys: offset == 0,
+        ),
+      );
+      widgets.add(
+        _buildCollapsiblePanel(
+          match.group(1)!.trim(),
+          match.group(2)!.trim(),
+          sectionTitle,
+          codeFontFamily,
+        ),
+      );
+      offset = match.end;
+    }
+    widgets.addAll(
+      _buildPlainSectionContent(
+        content.substring(offset),
+        sectionTitle,
+        codeFontFamily,
+        useInputKeys: offset == 0,
+      ),
+    );
+    return widgets;
+  }
+
+  List<Widget> _buildPlainSectionContent(
+    String content,
+    String title,
+    String codeFontFamily, {
+    required bool useInputKeys,
+  }) {
+    if (content.trim().isEmpty) return const [];
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final contentWidgets = <Widget>[];
     final parts = content.split(RegExp(r'```'));
 
     // 「入力」セクションで、かつコードブロックがない場合の特別処理
@@ -701,7 +782,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
         if (i % 2 == 0) {
           contentWidgets.add(
             TexWidget(
-              key: title == '入力'
+              key: title == '入力' && useInputKeys
                   ? const Key('problem-input-description')
                   : null,
               content: parts[i].trim(),
@@ -711,7 +792,9 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
         } else {
           contentWidgets.add(
             Container(
-              key: title == '入力' ? const Key('problem-input-format') : null,
+              key: title == '入力' && useInputKeys
+                  ? const Key('problem-input-format')
+                  : null,
               width: double.infinity,
               margin: const EdgeInsets.symmetric(vertical: 8),
               padding: const EdgeInsets.all(12),
@@ -739,27 +822,44 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withValues(alpha: 0.65),
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Text(
-            title,
-            style: theme.textTheme.titleSmall?.copyWith(
-              color: colorScheme.onPrimaryContainer,
-              fontWeight: FontWeight.w700,
+    return contentWidgets;
+  }
+
+  Widget _buildCollapsiblePanel(
+    String title,
+    String content,
+    String sectionTitle,
+    String codeFontFamily,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      key: ValueKey('problem-details-$title'),
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHigh.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: ExpansionTile(
+        shape: const Border(),
+        collapsedShape: const Border(),
+        tilePadding: const EdgeInsets.symmetric(horizontal: 12),
+        childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        leading: Icon(Icons.unfold_more, color: colorScheme.primary),
+        title: Text(title),
+        children: [
+          Column(
+            key: ValueKey('problem-details-content-$title'),
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: _buildPlainSectionContent(
+              content,
+              sectionTitle,
+              codeFontFamily,
+              useInputKeys: false,
             ),
           ),
-        ),
-        const SizedBox(height: 8),
-        ...contentWidgets,
-      ],
+        ],
+      ),
     );
   }
 
@@ -770,7 +870,6 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 8),
         _buildSampleBlock(
           title: '入力例 ${sample.index}',
           content: sample.input,
@@ -779,7 +878,6 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
           colorScheme: colorScheme,
           copiedMessage: '入力例をコピーしました',
         ),
-        const SizedBox(height: 4),
         _buildSampleBlock(
           title: '出力例 ${sample.index}',
           content: sample.output,
@@ -801,6 +899,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
     required String copiedMessage,
   }) {
     return Container(
+      key: ValueKey('sample-block-$title'),
       width: double.infinity,
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
@@ -812,29 +911,38 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 4, 0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
+          SizedBox(
+            key: ValueKey('sample-header-$title'),
+            height: 40,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-                ),
-                IconButtonM3E(
-                  icon: const Icon(Icons.copy, size: 16),
-                  tooltip: '$titleをコピー',
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: content));
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text(copiedMessage)));
-                  },
-                ),
-              ],
+                  IconButton(
+                    icon: const Icon(Icons.copy, size: 16),
+                    tooltip: '$titleをコピー',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints.tightFor(
+                      width: 40,
+                      height: 40,
+                    ),
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: content));
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text(copiedMessage)));
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
           Divider(height: 1, color: colorScheme.outlineVariant),

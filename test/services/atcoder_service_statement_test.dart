@@ -23,4 +23,27 @@ A_1 A_2 ... A_N</pre>
       lessThan(content.indexOf('```')),
     );
   });
+
+  test('preserves details and summary boundaries', () {
+    final content = AtCoderService().extractSectionContentFromHtml(
+      '''
+      <div id="task-statement">
+        <h3>問題文</h3>
+        <p>通常の問題文です。</p>
+        <details>
+          <summary>補足説明</summary>
+          <p>折りたたまれた内容です。</p>
+          <pre>example</pre>
+        </details>
+        <h3>制約</h3>
+      </div>
+    ''',
+      ['問題文', 'Problem'],
+    );
+
+    expect(content, contains('[[[DETAILS:補足説明]]]'));
+    expect(content, contains('折りたたまれた内容です。'));
+    expect(content, contains('```\nexample\n```'));
+    expect(content, contains('[[[/DETAILS]]]'));
+  });
 }
