@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -103,7 +104,7 @@ void main() {
           '整数 A と整数 B が与えられます。\n'
           '[[[DETAILS:補足説明]]]\n補足の本文です。\n[[[/DETAILS]]]',
       constraints: '1 <= A, B <= 1000000000',
-      inputFormat: '入力は以下の形式で標準入力から与えられる。\n\n```\nA B\n```',
+      inputFormat: '入力は以下の形式で標準入力から与えられる。\n\n```\n\$A\$ \$B\$\n```',
       outputFormat: '答えを出力してください。',
       samples: [SampleIO(input: '1 2', output: '3', index: 1)],
       url: 'https://atcoder.jp/contests/abc999/tasks/abc999_a',
@@ -138,6 +139,13 @@ void main() {
     // 入力の説明は形式のコード背景とは別のTexWidgetとして描画される。
     expect(find.byKey(const Key('problem-input-description')), findsOneWidget);
     expect(find.byKey(const Key('problem-input-format')), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('problem-input-format')),
+        matching: find.byType(Math),
+      ),
+      findsNWidgets(2),
+    );
     expect(find.byKey(const ValueKey('problem-details-補足説明')), findsOneWidget);
     expect(
       find.byKey(const ValueKey('problem-details-content-補足説明')),
@@ -160,7 +168,7 @@ void main() {
     final outputBlock = tester.getRect(
       find.byKey(const ValueKey('sample-block-出力例 1')),
     );
-    expect(outputBlock.top - inputBlock.bottom, 0);
+    expect(outputBlock.top - inputBlock.bottom, 12);
     expect(
       tester.getSize(find.byKey(const ValueKey('sample-header-入力例 1'))).height,
       40,

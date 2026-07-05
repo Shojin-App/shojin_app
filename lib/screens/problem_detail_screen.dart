@@ -615,6 +615,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
                         ],
                         TexWidget(
                           content: problem.title,
+                          mathTextScaleFactor: 1.08,
                           textStyle: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
@@ -771,6 +772,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
           child: TexWidget(
             content: content,
             textStyle: theme.textTheme.bodyMedium,
+            mathTextScaleFactor: 1.08,
           ),
         ),
       );
@@ -787,6 +789,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
                   : null,
               content: parts[i].trim(),
               textStyle: theme.textTheme.bodyMedium,
+              mathTextScaleFactor: 1.08,
             ),
           );
         } else {
@@ -807,9 +810,12 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
                   color: colorScheme.outlineVariant.withValues(alpha: 0.7),
                 ),
               ),
-              child: Text(
-                parts[i].trim(),
-                style: getMonospaceTextStyle(codeFontFamily),
+              // コード用フォントを保ちつつ、変数や添字などのTeXは
+              // 問題文と同じ規則で描画する。
+              child: TexWidget(
+                content: parts[i].trim(),
+                textStyle: getMonospaceTextStyle(codeFontFamily),
+                mathTextScaleFactor: 1.08,
               ),
             ),
           );
@@ -818,7 +824,11 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
     } else {
       // 「入力」セクション以外でコードブロックがない場合の通常の処理
       contentWidgets.add(
-        TexWidget(content: content, textStyle: theme.textTheme.bodyMedium),
+        TexWidget(
+          content: content,
+          textStyle: theme.textTheme.bodyMedium,
+          mathTextScaleFactor: 1.08,
+        ),
       );
     }
 
@@ -878,6 +888,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
           colorScheme: colorScheme,
           copiedMessage: '入力例をコピーしました',
         ),
+        const SizedBox(height: 12),
         _buildSampleBlock(
           title: '出力例 ${sample.index}',
           content: sample.output,

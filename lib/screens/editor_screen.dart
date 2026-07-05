@@ -1268,6 +1268,8 @@ class _EditorScreenState extends State<EditorScreen> {
                   minLines: null,
                   maxLines: null,
                   keyboardType: TextInputType.multiline,
+                  textAlignVertical: TextAlignVertical.top,
+                  scrollPadding: const EdgeInsets.all(24),
                   onTap: () => _stdinFocusNode.requestFocus(),
                   decoration: InputDecoration(
                     hintText: 'プログラムへの入力をここに入力します',
@@ -1550,6 +1552,9 @@ class _EditorScreenState extends State<EditorScreen> {
         (_currentProblem?.samples.isEmpty ?? true);
 
     return Scaffold(
+      // stdinへの入力中は画面をキーボードの上まで縮め、入力欄が
+      // オーバーレイの背後に残らないことを明示的に保証する。
+      resizeToAvoidBottomInset: true,
       appBar: _EditorAppBar(
         selectedLanguage: _selectedLanguage,
         languages: _languages,

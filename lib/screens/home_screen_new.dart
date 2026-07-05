@@ -204,68 +204,72 @@ class _NewHomeScreenState extends State<NewHomeScreen>
                             return Padding(
                               key: ValueKey(id),
                               padding: const EdgeInsets.only(bottom: 8),
-                              child: Material(
-                                color: visible
-                                    ? colorScheme.primaryContainer.withValues(
-                                        alpha: 0.22,
-                                      )
-                                    : colorScheme.surfaceContainerHighest
-                                          .withValues(alpha: 0.45),
-                                borderRadius: BorderRadius.circular(8),
-                                child: SwitchListTile(
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 2,
-                                  ),
-                                  secondary: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      ReorderableDragStartListener(
-                                        key: ValueKey('home-drag-$id'),
-                                        index: index,
-                                        child: Tooltip(
-                                          message: '並べ替え',
-                                          child: SizedBox(
-                                            // アイコンは控えめなまま、Androidで
-                                            // 掴みやすい48dpの操作領域を確保する。
-                                            width: 48,
-                                            height: 48,
-                                            child: Icon(
-                                              Icons.drag_handle,
-                                              color:
-                                                  colorScheme.onSurfaceVariant,
+                              // 行全体を長押し領域にして、保持中のわずかな
+                              // 指ずれでタイトル領域を外れてもドラッグを保つ。
+                              child: ReorderableDelayedDragStartListener(
+                                key: ValueKey('home-long-press-$id'),
+                                index: index,
+                                child: Material(
+                                  color: visible
+                                      ? colorScheme.primaryContainer.withValues(
+                                          alpha: 0.22,
+                                        )
+                                      : colorScheme.surfaceContainerHighest
+                                            .withValues(alpha: 0.45),
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: SwitchListTile(
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 2,
+                                    ),
+                                    secondary: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        ReorderableDragStartListener(
+                                          key: ValueKey('home-drag-$id'),
+                                          index: index,
+                                          child: Tooltip(
+                                            message: '並べ替え',
+                                            child: SizedBox(
+                                              // アイコンは控えめなまま、Androidで
+                                              // 掴みやすい48dpの操作領域を確保する。
+                                              width: 48,
+                                              height: 48,
+                                              child: Icon(
+                                                Icons.drag_handle,
+                                                color: colorScheme
+                                                    .onSurfaceVariant,
+                                              ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Container(
-                                        width: 40,
-                                        height: 40,
-                                        decoration: BoxDecoration(
-                                          color: visible
-                                              ? colorScheme.primaryContainer
-                                              : colorScheme
-                                                    .surfaceContainerHighest,
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                        ),
-                                        child: Center(
-                                          child: Icon(
-                                            _widgetIcon(id),
+                                        const SizedBox(width: 4),
+                                        Container(
+                                          width: 40,
+                                          height: 40,
+                                          decoration: BoxDecoration(
                                             color: visible
-                                                ? colorScheme.onPrimaryContainer
-                                                : colorScheme.onSurfaceVariant,
+                                                ? colorScheme.primaryContainer
+                                                : colorScheme
+                                                      .surfaceContainerHighest,
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
+                                          child: Center(
+                                            child: Icon(
+                                              _widgetIcon(id),
+                                              color: visible
+                                                  ? colorScheme
+                                                        .onPrimaryContainer
+                                                  : colorScheme
+                                                        .onSurfaceVariant,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  title: ReorderableDelayedDragStartListener(
-                                    key: ValueKey('home-long-press-$id'),
-                                    index: index,
-                                    child: Text(
+                                      ],
+                                    ),
+                                    title: Text(
                                       _widgetLabel(id),
                                       style: theme.textTheme.bodyMedium
                                           ?.copyWith(
@@ -274,21 +278,22 @@ class _NewHomeScreenState extends State<NewHomeScreen>
                                                 : FontWeight.w500,
                                           ),
                                     ),
-                                  ),
-                                  subtitle: Text(
-                                    visible ? 'ホームに表示中' : '非表示',
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: colorScheme.onSurfaceVariant,
+                                    subtitle: Text(
+                                      visible ? 'ホームに表示中' : '非表示',
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                            color: colorScheme.onSurfaceVariant,
+                                          ),
                                     ),
+                                    value: visible,
+                                    onChanged: (visible) {
+                                      setSheetState(() {
+                                        visible
+                                            ? draftHidden.remove(id)
+                                            : draftHidden.add(id);
+                                      });
+                                    },
                                   ),
-                                  value: visible,
-                                  onChanged: (visible) {
-                                    setSheetState(() {
-                                      visible
-                                          ? draftHidden.remove(id)
-                                          : draftHidden.add(id);
-                                    });
-                                  },
                                 ),
                               ),
                             );

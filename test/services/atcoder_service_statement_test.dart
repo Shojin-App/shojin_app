@@ -46,4 +46,22 @@ A_1 A_2 ... A_N</pre>
     expect(content, contains('```\nexample\n```'));
     expect(content, contains('[[[/DETAILS]]]'));
   });
+
+  test('preserves semantic emphasis and list markers', () {
+    final content = AtCoderService().extractSectionContentFromHtml(
+      '''
+      <div id="task-statement">
+        <h3>問題文</h3>
+        <p><strong>重要</strong>な条件です。</p>
+        <ul><li>最初の条件</li><li><var>A_i</var> の条件</li></ul>
+        <h3>制約</h3>
+      </div>
+    ''',
+      ['問題文', 'Problem'],
+    );
+
+    expect(content, contains('**重要**な条件です。'));
+    expect(content, contains('- 最初の条件'));
+    expect(content, contains(r'- $A_i$ の条件'));
+  });
 }

@@ -73,22 +73,60 @@ class TexWidget extends StatelessWidget {
 
   Widget _buildInlineContent(String inlineContent, TextStyle defaultTextStyle) {
     // Display formulas are handled as independent scrollable blocks above.
+    // 行頭のMarkdown記号だけを表示用の箇条書きへ変換し、数式中の
+    // 演算子として使われる * はそのまま残す。
+    final normalizedContent = inlineContent.replaceAllMapped(
+      RegExp(r'^(\s*)[-*+]\s+', multiLine: true),
+      (match) => '${match.group(1)}• ',
+    );
     final texPattern = RegExp(
-      r'(\$[^$]+\$|\\[a-zA-Z]+(?:\{[^}]*\})*|\\[^a-zA-Z]?)',
+      r'(\*\*[^*\n]+\*\*|__[^_\n]+__|\*[^*\n]+\*|`[^`\n]+`|\$[^$]+\$|\\[a-zA-Z]+(?:\{[^}]*\})*|\\[^a-zA-Z]?)',
     );
     final spans = <InlineSpan>[];
     int lastEnd = 0;
 
-    for (final match in texPattern.allMatches(inlineContent)) {
+    for (final match in texPattern.allMatches(normalizedContent)) {
       // マッチ前の通常テキストを追加
       if (match.start > lastEnd) {
-        final text = inlineContent.substring(lastEnd, match.start);
+        final text = normalizedContent.substring(lastEnd, match.start);
         if (text.isNotEmpty) {
           spans.add(TextSpan(text: text, style: defaultTextStyle));
         }
       }
 
       final texContent = match.group(0)!;
+
+      if ((texContent.startsWith('**') && texContent.endsWith('**')) ||
+          (texContent.startsWith('__') && texContent.endsWith('__'))) {
+        spans.add(
+          TextSpan(
+            text: texContent.substring(2, texContent.length - 2),
+            style: defaultTextStyle.copyWith(fontWeight: FontWeight.w700),
+          ),
+        );
+        lastEnd = match.end;
+        continue;
+      }
+      if (texContent.startsWith('`') && texContent.endsWith('`')) {
+        spans.add(
+          TextSpan(
+            text: texContent.substring(1, texContent.length - 1),
+            style: defaultTextStyle.copyWith(fontFamily: 'monospace'),
+          ),
+        );
+        lastEnd = match.end;
+        continue;
+      }
+      if (texContent.startsWith('*') && texContent.endsWith('*')) {
+        spans.add(
+          TextSpan(
+            text: texContent.substring(1, texContent.length - 1),
+            style: defaultTextStyle.copyWith(fontStyle: FontStyle.italic),
+          ),
+        );
+        lastEnd = match.end;
+        continue;
+      }
 
       try {
         // 数式として解析を試みる
@@ -99,7 +137,13 @@ class TexWidget extends StatelessWidget {
           final mathContent = texContent.substring(1, texContent.length - 1);
           mathWidget = Math.tex(
             mathContent,
-            textStyle: defaultTextStyle,
+            // 本文と同寸では記号の細部が潰れやすいため、行間を大きく
+            // 変えない範囲でインライン数式だけをわずかに拡大する。
+            textStyle: defaultTextStyle.copyWith(
+              fontSize:
+                  (defaultTextStyle.fontSize ?? 14) *
+                  (mathTextScaleFactor ?? 1),
+            ),
             mathStyle: MathStyle.text,
           );
         } else {
@@ -137,8 +181,8 @@ class TexWidget extends StatelessWidget {
     }
 
     // 残りのテキストを追加
-    if (lastEnd < inlineContent.length) {
-      final text = inlineContent.substring(lastEnd);
+    if (lastEnd < normalizedContent.length) {
+      final text = normalizedContent.substring(lastEnd);
       if (text.isNotEmpty) {
         spans.add(TextSpan(text: text, style: defaultTextStyle));
       }
@@ -146,7 +190,7 @@ class TexWidget extends StatelessWidget {
 
     // スパンがない場合は通常のテキストとして表示
     if (spans.isEmpty) {
-      return Text(inlineContent, style: defaultTextStyle);
+      return Text(normalizedContent, style: defaultTextStyle);
     }
 
     return RichText(text: TextSpan(children: spans));

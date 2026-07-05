@@ -479,6 +479,20 @@ class AtCoderService {
         if (childElement.localName == 'var') {
           // varタグの内容は数式として扱う
           text += '\$${childElement.text}\$';
+        } else if (childElement.localName == 'strong' ||
+            childElement.localName == 'b') {
+          // 装飾情報をプレーンテキスト化の過程で失わないよう、UI側で
+          // TeXと一緒に解釈できる最小限のMarkdownへ変換する。
+          text += '**${_processTextWithMath(childElement)}**';
+        } else if (childElement.localName == 'em' ||
+            childElement.localName == 'i') {
+          text += '*${_processTextWithMath(childElement)}*';
+        } else if (childElement.localName == 'code') {
+          text += '`${childElement.text}`';
+        } else if (childElement.localName == 'li') {
+          text += '- ${_processTextWithMath(childElement).trim()}\n';
+        } else if (childElement.localName == 'br') {
+          text += '\n';
         } else {
           // 他の要素は再帰的に処理
           text += _processTextWithMath(childElement);
