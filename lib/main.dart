@@ -167,6 +167,37 @@ final _pureBlackColorScheme =
       surfaceTint: Colors.transparent,
     );
 
+/// Material Youのsurface階調は維持しつつ、アクセント用途の色ファミリーを
+/// AtCoderレーティング色から再生成する。
+///
+/// primaryだけを置換するとsecondaryContainerが端末由来の色に残り、設定画面の
+/// アイコンフィールドだけがAtCoderテーマから外れて見えるため、secondaryと
+/// tertiaryも同じseedから導出する。primaryはレート色を忠実に表示する。
+@visibleForTesting
+ColorScheme applyAtCoderAccentColorScheme(ColorScheme base, Color seed) {
+  final generated = ColorScheme.fromSeed(
+    seedColor: seed,
+    brightness: base.brightness,
+  );
+  final onPrimary = _onColorFor(seed);
+
+  return base.copyWith(
+    primary: seed,
+    onPrimary: onPrimary,
+    primaryContainer: seed,
+    onPrimaryContainer: onPrimary,
+    secondary: generated.secondary,
+    onSecondary: generated.onSecondary,
+    secondaryContainer: generated.secondaryContainer,
+    onSecondaryContainer: generated.onSecondaryContainer,
+    tertiary: generated.tertiary,
+    onTertiary: generated.onTertiary,
+    tertiaryContainer: generated.tertiaryContainer,
+    onTertiaryContainer: generated.onTertiaryContainer,
+    surfaceTint: Colors.transparent,
+  );
+}
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -196,26 +227,13 @@ class MyApp extends StatelessWidget {
         if (themeProvider.useAtcoderRatingColor &&
             themeProvider.atcoderAccentColor != null) {
           final seed = themeProvider.atcoderAccentColor!;
-          final onPrimary = seed.computeLuminance() > 0.5
-              ? Colors.black
-              : Colors.white;
-
-          lightColorScheme = lightColorScheme.copyWith(
-            primary: seed,
-            onPrimary: onPrimary,
-            primaryContainer: seed,
-            onPrimaryContainer: onPrimary,
-            surfaceTint: Colors.transparent,
+          lightColorScheme = applyAtCoderAccentColorScheme(
+            lightColorScheme,
+            seed,
           );
 
           final baseDark = darkColorScheme;
-          final darkAdjusted = baseDark.copyWith(
-            primary: seed,
-            onPrimary: onPrimary,
-            primaryContainer: seed,
-            onPrimaryContainer: onPrimary,
-            surfaceTint: Colors.transparent,
-          );
+          final darkAdjusted = applyAtCoderAccentColorScheme(baseDark, seed);
           darkColorScheme = themeProvider.isPureBlack
               ? darkAdjusted.copyWith(
                   surface: Colors.black,
