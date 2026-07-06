@@ -423,10 +423,10 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_markdown_plus
-      sha256: "039177906850278e8fb1cd364115ee0a46281135932fa8ecea8455522166d2de"
+      sha256: "3893b00caa52ce75cf9212f2c159ea517b9d64a641fc2226811bf5f218b5b77e"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.7"
+    version: "1.0.9"
   flutter_math_fork:
     dependency: "direct main"
     description:
@@ -439,10 +439,10 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_monaco
-      sha256: "20bde36c57adba65d031d0f348b2fde50c39a54ffb26ec3b1497fecced65536f"
+      sha256: "077580220c8429a910b9701648334f27145dee78e1e2af730cb6428ba98cdae8"
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.1"
+    version: "2.3.0"
   flutter_oss_licenses:
     dependency: "direct dev"
     description:
@@ -673,10 +673,10 @@ packages:
     dependency: transitive
     description:
       name: markdown
-      sha256: "935e23e1ff3bc02d390bad4d4be001208ee92cc217cb5b5a6c19bc14aaa318c1"
+      sha256: ee85086ad7698b42522c6ad42fe195f1b9898e4d974a1af4576c1a3a176cada9
       url: "https://pub.dev"
     source: hosted
-    version: "7.3.0"
+    version: "7.3.1"
   matcher:
     dependency: transitive
     description:
