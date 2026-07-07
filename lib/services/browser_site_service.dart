@@ -1,11 +1,9 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
 
-import 'package:favicon/favicon.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/browser_site.dart';
-import 'image_color_extractor.dart';
 
 /// ブラウザサイトの管理を行うサービス
 class BrowserSiteService {
@@ -19,7 +17,11 @@ class BrowserSiteService {
 
       return sitesJson.map((jsonString) {
         final map = Map<String, String?>.from(jsonDecode(jsonString));
-        return BrowserSite.fromLegacyMap(map);
+        final site = BrowserSite.fromLegacyMap(map);
+        // faviconUrlは設定ファイルから復元できるため、保持するとアプリ起動時の
+        // Image.networkが任意の宛先へ通信する。カスタムサイトは汎用アイコンで
+        // 表示し、明示的なWebView操作以外の通信を発生させない。
+        return BrowserSite(title: site.title, url: site.url);
       }).toList();
     } catch (e) {
       developer.log('Error loading sites: $e', name: 'BrowserSiteService');
@@ -31,7 +33,13 @@ class BrowserSiteService {
   static Future<void> saveSites(List<BrowserSite> sites) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final sitesJson = sites.map((site) => jsonEncode(site.toJson())).toList();
+      final sitesJson = sites
+          .map(
+            (site) => jsonEncode(
+              BrowserSite(title: site.title, url: site.url).toJson(),
+            ),
+          )
+          .toList();
       await prefs.setStringList(_storageKey, sitesJson);
     } catch (e) {
       developer.log('Error saving sites: $e', name: 'BrowserSiteService');
@@ -39,50 +47,14 @@ class BrowserSiteService {
     }
   }
 
-  /// サイトのメタデータ（ファビコンと支配的な色）を取得
-  static Future<SiteMetadata> fetchSiteMetadata(String url) async {
-    String? faviconUrl;
-    String? colorHex;
-
-    try {
-      // ファビコンを取得
-      final icons = await FaviconFinder.getAll(url);
-      if (icons.isNotEmpty) {
-        faviconUrl = icons.first.url;
-        developer.log(
-          'Favicon found for $url: $faviconUrl',
-          name: 'BrowserSiteService',
-        );
-
-        // 支配的な色を抽出
-        final dominantColor = await ImageColorExtractor.extractDominantColor(
-          faviconUrl,
-        );
-        if (dominantColor != null) {
-          colorHex =
-              '#${dominantColor.toARGB32().toRadixString(16).padLeft(8, '0')}';
-          developer.log(
-            'Dominant color found for $faviconUrl: $colorHex',
-            name: 'BrowserSiteService',
-          );
-        }
-      } else {
-        developer.log('No favicon found for $url', name: 'BrowserSiteService');
-      }
-    } catch (e) {
-      developer.log(
-        'Error fetching metadata for $url: $e',
-        name: 'BrowserSiteService',
-      );
-    }
-
-    return SiteMetadata(faviconUrl: faviconUrl, colorHex: colorHex);
-  }
-
   /// URLの妥当性を検証
   static bool isValidUrl(String url) {
     final uri = Uri.tryParse(url);
-    return uri != null && uri.hasScheme && uri.hasAuthority;
+    return uri != null &&
+        (uri.scheme == 'https' || uri.scheme == 'http') &&
+        uri.hasAuthority &&
+        uri.host.isNotEmpty &&
+        uri.userInfo.isEmpty;
   }
 
   /// デフォルトサイトかどうかを判定
@@ -113,14 +85,6 @@ class BrowserSiteService {
 
     return false;
   }
-}
-
-/// サイトメタデータ
-class SiteMetadata {
-  final String? faviconUrl;
-  final String? colorHex;
-
-  const SiteMetadata({this.faviconUrl, this.colorHex});
 }
 
 /// デフォルトサイト情報

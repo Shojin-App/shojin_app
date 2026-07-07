@@ -7,6 +7,30 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 import '../widgets/shared/web_content_status_header.dart';
 
+/// 提出用WebViewで許可する遷移と、コードを注入してよいページを判定する。
+///
+/// 初期URLだけを信頼すると、リダイレクトやリンク遷移後の別オリジンへ
+/// エディタ内容を渡してしまうため、遷移時と注入直前の両方で検証する。
+abstract final class SubmitNavigationPolicy {
+  static bool isAllowedAtCoderUrl(String url) {
+    final uri = Uri.tryParse(url);
+    return uri != null &&
+        uri.scheme == 'https' &&
+        uri.host == 'atcoder.jp' &&
+        !uri.hasPort &&
+        uri.userInfo.isEmpty;
+  }
+
+  static bool isSubmissionPage(String url) {
+    if (!isAllowedAtCoderUrl(url)) return false;
+    final segments = Uri.parse(url).pathSegments;
+    return segments.length == 3 &&
+        segments[0] == 'contests' &&
+        segments[1].isNotEmpty &&
+        segments[2] == 'submit';
+  }
+}
+
 class SubmitScreen extends StatefulWidget {
   final String url;
   final String initialCode;
@@ -56,6 +80,9 @@ class _SubmitScreenState extends State<SubmitScreen> {
             });
           },
           onPageFinished: (url) {
+            // ログイン等のAtCoder内ページは遷移を許可するが、ソースコードを
+            // DOMへ渡すのは提出ページだけに限定する。
+            if (!SubmitNavigationPolicy.isSubmissionPage(url)) return;
             _controller.runJavaScript('''(function() {
   // debug: select[name="language_id"] presence
   var sel = document.querySelector('select[name="language_id"]');
@@ -113,6 +140,13 @@ class _SubmitScreenState extends State<SubmitScreen> {
               _hasPageError = true;
               _statusMessage = '提出ページを読み込めませんでした';
             });
+          },
+          onNavigationRequest: (request) {
+            // 外部オリジンへの遷移をWebView内で継続させると、そのページの
+            // DOMへ提出コードを注入する境界が再び生じるため、常に遮断する。
+            return SubmitNavigationPolicy.isAllowedAtCoderUrl(request.url)
+                ? NavigationDecision.navigate
+                : NavigationDecision.prevent;
           },
         ),
       )

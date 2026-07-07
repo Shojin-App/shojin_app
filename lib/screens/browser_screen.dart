@@ -72,7 +72,6 @@ class _BrowserScreenState extends State<BrowserScreen>
       if (!supportsEmbeddedWebView) {
         _embeddedBrowserUnavailable = true;
         if (mounted) setState(() {});
-        _updateMissingMetadata();
         return;
       }
 
@@ -117,7 +116,6 @@ class _BrowserScreenState extends State<BrowserScreen>
 
       _isControllerReady = true;
       if (mounted) setState(() {});
-      _updateMissingMetadata();
     } catch (error, stackTrace) {
       // 対応プラットフォームでもWebView実装が利用できない場合は、永久に
       // 待たせず外部ブラウザへ退避できる状態を表示する。
@@ -271,35 +269,6 @@ class _BrowserScreenState extends State<BrowserScreen>
     }
 
     return false;
-  }
-
-  Future<void> _updateMissingMetadata() async {
-    bool needsUpdate = false;
-    for (int i = 0; i < _sites.length; i++) {
-      if (_sites[i].faviconUrl == null || _sites[i].colorHex == null) {
-        try {
-          final metadata = await BrowserSiteService.fetchSiteMetadata(
-            _sites[i].url,
-          );
-          _sites[i] = _sites[i].copyWith(
-            faviconUrl: metadata.faviconUrl,
-            colorHex: metadata.colorHex,
-          );
-          needsUpdate = true;
-        } catch (e) {
-          developer.log(
-            'Error fetching metadata for ${_sites[i].url}: $e',
-            name: 'BrowserScreenMetadata',
-          );
-        }
-      }
-    }
-    if (needsUpdate) {
-      await BrowserSiteService.saveSites(_sites);
-      if (mounted) {
-        setState(() {});
-      }
-    }
   }
 
   Widget _buildDialogTitle(
@@ -467,8 +436,7 @@ class _BrowserScreenState extends State<BrowserScreen>
                     }
 
                     if (isValid) {
-                      final uri = Uri.tryParse(url);
-                      if (uri == null || !uri.hasScheme || !uri.hasAuthority) {
+                      if (!BrowserSiteService.isValidUrl(url)) {
                         setStateDialog(() {
                           urlErrorText =
                               '有効なURLを入力してください (例: https://example.com)';
@@ -479,34 +447,17 @@ class _BrowserScreenState extends State<BrowserScreen>
                   }
 
                   if (isValid) {
-                    showDialog(
-                      context: dialogContext,
-                      barrierDismissible: false,
-                      builder: (context) => const Center(
-                        child: AppLoadingIndicator(semanticsLabel: 'サイト情報を取得中'),
-                      ),
-                    );
                     try {
                       final newSite = BrowserSite(title: title, url: url);
-                      final metadata =
-                          await BrowserSiteService.fetchSiteMetadata(url);
-                      final siteWithMetadata = newSite.copyWithMetadata(
-                        faviconUrl: metadata.faviconUrl,
-                        colorHex: metadata.colorHex,
-                      );
 
                       if (!mounted) {
-                        if (navigator.mounted && navigator.canPop()) {
-                          navigator.pop();
-                        }
                         return;
                       }
 
-                      if (navigator.mounted && navigator.canPop()) {
-                        navigator.pop(); // Dismiss loading
-                      }
-
-                      _sites.add(siteWithMetadata);
+                      // カスタムサイトのfaviconを自動取得すると、設定ファイルや
+                      // HTMLが選んだ宛先へバックグラウンド通信できる。サイト自体は
+                      // 利用者の操作時だけWebViewで開き、ボタンは汎用アイコンにする。
+                      _sites.add(newSite);
                       await BrowserSiteService.saveSites(_sites);
                       if (mounted) {
                         setState(() {});
@@ -515,9 +466,6 @@ class _BrowserScreenState extends State<BrowserScreen>
                         navigator.pop(); // Close add dialog
                       }
                     } catch (e) {
-                      if (navigator.mounted && navigator.canPop()) {
-                        navigator.pop(); // Dismiss loading
-                      }
                       developer.log(
                         'Error adding site $url: $e',
                         name: 'BrowserScreenAddSite',
@@ -689,8 +637,7 @@ class _BrowserScreenState extends State<BrowserScreen>
                     return;
                   }
 
-                  final uri = Uri.tryParse(newUrl);
-                  if (uri == null || !uri.hasScheme || !uri.hasAuthority) {
+                  if (!BrowserSiteService.isValidUrl(newUrl)) {
                     setStateDialog(() {
                       urlErrorText = '有効なURLを入力してください。';
                     });
@@ -710,10 +657,6 @@ class _BrowserScreenState extends State<BrowserScreen>
                   await BrowserSiteService.saveSites(_sites);
 
                   if (mounted) setState(() {});
-
-                  if (newUrl != oldUrl) {
-                    _updateMissingMetadata();
-                  }
 
                   if (navigator.mounted && navigator.canPop()) {
                     navigator.pop();
