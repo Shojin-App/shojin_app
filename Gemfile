@@ -11,7 +11,7 @@ gem "fiddle", "~> 1.1"
 gem "ostruct"
 
 # iOS は現状非対応だが、依存で参照されることがあるため念のため
-gem "xcodeproj", "~> 1.24", platforms: [:ruby]
+gem "xcodeproj", "~> 1.28", platforms: [:ruby]
 
 # To install:
 #   bundle install
