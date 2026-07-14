@@ -101,12 +101,16 @@ void main() {
       contestId: 'abc999',
       contestName: 'AtCoder Beginner Contest 999 Extended Name',
       statement:
-          '整数 A と整数 B が与えられます。\n'
+          '**重要**な条件です。\n'
+          '- 整数 A と整数 B が与えられます。\n'
           '[[[DETAILS:補足説明]]]\n補足の本文です。\n[[[/DETAILS]]]',
       constraints: '1 <= A, B <= 1000000000',
       inputFormat: '入力は以下の形式で標準入力から与えられる。\n\n```\n\$A\$ \$B\$\n```',
       outputFormat: '答えを出力してください。',
-      samples: [SampleIO(input: '1 2', output: '3', index: 1)],
+      samples: [
+        SampleIO(input: '1 2', output: '3', index: 1),
+        SampleIO(input: '10 20', output: '30', index: 2),
+      ],
       url: 'https://atcoder.jp/contests/abc999/tasks/abc999_a',
     );
 
@@ -135,7 +139,20 @@ void main() {
     expect(find.text('問題文'), findsOneWidget);
     expect(find.text('入力例 1'), findsOneWidget);
     expect(find.text('出力例 1'), findsOneWidget);
+    expect(find.text('入力例 2'), findsOneWidget);
+    expect(find.text('出力例 2'), findsOneWidget);
     expect(find.byTooltip('入力例 1をコピー'), findsOneWidget);
+    final formattedStatement = tester.widget<RichText>(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is RichText && widget.text.toPlainText().contains('重要な条件'),
+      ),
+    );
+    expect(formattedStatement.text.toPlainText(), contains('• 整数 A'));
+    expect(
+      _findTextSpan(formattedStatement.text, '重要')?.style?.fontWeight,
+      FontWeight.w700,
+    );
     // 入力の説明は形式のコード背景とは別のTexWidgetとして描画される。
     expect(find.byKey(const Key('problem-input-description')), findsOneWidget);
     expect(find.byKey(const Key('problem-input-format')), findsOneWidget);
@@ -169,6 +186,17 @@ void main() {
       find.byKey(const ValueKey('sample-block-出力例 1')),
     );
     expect(outputBlock.top - inputBlock.bottom, 12);
+    final secondInputBlock = tester.getRect(
+      find.byKey(const ValueKey('sample-block-入力例 2')),
+    );
+    expect(secondInputBlock.top - outputBlock.bottom, 20);
+    final sampleText = tester.widget<SelectableText>(
+      find.descendant(
+        of: find.byKey(const ValueKey('sample-block-入力例 1')),
+        matching: find.byType(SelectableText),
+      ),
+    );
+    expect(sampleText.style?.fontFamily, defaultCodeFontFamily);
     expect(
       tester.getSize(find.byKey(const ValueKey('sample-header-入力例 1'))).height,
       40,
@@ -226,6 +254,16 @@ void main() {
     expect(find.byKey(const Key('problem-input-format')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+}
+
+TextSpan? _findTextSpan(InlineSpan span, String text) {
+  if (span is! TextSpan) return null;
+  if (span.text == text) return span;
+  for (final child in span.children ?? const <InlineSpan>[]) {
+    final match = _findTextSpan(child, text);
+    if (match != null) return match;
+  }
+  return null;
 }
 
 class _FakeAtCoderService extends AtCoderService {

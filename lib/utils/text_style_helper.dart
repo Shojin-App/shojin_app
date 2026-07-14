@@ -12,9 +12,12 @@ TextStyle getMonospaceTextStyle(
   Color? color,
   FontWeight? fontWeight,
 }) {
-  if (fontFamily == 'monospace') {
+  if (fontFamily == 'monospace' || fontFamily == 'HackGen35') {
+    // HackGen35はpubspecで同梱しているため、Google Fontsの有効・無効に
+    // 関係なく直接指定できる。AppFontsへ渡すとF-Droidビルドでは
+    // sans-serifへフォールバックし、コードの桁揃えが崩れてしまう。
     return TextStyle(
-      fontFamily: 'monospace',
+      fontFamily: fontFamily,
       fontSize: fontSize,
       color: color,
       fontWeight: fontWeight,

@@ -36,6 +36,10 @@ class ProblemDetailScreen extends StatefulWidget {
 }
 
 class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
+  // 数式は和文本文と同じサイズだと添字や分数が潰れやすい。レイアウトを
+  // 大きく変えない範囲で問題画面内のTeXだけを一貫して少し拡大する。
+  static const _problemMathTextScaleFactor = 1.12;
+
   final _urlController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   late final AtCoderService _atCoderService;
@@ -615,7 +619,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
                         ],
                         TexWidget(
                           content: problem.title,
-                          mathTextScaleFactor: 1.08,
+                          mathTextScaleFactor: _problemMathTextScaleFactor,
                           textStyle: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
@@ -774,7 +778,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
           child: TexWidget(
             content: content,
             textStyle: theme.textTheme.bodyMedium,
-            mathTextScaleFactor: 1.08,
+            mathTextScaleFactor: _problemMathTextScaleFactor,
           ),
         ),
       );
@@ -796,7 +800,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
                   : null,
               content: parts[i].trim(),
               textStyle: theme.textTheme.bodyMedium,
-              mathTextScaleFactor: 1.08,
+              mathTextScaleFactor: _problemMathTextScaleFactor,
             ),
           );
         } else {
@@ -825,7 +829,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
               child: TexWidget(
                 content: parts[i].trim(),
                 textStyle: getMonospaceTextStyle(codeFontFamily),
-                mathTextScaleFactor: 1.08,
+                mathTextScaleFactor: _problemMathTextScaleFactor,
               ),
             ),
           );
@@ -837,7 +841,7 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
         TexWidget(
           content: content,
           textStyle: theme.textTheme.bodyMedium,
-          mathTextScaleFactor: 1.08,
+          mathTextScaleFactor: _problemMathTextScaleFactor,
         ),
       );
     }
@@ -887,27 +891,34 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSampleBlock(
-          title: '入力例 ${sample.index}',
-          content: sample.input,
-          codeFontFamily: codeFontFamily,
-          theme: theme,
-          colorScheme: colorScheme,
-          copiedMessage: '入力例をコピーしました',
-        ),
-        const SizedBox(height: 12),
-        _buildSampleBlock(
-          title: '出力例 ${sample.index}',
-          content: sample.output,
-          codeFontFamily: codeFontFamily,
-          theme: theme,
-          colorScheme: colorScheme,
-          copiedMessage: '出力例をコピーしました',
-        ),
-      ],
+    return Padding(
+      key: ValueKey('sample-group-${sample.index}'),
+      // 出力形式→入力例1と、出力例n→入力例n+1の境界には見出しがない。
+      // 各サンプル群側で余白を持たせ、隣接するコード枠を別の組として読める
+      // ようにする。入力例と対応する出力例は近い12pxのまま維持する。
+      padding: const EdgeInsets.only(top: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSampleBlock(
+            title: '入力例 ${sample.index}',
+            content: sample.input,
+            codeFontFamily: codeFontFamily,
+            theme: theme,
+            colorScheme: colorScheme,
+            copiedMessage: '入力例をコピーしました',
+          ),
+          const SizedBox(height: 12),
+          _buildSampleBlock(
+            title: '出力例 ${sample.index}',
+            content: sample.output,
+            codeFontFamily: codeFontFamily,
+            theme: theme,
+            colorScheme: colorScheme,
+            copiedMessage: '出力例をコピーしました',
+          ),
+        ],
+      ),
     );
   }
 
