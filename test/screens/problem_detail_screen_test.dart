@@ -189,6 +189,43 @@ void main() {
     );
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('multiple input code fences keep identification keys unique', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final problem = Problem(
+      title: 'A - 複数形式の入力',
+      contestId: 'abc999',
+      contestName: 'AtCoder Beginner Contest 999',
+      statement: '問題文です。',
+      constraints: '制約です。',
+      inputFormat:
+          '最初の入力です。\n```\n\$N\$\n```\n'
+          '続いて次の入力です。\n```\n\$A_1\$ ... \$A_N\$\n```',
+      outputFormat: '答えを出力してください。',
+      samples: const [],
+      url: 'https://atcoder.jp/contests/abc999/tasks/abc999_a',
+    );
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider(
+        create: (_) => ThemeProvider(),
+        child: MaterialApp(
+          home: ProblemDetailScreen(
+            problemIdToLoad: 'abc999_a',
+            atCoderService: _FakeAtCoderService(problem),
+            onProblemChanged: (_) {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('problem-input-description')), findsOneWidget);
+    expect(find.byKey(const Key('problem-input-format')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }
 
 class _FakeAtCoderService extends AtCoderService {

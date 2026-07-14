@@ -753,6 +753,8 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
     final colorScheme = theme.colorScheme;
     final contentWidgets = <Widget>[];
     final parts = content.split(RegExp(r'```'));
+    var hasAssignedInputDescriptionKey = false;
+    var hasAssignedInputFormatKey = false;
 
     // 「入力」セクションで、かつコードブロックがない場合の特別処理
     if (title == '入力' && parts.length <= 1) {
@@ -782,9 +784,14 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
         if (parts[i].trim().isEmpty) continue;
 
         if (i % 2 == 0) {
+          // 入力形式に複数のコードフェンスがある場合も、テストや画面内検索用の
+          // 識別キーは最初の各ブロックだけに付け、兄弟要素のキーを一意に保つ。
+          final shouldAssignInputDescriptionKey =
+              title == '入力' && useInputKeys && !hasAssignedInputDescriptionKey;
+          hasAssignedInputDescriptionKey |= shouldAssignInputDescriptionKey;
           contentWidgets.add(
             TexWidget(
-              key: title == '入力' && useInputKeys
+              key: shouldAssignInputDescriptionKey
                   ? const Key('problem-input-description')
                   : null,
               content: parts[i].trim(),
@@ -793,9 +800,12 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen> {
             ),
           );
         } else {
+          final shouldAssignInputFormatKey =
+              title == '入力' && useInputKeys && !hasAssignedInputFormatKey;
+          hasAssignedInputFormatKey |= shouldAssignInputFormatKey;
           contentWidgets.add(
             Container(
-              key: title == '入力' && useInputKeys
+              key: shouldAssignInputFormatKey
                   ? const Key('problem-input-format')
                   : null,
               width: double.infinity,
