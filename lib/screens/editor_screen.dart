@@ -32,7 +32,6 @@ import '../utils/responsive_layout.dart';
 import '../widgets/monaco_code_editor.dart';
 import '../widgets/programming_language_icon.dart';
 import '../widgets/shared/copyable_code_section.dart';
-import '../widgets/shared/responsive_action.dart';
 import 'code_history_screen.dart';
 import 'submit_screen.dart'; // 提出画面を表示するWebViewスクリーン
 
@@ -1098,300 +1097,261 @@ class _EditorScreenState extends State<EditorScreen> {
     );
   }
 
-  Widget _buildExecutionControls(bool isButtonDisabled) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+  Future<void> _runAndShowOutput() async {
+    await _runCode();
+    if (!mounted) return;
+    await _showIoSheet(initialIndex: 1);
+  }
 
-    final runButton = ButtonM3E(
-      style: ButtonM3EStyle.filled,
-      icon: _isRunning
-          ? SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation(colorScheme.onPrimary),
-              ),
-            )
-          : const Icon(Icons.play_arrow),
-      label: const Text('実行'),
-      onPressed: _isRunning ? null : _runCode,
-    );
+  Future<void> _showIoSheet({int initialIndex = 0}) async {
+    final codeFontFamily = Provider.of<ThemeProvider>(
+      context,
+      listen: false,
+    ).codeFontFamily;
+    _stdinFocusNode.unfocus();
 
-    final sampleButton = ButtonM3E(
-      style: ButtonM3EStyle.tonal,
-      icon: _isTesting
-          ? SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation(
-                  colorScheme.onSecondaryContainer,
-                ),
-              ),
-            )
-          : const Icon(Icons.checklist_rtl),
-      label: const Text('サンプル'),
-      onPressed: isButtonDisabled
-          ? null
-          : () {
-              _log('★★★ Test Button Pressed! ★★★');
-              _runTests();
-            },
-    );
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      constraints: const BoxConstraints(maxWidth: 720),
+      builder: (sheetContext) {
+        final mediaQuery = MediaQuery.of(sheetContext);
+        final usableHeight =
+            mediaQuery.size.height - mediaQuery.viewInsets.bottom;
+        final sheetHeight = (usableHeight * 0.56)
+            .clamp(220.0, 440.0)
+            .toDouble();
+        final colorScheme = Theme.of(sheetContext).colorScheme;
 
-    final submitButton = ButtonM3E(
-      style: ButtonM3EStyle.filled,
-      icon: const Icon(Icons.cloud_upload),
-      label: const Text('提出'),
-      onPressed: _openSubmitScreen,
-    );
-
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.fromLTRB(4, 6, 4, 4),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      clipBehavior: Clip.antiAlias,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    Icons.terminal,
-                    size: 20,
-                    color: colorScheme.onPrimaryContainer,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '実行と提出',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
+        return Padding(
+          padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
+          child: SizedBox(
+            key: const Key('editor-io-sheet'),
+            height: sheetHeight,
+            child: DefaultTabController(
+              length: 2,
+              initialIndex: initialIndex,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 8, 4),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '入出力',
+                            style: Theme.of(sheetContext).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
                         ),
-                      ),
-                      Text(
-                        _currentProblem == null
-                            ? 'コードを実行できます'
-                            : 'サンプルテストと提出をここから実行',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
+                        TextButton.icon(
+                          icon: _isTesting
+                              ? const SizedBox.square(
+                                  dimension: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.checklist_rtl, size: 18),
+                          label: const Text('サンプル'),
+                          onPressed:
+                              _isTesting ||
+                                  _currentProblem == null ||
+                                  _currentProblem!.samples.isEmpty
+                              ? null
+                              : () {
+                                  Navigator.pop(sheetContext);
+                                  _log('★★★ Test Button Pressed! ★★★');
+                                  _runTests();
+                                },
                         ),
-                      ),
-                    ],
+                        IconButton(
+                          tooltip: '閉じる',
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(sheetContext),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                if (_currentProblem == null) {
-                  return ResponsiveAction(maxWidth: 220, child: runButton);
-                }
-
-                if (constraints.maxWidth < 420) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(child: runButton),
-                          const SizedBox(width: 8),
-                          Expanded(child: sampleButton),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      submitButton,
+                  TabBar(
+                    tabs: const [
+                      Tab(text: '標準入力'),
+                      Tab(text: '実行結果'),
                     ],
-                  );
-                }
-
-                return Row(
-                  children: [
-                    Expanded(child: runButton),
-                    const SizedBox(width: 8),
-                    Expanded(child: sampleButton),
-                    const SizedBox(width: 8),
-                    Expanded(child: submitButton),
-                  ],
-                );
-              },
+                    dividerColor: colorScheme.outlineVariant,
+                  ),
+                  Expanded(
+                    child: TabBarView(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: _buildStdinPanel(codeFontFamily),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: _buildOutputPanel(codeFontFamily),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildIoPanel(String codeFontFamily, bool isKeyboardVisible) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
+  Widget _buildEditorCommandBar(bool isSubmitDisabled) {
     return Card(
+      key: const Key('editor-command-bar'),
       elevation: 2,
       margin: const EdgeInsets.fromLTRB(4, 4, 4, 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       clipBehavior: Clip.antiAlias,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final stackVertically = constraints.maxWidth < 600;
-            final inputFlex = stackVertically && isKeyboardVisible ? 4 : 1;
-            final outputFlex = 1;
-            final inputPanel = KeyedSubtree(
-              key: const Key('editor-stdin-panel'),
-              child: _buildTextPanel(
-                title: '標準入力',
-                subtitle: 'stdin',
-                icon: Icons.keyboard_alt_outlined,
-                child: TextField(
-                  controller: _stdinController,
-                  focusNode: _stdinFocusNode,
-                  scrollController: _stdinScrollController,
-                  expands: true,
-                  minLines: null,
-                  maxLines: null,
-                  keyboardType: TextInputType.multiline,
-                  textAlignVertical: TextAlignVertical.top,
-                  scrollPadding: const EdgeInsets.all(24),
-                  onTap: () => _stdinFocusNode.requestFocus(),
-                  decoration: InputDecoration(
-                    hintText: 'プログラムへの入力をここに入力します',
-                    hintStyle: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                    border: InputBorder.none,
-                    isDense: true,
-                  ),
-                  style: getMonospaceTextStyle(codeFontFamily, fontSize: 13),
-                ),
-                scrollController: _stdinScrollController,
-                scrollChild: false,
-              ),
-            );
-
-            // ソフトウェアキーボードで縦幅が狭くなる間は、操作ボタンや出力を
-            // 同居させずstdinへ全領域を渡す。フォーカスだけを判定すると、
-            // Androidの戻る操作でキーボードが閉じた後も縮小状態が残る。
-            if (isKeyboardVisible) return inputPanel;
-
-            return Flex(
-              direction: stackVertically ? Axis.vertical : Axis.horizontal,
-              children: [
-                Expanded(flex: inputFlex, child: inputPanel),
-                SizedBox(
-                  width: stackVertically ? 0 : 12,
-                  height: stackVertically ? 12 : 0,
-                ),
-                Expanded(
-                  flex: outputFlex,
-                  child: _buildTextPanel(
-                    title: '実行結果',
-                    subtitle: 'stdout / stderr',
-                    icon: Icons.output_outlined,
-                    trailing: IconButton(
-                      tooltip: '実行結果をコピー',
-                      icon: const Icon(Icons.copy_outlined, size: 18),
-                      onPressed: _output.isEmpty && _error.isEmpty
-                          ? null
-                          : _copyExecutionResult,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (_output.isEmpty && _error.isEmpty)
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: colorScheme.surfaceContainerHigh
-                                  .withValues(alpha: 0.6),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: colorScheme.outlineVariant.withValues(
-                                  alpha: 0.65,
-                                ),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.play_circle_outline,
-                                  size: 18,
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    'まだ実行結果はありません',
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: colorScheme.onSurfaceVariant,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        if (_output.isNotEmpty)
-                          SelectableText(
-                            _output,
-                            style: getMonospaceTextStyle(
-                              codeFontFamily,
-                              fontSize: 13,
-                            ),
-                          ),
-                        if (_error.isNotEmpty) ...[
-                          Padding(
-                            padding: EdgeInsets.only(
-                              top: _output.isNotEmpty ? 8.0 : 0,
-                            ),
-                            child: Text(
-                              'エラー出力',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                color: colorScheme.error,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          SelectableText(
-                            _error,
-                            style: getMonospaceTextStyle(
-                              codeFontFamily,
-                              fontSize: 13,
-                              color: colorScheme.error,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    scrollController: _ioScrollController,
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _EditorCommandButton(
+              icon: Icons.play_arrow,
+              label: '実行',
+              isBusy: _isRunning,
+              onPressed: _isRunning ? null : _runAndShowOutput,
+            ),
+          ),
+          Expanded(
+            child: _EditorCommandButton(
+              icon: Icons.terminal,
+              label: '入出力',
+              onPressed: () => _showIoSheet(),
+            ),
+          ),
+          Expanded(
+            child: _EditorCommandButton(
+              icon: Icons.cloud_upload_outlined,
+              label: '提出',
+              onPressed: isSubmitDisabled ? null : _openSubmitScreen,
+            ),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildStdinPanel(String codeFontFamily) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return KeyedSubtree(
+      key: const Key('editor-stdin-panel'),
+      child: _buildTextPanel(
+        title: '標準入力',
+        subtitle: 'stdin',
+        icon: Icons.keyboard_alt_outlined,
+        child: TextField(
+          controller: _stdinController,
+          focusNode: _stdinFocusNode,
+          scrollController: _stdinScrollController,
+          expands: true,
+          minLines: null,
+          maxLines: null,
+          keyboardType: TextInputType.multiline,
+          textAlignVertical: TextAlignVertical.top,
+          scrollPadding: const EdgeInsets.all(24),
+          decoration: InputDecoration(
+            hintText: 'プログラムへの入力をここに入力します',
+            hintStyle: theme.textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+            border: InputBorder.none,
+            isDense: true,
+          ),
+          style: getMonospaceTextStyle(codeFontFamily, fontSize: 13),
+        ),
+        scrollController: _stdinScrollController,
+        scrollChild: false,
+      ),
+    );
+  }
+
+  Widget _buildOutputPanel(String codeFontFamily) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return _buildTextPanel(
+      title: '実行結果',
+      subtitle: 'stdout / stderr',
+      icon: Icons.output_outlined,
+      trailing: IconButton(
+        tooltip: '実行結果をコピー',
+        icon: const Icon(Icons.copy_outlined, size: 18),
+        onPressed: _output.isEmpty && _error.isEmpty
+            ? null
+            : _copyExecutionResult,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (_output.isEmpty && _error.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHigh.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.65),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.play_circle_outline,
+                    size: 18,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'まだ実行結果はありません',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (_output.isNotEmpty)
+            SelectableText(
+              _output,
+              style: getMonospaceTextStyle(codeFontFamily, fontSize: 13),
+            ),
+          if (_error.isNotEmpty) ...[
+            Padding(
+              padding: EdgeInsets.only(top: _output.isNotEmpty ? 8.0 : 0),
+              child: Text(
+                'エラー出力',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: colorScheme.error,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            SelectableText(
+              _error,
+              style: getMonospaceTextStyle(
+                codeFontFamily,
+                fontSize: 13,
+                color: colorScheme.error,
+              ),
+            ),
+          ],
+        ],
+      ),
+      scrollController: _ioScrollController,
     );
   }
 
@@ -1541,19 +1501,16 @@ class _EditorScreenState extends State<EditorScreen> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final codeFontFamily = themeProvider.codeFontFamily;
-    final isKeyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     final bool isLoadingProblem =
         _isLoadingCode ||
         (widget.problemId != 'default_problem' && _currentProblem == null);
-    final bool isButtonDisabled =
-        isLoadingProblem ||
-        _isTesting ||
-        _currentProblem == null ||
-        (_currentProblem?.samples.isEmpty ?? true);
+    final isSubmitDisabled =
+        isLoadingProblem || widget.problemId == 'default_problem';
 
     return Scaffold(
-      // stdinへの入力中は画面をキーボードの上まで縮め、入力欄が
-      // オーバーレイの背後に残らないことを明示的に保証する。
+      // コード編集時はエディタを自然に縮め、標準入力は別Routeの
+      // ボトムシート側でviewInsetsを受ける。どちらのフォーカスでも
+      // 入力先を自動的に切り替えないことがこの画面の不変条件。
       resizeToAvoidBottomInset: true,
       appBar: _EditorAppBar(
         selectedLanguage: _selectedLanguage,
@@ -1629,15 +1586,15 @@ class _EditorScreenState extends State<EditorScreen> {
           builder: (context, themeProvider, child) {
             return Column(
               children: [
-                // ローディング表示 or コードエディタ
+                // エディタは常に画面の主領域に保ち、標準入力の
+                // フォーカスやキーボード開閉で別UIへ差し替えない。
                 if (isLoadingProblem)
                   const Expanded(
                     child: Center(child: CircularProgressIndicator()),
                   )
-                else if (!isKeyboardVisible)
+                else ...[
                   Expanded(
                     key: const Key('editor-code-area'),
-                    flex: 3,
                     child: themeProvider.editorType == EditorType.monaco
                         ? MonacoCodeEditor(
                             key: _monacoEditorKey,
@@ -1654,22 +1611,76 @@ class _EditorScreenState extends State<EditorScreen> {
                             codeFontFamily: codeFontFamily,
                           ),
                   ),
-
-                // 入出力エリア: ボタン行 + 左右分割 (stdin | stdout/stderr)
-                if (!isLoadingProblem) ...[
-                  if (!isKeyboardVisible)
-                    _buildExecutionControls(isButtonDisabled),
-                  Expanded(
-                    key: const Key('editor-io-area'),
-                    // キーボード表示中は入力欄へ利用可能な高さをすべて渡す。
-                    // 狭い端末でstdinが数行しか見えなくなるのを防ぐ。
-                    flex: isKeyboardVisible ? 1 : 2,
-                    child: _buildIoPanel(codeFontFamily, isKeyboardVisible),
-                  ),
+                  _buildEditorCommandBar(isSubmitDisabled),
                 ],
               ],
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+class _EditorCommandButton extends StatelessWidget {
+  const _EditorCommandButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+    this.isBusy = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback? onPressed;
+  final bool isBusy;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final enabled = onPressed != null;
+    final foreground = enabled
+        ? colorScheme.onSurface
+        : colorScheme.onSurface.withValues(alpha: 0.38);
+
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: label,
+      child: InkWell(
+        onTap: onPressed,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 64),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isBusy)
+                  SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: foreground,
+                    ),
+                  )
+                else
+                  Icon(icon, size: 22, color: foreground),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: foreground,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

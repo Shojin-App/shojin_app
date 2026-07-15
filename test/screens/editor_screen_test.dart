@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:m3e_collection/m3e_collection.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shojin_app/providers/template_provider.dart';
@@ -39,11 +38,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Python'), findsOneWidget);
-    expect(find.text('実行と提出'), findsOneWidget);
-    expect(find.text('サンプル'), findsNothing);
-    expect(find.text('提出'), findsNothing);
-    expect(find.text('標準入力'), findsOneWidget);
-    expect(find.byTooltip('実行結果をコピー'), findsOneWidget);
+    expect(find.byKey(const Key('editor-code-area')), findsOneWidget);
+    expect(find.byKey(const Key('editor-command-bar')), findsOneWidget);
+    expect(find.text('実行'), findsOneWidget);
+    expect(find.text('入出力'), findsOneWidget);
+    expect(find.text('提出'), findsOneWidget);
+    expect(find.text('標準入力'), findsNothing);
     expect(
       tester.getSize(find.byKey(const Key('editor-language-selector'))).height,
       48,
@@ -58,20 +58,31 @@ void main() {
     final overflowShape =
         (overflowMenu as PopupMenuButton).shape! as RoundedRectangleBorder;
     expect(overflowShape.borderRadius, BorderRadius.circular(8));
-    final narrowRunButton = find.ancestor(
-      of: find.text('実行'),
-      matching: find.byType(ButtonM3E),
-    );
-    expect(tester.getSize(narrowRunButton).width, greaterThan(220));
     expect(
-      tester
-          .widget<IconButton>(
-            find.widgetWithIcon(IconButton, Icons.copy_outlined),
-          )
-          .onPressed,
-      isNull,
+      tester.getSize(find.byKey(const Key('editor-command-bar'))).height,
+      lessThanOrEqualTo(80),
     );
     expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('入出力'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('editor-io-sheet')), findsOneWidget);
+    expect(find.text('標準入力'), findsAtLeastNWidgets(1));
+    expect(find.text('実行結果'), findsAtLeastNWidgets(1));
+    expect(find.text('サンプル'), findsOneWidget);
+    final stdinField = tester.widget<TextField>(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField &&
+            widget.decoration?.hintText == 'プログラムへの入力をここに入力します',
+      ),
+    );
+    expect(stdinField.focusNode?.hasFocus, isFalse);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.byTooltip('閉じる'));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.byTooltip('その他'));
     await tester.pumpAndSettle();
@@ -81,7 +92,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('single run action stays compact on a wide screen', (
+  testWidgets('editor command bar stays compact on a wide screen', (
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
@@ -103,20 +114,18 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final runButton = find.ancestor(
-      of: find.text('実行'),
-      matching: find.byType(ButtonM3E),
+    expect(find.byKey(const Key('editor-code-area')), findsOneWidget);
+    expect(find.text('実行'), findsOneWidget);
+    expect(find.text('入出力'), findsOneWidget);
+    expect(find.text('提出'), findsOneWidget);
+    expect(
+      tester.getSize(find.byKey(const Key('editor-command-bar'))).height,
+      lessThanOrEqualTo(80),
     );
-    expect(runButton, findsOneWidget);
-    expect(find.text('サンプル'), findsNothing);
-    expect(find.text('提出'), findsNothing);
-    expect(tester.getSize(runButton).width, 220);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('restores editor height when the keyboard closes', (
-    tester,
-  ) async {
+  testWidgets('stdin sheet does not replace the code editor', (tester) async {
     SharedPreferences.setMockInitialValues({});
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
@@ -131,33 +140,34 @@ void main() {
           ChangeNotifierProvider(create: (_) => TemplateProvider()),
         ],
         child: const MaterialApp(
-          home: EditorScreen(problemId: 'default_problem'),
+          // MainScreenがEditorScreenをScaffold内に保持する実機と同じ
+          // 構造で、キーボード表示時のオーバーフローを検出する。
+          home: Scaffold(body: EditorScreen(problemId: 'default_problem')),
         ),
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('editor-code-area')), findsOneWidget);
+    await tester.tap(find.text('入出力'));
+    await tester.pumpAndSettle();
 
-    await tester.tap(
-      find.byWidgetPredicate(
-        (widget) =>
-            widget is TextField &&
-            widget.decoration?.hintText == 'プログラムへの入力をここに入力します',
-      ),
+    final stdinFinder = find.byWidgetPredicate(
+      (widget) =>
+          widget is TextField &&
+          widget.decoration?.hintText == 'プログラムへの入力をここに入力します',
     );
+    expect(tester.widget<TextField>(stdinFinder).focusNode?.hasFocus, isFalse);
+    await tester.tap(stdinFinder);
     tester.view.viewInsets = const FakeViewPadding(bottom: 300);
     await tester.pump();
-    expect(find.byKey(const Key('editor-code-area')), findsNothing);
-    expect(find.text('実行と提出'), findsNothing);
+    expect(find.byKey(const Key('editor-code-area')), findsOneWidget);
+    expect(find.byKey(const Key('editor-command-bar')), findsOneWidget);
     expect(
-      tester.getSize(find.byKey(const Key('editor-stdin-panel'))).height,
-      greaterThan(250),
+      tester.getSize(find.byKey(const Key('editor-io-sheet'))).height,
+      inInclusiveRange(220, 440),
     );
 
-    // Androidの戻る操作はTextFieldのフォーカスを残したまま、キーボードだけ
-    // 閉じることがある。この状態でもコード領域が元に戻ることを確認する。
     tester.view.viewInsets = FakeViewPadding.zero;
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(find.byKey(const Key('editor-code-area')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
