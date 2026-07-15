@@ -8,8 +8,8 @@ void main() {
       <div id="task-statement">
         <h3>入力</h3>
         <p>入力は以下の形式で標準入力から与えられる。</p>
-        <pre>N
-A_1 A_2 ... A_N</pre>
+        <pre><var>N</var>
+<var>A_1</var> <var>A_2</var> ... <var>A_N</var></pre>
         <h3>出力</h3>
       </div>
     ''',
@@ -17,7 +17,13 @@ A_1 A_2 ... A_N</pre>
     );
 
     expect(content, startsWith('入力は以下の形式で標準入力から与えられる。'));
-    expect(content, contains('```\nN\nA_1 A_2 ... A_N\n```'));
+    expect(
+      content,
+      contains(r'''```
+$N$
+$A_1$ $A_2$ ... $A_N$
+```'''),
+    );
     expect(
       content.indexOf('入力は以下の形式で標準入力から与えられる。'),
       lessThan(content.indexOf('```')),

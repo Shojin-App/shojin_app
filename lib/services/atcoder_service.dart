@@ -384,10 +384,12 @@ class AtCoderService {
 
   void _appendSectionElement(StringBuffer buffer, Element element) {
     if (element.localName == 'pre') {
-      // 説明文と形式をUIで別表示できるよう、pre要素の境界を保持する。
+      // pre.textではAtCoderが変数に付けた<var>の意味が失われる。
+      // 空白と改行はコードブロックの配置に必要なためそのまま保ち、
+      // varだけをTeX区間に変換してUIまで数式情報を運ぶ。
       buffer
         ..write('\n\n```\n')
-        ..write(element.text.trim())
+        ..write(_processPreformattedContent(element).trim())
         ..write('\n```\n\n');
       return;
     }
@@ -418,6 +420,29 @@ class AtCoderService {
     buffer
       ..write(_processTextWithMath(element))
       ..write('\n');
+  }
+
+  String _processPreformattedContent(Element element) {
+    final text = StringBuffer();
+    for (final node in element.nodes) {
+      if (node.nodeType == Node.TEXT_NODE) {
+        // pre内の改行や連続空白は入力形式そのものなので、
+        // 通常本文用の自動整形は適用しない。
+        text.write(node.text ?? '');
+        continue;
+      }
+      if (node.nodeType != Node.ELEMENT_NODE) continue;
+
+      final child = node as Element;
+      if (child.localName == 'var') {
+        text.write('\$${child.text}\$');
+      } else if (child.localName == 'br') {
+        text.write('\n');
+      } else {
+        text.write(_processPreformattedContent(child));
+      }
+    }
+    return text.toString();
   }
 
   /// 入力セクションの内容をクリーンアップする
