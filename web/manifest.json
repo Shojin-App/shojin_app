@@ -1,6 +1,6 @@
 {
-    "name": "shojin_app",
-    "short_name": "shojin_app",
+    "name": "Shojin",
+    "short_name": "Shojin",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
