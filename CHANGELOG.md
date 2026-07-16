@@ -1,5 +1,76 @@
 ## [Unreleased]
 
+## [2.0.1] - 2026-07-16
+
+- 🐛 fix: unify display name as Shojin
+- ci: remove Gemini and license snapshot workflows
+- 🐛 fix: reliably cancel Android contest reminders
+- 🔧 chore(deps): bump the pub-minor-patch group across 1 directory with 3 updates
+- 🔧 chore: remove unused code blocks from the repository Cleaned up the codebase by eliminating redundant code sections to improve maintainability and readability.
+- ♻️  refactor: rebuild editor around code workspace
+- 🐛 fix: update Flutter version to 3.44.6
+- 🐛 fix: preserve TeX in input format blocks
+- 📝 docs: AGENTS.mdにコミットの頻度に関するガイドラインを追加
+- 🐛 fix: polish problem statement rendering
+- Keep problem input identification keys unique
+- 🔧 chore(deps): bump fastlane from 2.236.1 to 2.237.0
+- 🔧 chore(deps): bump xcodeproj from 1.27.0 to 1.28.1
+- Harden browser metadata and submit navigation checks
+- 🐛 fix: improve text rendering and input handling in various screens - Adjusted text alignment and padding in the editor screen for better usability. - Enhanced the problem detail screen to preserve semantic emphasis and list markers. - Updated the TexWidget to handle inline Markdown formatting more effectively. - Added tests to ensure proper rendering of formatted content.
+- 🐛 fix: refine problem content layout and parsing
+- 🐛 fix: stabilize editor input and widget reordering
+- 🐛 fix: apply AtCoder accent color family
+- ✅ test: assert Material You icon separation
+- ✅ test: cover Material You icon contrast
+- ci: pin Flutter to mise version
+- 🔧 chore(deps): update runtime dependencies
+- 🐛 fix: refine editor and problem navigation UI
+- 🐛 fix: restore scheduled contest reminders
+- ✨ feat: include authenticated AtCoder contests
+- 🐛 fix: improve editor home and reminder behavior
+- 📝 docs: AGENTS.mdにファイル編集や新規作成の許可を追加
+- ✅ test: add widget tests for various screens and components to support enlarged text on narrow screens - Implemented tests for settings screen, template edit screen, TeX test screen, and upcoming contests screen. - Added tests for responsive behavior of bottom navigation, browser site form fields, and recommendation problem card. - Ensured that dialogs and notifications handle enlarged text correctly. - Verified that various UI components maintain usability and aesthetics across different screen sizes.
+- ♻️  refactor: shared state cards and tighten UI radii
+- ✨ feat: UIの改善と機能追加
+- ✨ feat: adjust gutter width in code editor for improved layout
+- ✨ feat: adjust code editor gutter width and padding for improved layout
+- ✨ feat: implement translucent app bar and improve focus handling in editor - Added TranslucentAppBar for better UI experience. - Enhanced focus management in the editor screen for improved usability. - Updated browser screen layout for better responsiveness.
+- ✨ feat: add responsive layout utilities and loading indicator widget
+- Update UI
+- ✨ feat: add animated tab stack for smoother navigation transitions
+- 🐛 fix: handle context mounted state in various screens and services - Added checks for context mounted state in editor, recommend, settings, and update services to prevent errors. - Refactored recommendation controls in the recommend screen for better layout handling. - Updated tests to ensure proper functionality of new features and fixes.
+- 🐛 fix: move problem source link to footer
+- 🐛 fix: unify supported editor languages
+- 🔧 chore: remove robots.txt file
+- 🐛 fix: default code font to HackGen35
+- 🐛 fix: use proper programming language logos
+- 📝 docs: track remaining product improvements
+- ✨ feat: customize home widgets
+- ✨ feat: show recommended problem titles
+- 🐛 fix: schedule contest reminders
+- ✨ feat: improve editor and settings usability
+- a
+- auto fix
+- 🔧 chore: Gradle設定と通知サービスの初期化を更新 - Gradleのバージョンを8.14.3に更新 - Kotlinプラグインのバージョンを2.2.20に更新 - NotificationServiceの初期化設定を整理し、引数名を明確化
+- 📝 docs: 開発環境のセットアップ手順を追加
+- 🔧 chore: .fvmrcを削除し、Flutter SDKのバージョンを更新 - .fvmrcファイルを削除しました。 - pubspec.lockでDartとFlutterのバージョンを更新しました。 - mise.tomlを新規作成し、Flutterのバージョンを設定しました。
+- ✨ feat(atcoder): AtCoderコンテンツの取り扱いに関する法律情報を追加 feat(atcoder): AtCoderの元ページを開くボタンを問題詳細画面に追加 feat(atcoder): リクエストの間隔を制限するレートリミッターを実装 feat(atcoder): AtCoderプロフィールを解析するパーサーを追加 test: AtCoderプロフィールパーサーのユニットテストを追加 test: リクエストレートリミッターのユニットテストを追加
+- 📝 docs: READMEにバッジを追加して情報を強化
+- update readme
+- 📝 docs: README、開発ガイド、インストールガイド、法的情報、リリースプロセスの追加
+- ♻️  refactor(home_screen): reorder imports and remove reminder settings button
+- 🔧 chore(licenses): update OSS license snapshot
+- 🔧 chore(deps): bump google_fonts from 6.3.3 to 8.1.0
+- 🔧 chore(licenses): update OSS license snapshot
+- 🔧 chore(deps): bump fastlane from 2.228.0 to 2.236.1
+- 🔧 chore(deps): bump the pub-minor-patch group across 1 directory with 12 updates
+- README.md の更新
+- 🔧 chore(dependabot): group pub updates and add bundler support
+- Initial plan
+- 🐛 fix: GitHub Actionsの403 Forbidden エラーを修正するため、リポジトリの参照順序を変更
+- ci: ワークフローのトリガーを修正し、pushイベントの対象ブランチを明示化
+
+
 - アプリの表示名を全プラットフォームで「Shojin」に統一
 
 ## [2.0.0] - 2026-07-16

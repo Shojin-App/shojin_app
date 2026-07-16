@@ -4,7 +4,7 @@ homepage: https://github.com/Shojin-App/shojin_app
 
 publish_to: "none"
 
-version: 2.0.0
+version: 2.0.1
 
 environment:
   sdk: ^3.8.1
