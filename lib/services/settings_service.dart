@@ -30,7 +30,7 @@ class SettingsService {
       await file.writeAsString(jsonString);
 
       await SharePlus.instance.share(
-        ShareParams(files: [XFile(file.path)], text: '精進アプリの設定'),
+        ShareParams(files: [XFile(file.path)], text: 'Shojinの設定'),
       );
       _showSnackBar('設定ファイルを共有しました');
     } catch (_) {

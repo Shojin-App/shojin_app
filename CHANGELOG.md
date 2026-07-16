@@ -1,5 +1,7 @@
 ## [Unreleased]
 
+- アプリの表示名を全プラットフォームで「Shojin」に統一
+
 ## [2.0.0] - 2026-07-16
 
 - ci: remove Gemini and license snapshot workflows

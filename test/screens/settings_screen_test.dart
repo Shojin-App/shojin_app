@@ -197,7 +197,7 @@ void main() {
           home: Scaffold(
             body: SettingsScreen(
               aboutInfoLoader: () async => {
-                'appName': '精進アプリ',
+                'appName': 'Shojin',
                 'packageName': 'io.github.shojinapp.kyopro',
                 'buildNumber': '100',
                 'platform': 'Android',
