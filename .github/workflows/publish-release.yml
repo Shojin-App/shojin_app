@@ -65,8 +65,12 @@ jobs:
         id: notes
         run: |
           VER='${{ steps.version.outputs.value }}'
-          # Extract section between headings
-          awk -v ver="$VER" 'BEGIN{capture=0} /^## \[/ { if(capture){exit} } /^## \['ver'\]/ {capture=1; next} { if(capture) print }' CHANGELOG.md > /tmp/section.txt || true
+          # Match the complete heading literally, then stop at the next version.
+          awk -v heading="## [$VER]" '
+            $0 == heading { capture=1; next }
+            capture && /^## \[/ { exit }
+            capture { print }
+          ' CHANGELOG.md > /tmp/section.txt
           if [ ! -s /tmp/section.txt ]; then
             echo "No changelog section found, using placeholder" > /tmp/section.txt
           fi
