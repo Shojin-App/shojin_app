@@ -1,7 +1,7 @@
 source "https://rubygems.org"
 
 # fastlane 本体（Windows でも Android 用 lane は動作可能）
-gem "fastlane", "~> 2.228"
+gem "fastlane", "~> 2.237"
 
 # Ruby 3.4+ で標準から外れたライブラリを補う
 gem "abbrev", "~> 0.1"
@@ -11,7 +11,7 @@ gem "fiddle", "~> 1.1"
 gem "ostruct"
 
 # iOS は現状非対応だが、依存で参照されることがあるため念のため
-gem "xcodeproj", "~> 1.24", platforms: [:ruby]
+gem "xcodeproj", "~> 1.28", platforms: [:ruby]
 
 # To install:
 #   bundle install

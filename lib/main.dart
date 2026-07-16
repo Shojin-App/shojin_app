@@ -1,7 +1,8 @@
+import 'dart:async';
 import 'dart:developer' as developer;
-import 'dart:ui';
 
 import 'package:dynamic_color/dynamic_color.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart'; // 追加
@@ -19,8 +20,12 @@ import 'screens/home_screen_new.dart'; // Import new home screen
 import 'screens/problem_detail_screen.dart';
 import 'screens/settings_screen.dart';
 import 'services/auto_update_manager.dart'; // Add auto update manager
+import 'services/contest_reminder_service.dart';
 import 'services/notification_service.dart'; // Import NotificationService
 import 'utils/app_fonts.dart'; // Import app fonts helper
+import 'utils/responsive_layout.dart';
+import 'widgets/shared/app_bottom_navigation.dart';
+import 'widgets/shared/custom_sliver_app_bar.dart';
 
 void main() async {
   // Flutter Engineの初期化を保証
@@ -38,23 +43,14 @@ void main() async {
     return true;
   }());
 
-  // NotificationServiceの初期化と権限リクエスト
-  final notificationService = NotificationService();
-  await notificationService.initialize();
-  await notificationService.requestPermissions();
-
   // Providerのインスタンスを作成
   final themeProvider = ThemeProvider();
   final templateProvider = TemplateProvider();
   final contestProvider = ContestProvider();
 
-  // 非同期でテーマとテンプレートの読み込みが完了するのを待つ
-  // 各プロバイダー内の_loadFromPrefsの完了を待つため、
-  // isLoadingがfalseになるまで短い遅延を入れて待機する
-  while (themeProvider.isLoading || templateProvider.isLoading) {
-    await Future.delayed(const Duration(milliseconds: 10));
-  }
-
+  // 永続設定や通知プラグインの応答が遅くても、最初のフレームは既定値で
+  // 描画する。各Providerは読み込み完了時にnotifyListenersするため、UIは
+  // 後から保存済み設定へ更新される。
   runApp(
     MultiProvider(
       providers: [
@@ -65,11 +61,60 @@ void main() async {
       child: const MyApp(),
     ),
   );
+  unawaited(_initializeBackgroundServices());
   developer.log('App started successfully');
+}
+
+Future<void> _initializeBackgroundServices() async {
+  // flutter_local_notificationsはWeb、Windows、Linux向けの初期化設定を
+  // 持たない。未対応環境ではUI起動を妨げず、通知処理自体を実行しない。
+  if (kIsWeb ||
+      !const {
+        TargetPlatform.android,
+        TargetPlatform.iOS,
+        TargetPlatform.macOS,
+      }.contains(defaultTargetPlatform)) {
+    return;
+  }
+
+  try {
+    // 同じプラグインインスタンスを同期処理にも渡し、初期化済みであることを
+    // 保ったまま保留通知の確認と再登録を行う。
+    final notificationService = NotificationService();
+    await notificationService.initialize();
+    await ContestReminderService(
+      notificationService: notificationService,
+    ).synchronize();
+  } catch (error, stackTrace) {
+    developer.log(
+      'Failed to initialize background services',
+      name: 'AppStartup',
+      error: error,
+      stackTrace: stackTrace,
+    );
+  }
 }
 
 Color _onColorFor(Color color) {
   return color.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+}
+
+SystemUiOverlayStyle appSystemUiOverlayStyle(Brightness brightness) {
+  final iconBrightness = brightness == Brightness.dark
+      ? Brightness.light
+      : Brightness.dark;
+
+  return SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: iconBrightness,
+    statusBarBrightness: brightness,
+    // Androidのジェスチャー／3ボタン領域にもアプリ側の半透明
+    // ナビゲーション背景を連続させ、OSの追加scrimとの二重表示を防ぐ。
+    systemNavigationBarColor: Colors.transparent,
+    systemNavigationBarDividerColor: Colors.transparent,
+    systemNavigationBarIconBrightness: iconBrightness,
+    systemNavigationBarContrastEnforced: false,
+  );
 }
 
 // デフォルトのカラースキーム（MaterialYou ON時）
@@ -122,6 +167,37 @@ final _pureBlackColorScheme =
       surfaceTint: Colors.transparent,
     );
 
+/// Material Youのsurface階調は維持しつつ、アクセント用途の色ファミリーを
+/// AtCoderレーティング色から再生成する。
+///
+/// primaryだけを置換するとsecondaryContainerが端末由来の色に残り、設定画面の
+/// アイコンフィールドだけがAtCoderテーマから外れて見えるため、secondaryと
+/// tertiaryも同じseedから導出する。primaryはレート色を忠実に表示する。
+@visibleForTesting
+ColorScheme applyAtCoderAccentColorScheme(ColorScheme base, Color seed) {
+  final generated = ColorScheme.fromSeed(
+    seedColor: seed,
+    brightness: base.brightness,
+  );
+  final onPrimary = _onColorFor(seed);
+
+  return base.copyWith(
+    primary: seed,
+    onPrimary: onPrimary,
+    primaryContainer: seed,
+    onPrimaryContainer: onPrimary,
+    secondary: generated.secondary,
+    onSecondary: generated.onSecondary,
+    secondaryContainer: generated.secondaryContainer,
+    onSecondaryContainer: generated.onSecondaryContainer,
+    tertiary: generated.tertiary,
+    onTertiary: generated.onTertiary,
+    tertiaryContainer: generated.tertiaryContainer,
+    onTertiaryContainer: generated.onTertiaryContainer,
+    surfaceTint: Colors.transparent,
+  );
+}
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -151,26 +227,13 @@ class MyApp extends StatelessWidget {
         if (themeProvider.useAtcoderRatingColor &&
             themeProvider.atcoderAccentColor != null) {
           final seed = themeProvider.atcoderAccentColor!;
-          final onPrimary = seed.computeLuminance() > 0.5
-              ? Colors.black
-              : Colors.white;
-
-          lightColorScheme = lightColorScheme.copyWith(
-            primary: seed,
-            onPrimary: onPrimary,
-            primaryContainer: seed,
-            onPrimaryContainer: onPrimary,
-            surfaceTint: Colors.transparent,
+          lightColorScheme = applyAtCoderAccentColorScheme(
+            lightColorScheme,
+            seed,
           );
 
           final baseDark = darkColorScheme;
-          final darkAdjusted = baseDark.copyWith(
-            primary: seed,
-            onPrimary: onPrimary,
-            primaryContainer: seed,
-            onPrimaryContainer: onPrimary,
-            surfaceTint: Colors.transparent,
-          );
+          final darkAdjusted = applyAtCoderAccentColorScheme(baseDark, seed);
           darkColorScheme = themeProvider.isPureBlack
               ? darkAdjusted.copyWith(
                   surface: Colors.black,
@@ -237,7 +300,7 @@ class MyApp extends StatelessWidget {
         );
 
         return MaterialApp(
-          title: 'Shojin App',
+          title: '精進アプリ',
           localizationsDelegates: const [
             AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
@@ -257,7 +320,7 @@ class MyApp extends StatelessWidget {
                 elevation: 2,
                 margin: const EdgeInsets.all(8),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24.0),
+                  borderRadius: BorderRadius.circular(8.0),
                 ),
                 // MaterialYou使用時のコントラスト改善
                 surfaceTintColor: themeProvider.useMaterialYou
@@ -283,6 +346,62 @@ class MyApp extends StatelessWidget {
                       : lightColorScheme.onSurfaceVariant;
                   return TextStyle(color: color);
                 }),
+              ),
+              tabBarTheme: TabBarThemeData(
+                indicator: BoxDecoration(
+                  color: lightColorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                indicatorSize: TabBarIndicatorSize.tab,
+                dividerColor: Colors.transparent,
+                labelColor: lightColorScheme.onPrimaryContainer,
+                unselectedLabelColor: lightColorScheme.onSurfaceVariant,
+                labelStyle: textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              menuTheme: MenuThemeData(
+                style: MenuStyle(
+                  shape: WidgetStatePropertyAll(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+              popupMenuTheme: PopupMenuThemeData(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              dropdownMenuTheme: DropdownMenuThemeData(
+                menuStyle: MenuStyle(
+                  shape: WidgetStatePropertyAll(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+              dialogTheme: DialogThemeData(
+                elevation: 3,
+                backgroundColor: lightColorScheme.surfaceContainerHigh,
+                surfaceTintColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              snackBarTheme: SnackBarThemeData(
+                behavior: SnackBarBehavior.floating,
+                elevation: 3,
+                backgroundColor: lightColorScheme.inverseSurface,
+                actionTextColor: lightColorScheme.inversePrimary,
+                contentTextStyle: textTheme.bodyMedium?.copyWith(
+                  color: lightColorScheme.onInverseSurface,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               elevatedButtonTheme: ElevatedButtonThemeData(
                 style: ElevatedButton.styleFrom(
@@ -325,11 +444,67 @@ class MyApp extends StatelessWidget {
                   return TextStyle(color: color);
                 }),
               ),
+              tabBarTheme: TabBarThemeData(
+                indicator: BoxDecoration(
+                  color: darkColorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                indicatorSize: TabBarIndicatorSize.tab,
+                dividerColor: Colors.transparent,
+                labelColor: darkColorScheme.onPrimaryContainer,
+                unselectedLabelColor: darkColorScheme.onSurfaceVariant,
+                labelStyle: textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              menuTheme: MenuThemeData(
+                style: MenuStyle(
+                  shape: WidgetStatePropertyAll(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+              popupMenuTheme: PopupMenuThemeData(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              dropdownMenuTheme: DropdownMenuThemeData(
+                menuStyle: MenuStyle(
+                  shape: WidgetStatePropertyAll(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+              dialogTheme: DialogThemeData(
+                elevation: 3,
+                backgroundColor: darkColorScheme.surfaceContainerHigh,
+                surfaceTintColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              snackBarTheme: SnackBarThemeData(
+                behavior: SnackBarBehavior.floating,
+                elevation: 3,
+                backgroundColor: darkColorScheme.inverseSurface,
+                actionTextColor: darkColorScheme.inversePrimary,
+                contentTextStyle: textTheme.bodyMedium?.copyWith(
+                  color: darkColorScheme.onInverseSurface,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
               cardTheme: CardThemeData(
                 elevation: 2,
                 margin: const EdgeInsets.all(8),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24.0),
+                  borderRadius: BorderRadius.circular(8.0),
                 ),
                 color: themeProvider.isPureBlack
                     ? const Color(0xFF121212)
@@ -466,7 +641,11 @@ class _MainScreenState extends State<MainScreen> {
     }
 
     return [
-      NewHomeScreen(key: const ValueKey('home')), // Index 0
+      NewHomeScreen(
+        key: const ValueKey('home'),
+        isSelected: _selectedIndex == 0,
+        onProblemSelected: _navigateToProblemTabWithId,
+      ), // Index 0
       BrowserScreen(
         key: const ValueKey('browser'),
         navigateToProblem: _navigateToProblemTabWithId,
@@ -487,6 +666,10 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   void _onItemTapped(int index) {
+    if (index == _selectedIndex) {
+      return;
+    }
+
     // 触覚フィードバックを追加
     HapticFeedback.lightImpact();
     _hideKeyboard(context);
@@ -511,13 +694,7 @@ class _MainScreenState extends State<MainScreen> {
     final screens = _buildScreens();
 
     final brightness = Theme.of(context).brightness;
-    final overlayStyle = SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: brightness == Brightness.dark
-          ? Brightness.light
-          : Brightness.dark,
-      statusBarBrightness: brightness,
-    );
+    final overlayStyle = appSystemUiOverlayStyle(brightness);
 
     return GestureDetector(
       onTap: () {
@@ -528,59 +705,153 @@ class _MainScreenState extends State<MainScreen> {
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: overlayStyle,
         child: Scaffold(
-          extendBody:
-              true, // Allow body to extend behind BottomNavigationBar for backdrop blur
+          extendBody: true,
           body: SafeArea(
-            top: _selectedIndex != 4,
+            // Browser and the M3E editor app bar need an external top inset.
+            // The other tabs paint their own translucent app bar into it.
+            top: _selectedIndex == 1 || _selectedIndex == 3,
             bottom:
                 false, // allow content under BottomNavigationBar for BackdropFilter
-            child: IndexedStack(index: _selectedIndex, children: screens),
+            child: AnimatedTabStack(index: _selectedIndex, children: screens),
           ),
-          bottomNavigationBar: ClipRect(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
-              child: Container(
-                // Adjust opacity from settings
-                color: Theme.of(context).colorScheme.surface.withValues(
-                  alpha: Provider.of<ThemeProvider>(context).navBarOpacity,
-                ),
-                child: Material(
-                  color:
-                      Colors.transparent, // Let the translucent container show
-                  child: NavigationBarM3E(
-                    backgroundColor: Colors.transparent,
-                    elevation: 0,
+          bottomNavigationBar: TranslucentNavigationBackground(
+            opacity: context.watch<ThemeProvider>().navBarOpacity,
+            color: Theme.of(context).colorScheme.surface,
+            child: Material(
+              color: Colors.transparent,
+              child: Center(
+                heightFactor: 1,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: ResponsiveLayout.maxContentWidth,
+                  ),
+                  child: AppBottomNavigation(
                     onDestinationSelected: _onItemTapped,
                     selectedIndex: _selectedIndex,
-                    destinations: const [
-                      NavigationDestinationM3E(
-                        icon: Icon(Icons.home_outlined),
-                        selectedIcon: Icon(Icons.home),
-                        label: 'ホーム',
-                      ),
-                      NavigationDestinationM3E(
-                        icon: Icon(Icons.public_outlined),
-                        selectedIcon: Icon(Icons.public),
-                        label: 'ブラウザ',
-                      ),
-                      NavigationDestinationM3E(
-                        icon: Icon(Icons.list_alt_outlined),
-                        selectedIcon: Icon(Icons.list_alt),
-                        label: '問題',
-                      ),
-                      NavigationDestinationM3E(
-                        icon: Icon(Icons.code_outlined),
-                        selectedIcon: Icon(Icons.code),
-                        label: 'エディタ',
-                      ),
-                      NavigationDestinationM3E(
-                        icon: Icon(Icons.settings_outlined),
-                        selectedIcon: Icon(Icons.settings),
-                        label: '設定',
-                      ),
-                    ],
                   ),
                 ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class AnimatedTabStack extends StatefulWidget {
+  final int index;
+  final List<Widget> children;
+
+  const AnimatedTabStack({
+    super.key,
+    required this.index,
+    required this.children,
+  });
+
+  @override
+  State<AnimatedTabStack> createState() => _AnimatedTabStackState();
+}
+
+class _AnimatedTabStackState extends State<AnimatedTabStack>
+    with SingleTickerProviderStateMixin {
+  static const _duration = Duration(milliseconds: 280);
+  static const _curve = Curves.easeOutCubic;
+
+  late final AnimationController _controller;
+  late Animation<double> _animation;
+  int? _previousIndex;
+  int _transitionDirection = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: _duration)
+      ..value = 1
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed && _previousIndex != null) {
+          setState(() {
+            _previousIndex = null;
+          });
+        }
+      });
+    _animation = CurvedAnimation(parent: _controller, curve: _curve);
+  }
+
+  @override
+  void didUpdateWidget(covariant AnimatedTabStack oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.index != oldWidget.index) {
+      if (MediaQuery.disableAnimationsOf(context)) {
+        _controller.stop();
+        _controller.value = 1;
+        _previousIndex = null;
+        return;
+      }
+      _previousIndex = oldWidget.index;
+      _transitionDirection = widget.index > oldWidget.index ? 1 : -1;
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, _) {
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            for (var i = 0; i < widget.children.length; i++)
+              _buildAnimatedChild(context, i),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildAnimatedChild(BuildContext context, int childIndex) {
+    final isSelected = childIndex == widget.index;
+    final isPrevious = childIndex == _previousIndex && _controller.isAnimating;
+    final isVisible = isSelected || isPrevious;
+    final progress = _animation.value;
+    final textDirection = Directionality.of(context);
+    final horizontalDirection = textDirection == TextDirection.rtl
+        ? -_transitionDirection
+        : _transitionDirection;
+
+    double opacity;
+    double slideOffset;
+    if (isSelected) {
+      opacity = progress;
+      slideOffset = (1 - progress) * 0.06 * horizontalDirection;
+    } else if (isPrevious) {
+      opacity = 1 - progress;
+      slideOffset = -progress * 0.06 * horizontalDirection;
+    } else {
+      opacity = 0;
+      slideOffset = 0;
+    }
+
+    return Offstage(
+      offstage: !isVisible,
+      child: ExcludeFocus(
+        excluding: !isSelected,
+        child: TickerMode(
+          enabled: isVisible,
+          child: IgnorePointer(
+            ignoring: !isSelected,
+            child: FractionalTranslation(
+              translation: Offset(slideOffset, 0),
+              child: Opacity(
+                opacity: opacity.clamp(0, 1),
+                child: widget.children[childIndex],
               ),
             ),
           ),

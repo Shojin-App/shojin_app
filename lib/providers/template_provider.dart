@@ -1,19 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../constants/programming_languages.dart';
+
 class TemplateProvider extends ChangeNotifier {
   final String _prefsKeyPrefix = 'code_template_';
   Map<String, String> _templates = {};
   bool _isLoading = true;
 
-  // サポートする言語リスト
-  final List<String> supportedLanguages = [
-    'Python',
-    'C++',
-    'Rust',
-    'Java',
-    'C#'
-  ];
+  List<String> get supportedLanguages => supportedProgrammingLanguages;
 
   TemplateProvider() {
     _loadFromPrefs();
@@ -28,7 +23,7 @@ class TemplateProvider extends ChangeNotifier {
     if (_templates.containsKey(language)) {
       return _templates[language]!;
     }
-    
+
     // なければデフォルトテンプレートを返す
     return getDefaultTemplate(language);
   }
@@ -65,14 +60,6 @@ public class Main {
         System.out.println("Hello World!");
     }
 }''';
-      case 'C#':
-        return '''using System;
-public class Program {
-    public static void Main() {
-        int n = int.Parse(Console.ReadLine());
-        Console.WriteLine("Hello World!");
-    }
-}''';
       default:
         return '// ここにコードを書いてください';
     }
@@ -99,7 +86,7 @@ public class Program {
   Future<void> _loadFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     Map<String, String> templates = {};
-    
+
     // 各言語のテンプレートを読み込む
     for (var language in supportedLanguages) {
       final template = prefs.getString('$_prefsKeyPrefix$language');
@@ -107,7 +94,7 @@ public class Program {
         templates[language] = template;
       }
     }
-    
+
     _templates = templates;
     _isLoading = false;
     notifyListeners();
@@ -116,7 +103,7 @@ public class Program {
   // テンプレートを設定に保存
   Future<void> _saveToPrefs(String language) async {
     if (!_templates.containsKey(language)) return;
-    
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('$_prefsKeyPrefix$language', _templates[language]!);
   }

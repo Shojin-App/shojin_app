@@ -8,14 +8,22 @@ class BrowserConstants {
     DefaultSite(
       title: 'NoviSteps',
       url: 'https://atcoder-novisteps.vercel.app/problems',
-      faviconUrl: 'https://raw.githubusercontent.com/AtCoder-NoviSteps/AtCoderNoviSteps/staging/static/favicon.png',
+      faviconUrl:
+          'https://raw.githubusercontent.com/AtCoder-NoviSteps/AtCoderNoviSteps/staging/static/favicon.png',
       colorHex: '#48955D',
     ),
     DefaultSite(
       title: 'Problems',
       url: 'https://kenkoooo.com/atcoder/#/table/',
-      faviconUrl: 'https://github.com/kenkoooo/AtCoderProblems/raw/refs/heads/master/atcoder-problems-frontend/public/favicon.ico',
+      faviconUrl:
+          'https://github.com/kenkoooo/AtCoderProblems/raw/refs/heads/master/atcoder-problems-frontend/public/favicon.ico',
       colorHex: '#66C84D',
+    ),
+    DefaultSite(
+      title: 'AtCoder',
+      url: 'https://atcoder.jp/',
+      faviconUrl: 'https://atcoder.jp/favicon.ico',
+      colorHex: '#FFFFFF',
     ),
   ];
 
@@ -27,12 +35,12 @@ class BrowserConstants {
   static const double buttonInternalVerticalPadding = 8.0;
   static const double buttonBorderRadius = 16.0;
   static const double buttonElevation = 1.0;
-  
+
   static const double faviconSize = 20.0;
   static const double faviconBorderWidth = 1.0;
   static const double iconSize = 18.0;
   static const double iconSpacing = 8.0;
-  
+
   static const double progressIndicatorStrokeWidth = 2.0;
   static const double horizontalPadding = 8.0;
 
@@ -56,12 +64,13 @@ class BrowserConstants {
   static const String buttonAdd = '追加';
   static const String buttonUpdate = '更新';
   static const String buttonDelete = '削除';
-  
+
   static const String errorTitleUrlRequired = 'タイトルとURLを入力してください。';
-  static const String errorInvalidUrl = '有効なURLを入力してください (例: https://example.com)';
+  static const String errorInvalidUrl =
+      '有効なURLを入力してください (例: https://example.com)';
   static const String errorSiteAlreadyExists = 'は既に追加されています。';
   static const String errorFetchingMetadata = 'サイトメタデータの取得に失敗しました: ';
-  
+
   static const String confirmRemoveSite = 'を削除しますか？';
 }
 
@@ -69,7 +78,8 @@ class BrowserConstants {
 class BrowserColorUtils {
   /// 背景色に基づいてテキスト色を決定
   static Color getTextColorForBackground(Color backgroundColor) {
-    return ThemeData.estimateBrightnessForColor(backgroundColor) == Brightness.dark
+    return ThemeData.estimateBrightnessForColor(backgroundColor) ==
+            Brightness.dark
         ? Colors.white
         : Colors.black;
   }
@@ -77,7 +87,7 @@ class BrowserColorUtils {
   /// 16進数カラーコードを解析
   static Color? parseColorHex(String? colorHex) {
     if (colorHex == null) return null;
-    
+
     try {
       String hex = colorHex.replaceFirst('#', '');
       if (hex.length == 6) hex = 'FF$hex';

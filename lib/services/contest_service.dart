@@ -2,8 +2,14 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:yaml/yaml.dart';
 import '../models/contest.dart';
+import 'authenticated_contest_cache.dart';
 
 class ContestService {
+  ContestService({AuthenticatedContestCache? authenticatedContestCache})
+    : _authenticatedContestCache =
+          authenticatedContestCache ?? AuthenticatedContestCache();
+
+  final AuthenticatedContestCache _authenticatedContestCache;
   static const String _userAgent =
       'ShojinApp/1.0 (+https://github.com/Shojin-App/Shojin_App)';
   static const _headers = {'User-Agent': _userAgent};
@@ -13,7 +19,10 @@ class ContestService {
   /// すべてのコンテスト情報を取得
   Future<List<Contest>> fetchAllContests() async {
     try {
-      final response = await http.get(Uri.parse(_contestUrl), headers: _headers);
+      final response = await http.get(
+        Uri.parse(_contestUrl),
+        headers: _headers,
+      );
 
       if (response.statusCode == 200) {
         // UTF-8でデコード
@@ -21,12 +30,18 @@ class ContestService {
         final yamlDoc = loadYaml(yamlString);
 
         if (yamlDoc is List) {
-          return yamlDoc
+          final publicContests = yamlDoc
               .map(
                 (contestData) =>
                     Contest.fromMap(Map<String, dynamic>.from(contestData)),
               )
               .toList();
+          final authenticatedContests = await _authenticatedContestCache.load();
+          // 同じコンテストはログインセッション由来の情報を優先する。
+          return {
+            for (final contest in publicContests) contest.url: contest,
+            for (final contest in authenticatedContests) contest.url: contest,
+          }.values.toList();
         }
       }
 

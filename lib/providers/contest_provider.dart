@@ -3,8 +3,11 @@ import '../models/contest.dart';
 import '../services/contest_service.dart';
 
 class ContestProvider with ChangeNotifier {
-  final ContestService _contestService = ContestService();
-  
+  ContestProvider({ContestService? contestService})
+    : _contestService = contestService ?? ContestService();
+
+  final ContestService _contestService;
+
   Contest? _nextABC;
   List<Contest> _upcomingABCs = [];
   List<Contest> _upcomingContests = [];

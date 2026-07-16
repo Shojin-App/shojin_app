@@ -1,5 +1,10 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:m3e_collection/m3e_collection.dart';
+import 'package:provider/provider.dart';
+
+import '../../providers/theme_provider.dart';
 
 class CustomSliverAppBar extends StatelessWidget {
   final bool isMainView;
@@ -19,20 +24,94 @@ class CustomSliverAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SliverAppBarM3E(
+    final opacity = context.watch<ThemeProvider>().navBarOpacity;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return SliverAppBar(
       pinned: true,
-      variant: AppBarM3EVariant.small,
+      centerTitle: true,
       title: title,
       leading: isMainView
           ? null
           : IconButtonM3E(
+              tooltip: '戻る',
               icon: const Icon(Icons.arrow_back),
               onPressed:
                   onBackButtonPressed ?? () => Navigator.of(context).pop(),
             ),
-      backgroundColor: Colors
-          .transparent, // Let SliverAppBarM3E handle its own surface coloring or transparency
+      backgroundColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      flexibleSpace: TranslucentNavigationBackground(
+        opacity: opacity,
+        color: colorScheme.surface,
+      ),
       actions: actions,
+    );
+  }
+}
+
+class TranslucentAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final Widget title;
+  final List<Widget>? actions;
+  final Widget? leading;
+  final bool automaticallyImplyLeading;
+
+  const TranslucentAppBar({
+    super.key,
+    required this.title,
+    this.actions,
+    this.leading,
+    this.automaticallyImplyLeading = true,
+  });
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  @override
+  Widget build(BuildContext context) {
+    final opacity = context.watch<ThemeProvider>().navBarOpacity;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return AppBar(
+      title: title,
+      actions: actions,
+      leading: leading,
+      automaticallyImplyLeading: automaticallyImplyLeading,
+      centerTitle: true,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      backgroundColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      flexibleSpace: TranslucentNavigationBackground(
+        opacity: opacity,
+        color: colorScheme.surface,
+      ),
+    );
+  }
+}
+
+class TranslucentNavigationBackground extends StatelessWidget {
+  const TranslucentNavigationBackground({
+    super.key,
+    required this.opacity,
+    required this.color,
+    this.child,
+  });
+
+  final double opacity;
+  final Color color;
+  final Widget? child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: opacity * 24, sigmaY: opacity * 24),
+        child: ColoredBox(
+          color: color.withValues(alpha: opacity),
+          child: child,
+        ),
+      ),
     );
   }
 }

@@ -111,6 +111,7 @@ class AutoUpdateManager {
 
       if (updateInfo != null && context.mounted) {
         final skippedVersion = await getSkippedVersion();
+        if (!context.mounted) return;
         debugPrint('スタートアップ - 最新バージョン: "${updateInfo.version}"');
         debugPrint('スタートアップ - スキップ済みバージョン: "$skippedVersion"');
 
@@ -273,14 +274,17 @@ class AutoUpdateManager {
 class UpdateLifecycleManager extends WidgetsBindingObserver {
   final AutoUpdateManager _autoUpdateManager = AutoUpdateManager();
   final BuildContext context;
+  bool _isListening = false;
 
   UpdateLifecycleManager(this.context);
 
   void startListening() {
+    _isListening = true;
     WidgetsBinding.instance.addObserver(this);
   }
 
   void stopListening() {
+    _isListening = false;
     WidgetsBinding.instance.removeObserver(this);
   }
 
@@ -291,7 +295,9 @@ class UpdateLifecycleManager extends WidgetsBindingObserver {
     // Check for updates when app becomes active
     if (state == AppLifecycleState.resumed) {
       Future.delayed(const Duration(seconds: 2), () {
-        _autoUpdateManager.checkForUpdatesOnStartup(context);
+        if (_isListening && context.mounted) {
+          _autoUpdateManager.checkForUpdatesOnStartup(context);
+        }
       });
     }
   }

@@ -1,13 +1,46 @@
 import 'dart:convert'; // for auto-paste code
 import 'dart:developer'; // for JS debug messages
+
 import 'package:flutter/material.dart';
+import 'package:m3e_collection/m3e_collection.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+
+import '../widgets/shared/web_content_status_header.dart';
+
+/// 提出用WebViewで許可する遷移と、コードを注入してよいページを判定する。
+///
+/// 初期URLだけを信頼すると、リダイレクトやリンク遷移後の別オリジンへ
+/// エディタ内容を渡してしまうため、遷移時と注入直前の両方で検証する。
+abstract final class SubmitNavigationPolicy {
+  static bool isAllowedAtCoderUrl(String url) {
+    final uri = Uri.tryParse(url);
+    return uri != null &&
+        uri.scheme == 'https' &&
+        uri.host == 'atcoder.jp' &&
+        !uri.hasPort &&
+        uri.userInfo.isEmpty;
+  }
+
+  static bool isSubmissionPage(String url) {
+    if (!isAllowedAtCoderUrl(url)) return false;
+    final segments = Uri.parse(url).pathSegments;
+    return segments.length == 3 &&
+        segments[0] == 'contests' &&
+        segments[1].isNotEmpty &&
+        segments[2] == 'submit';
+  }
+}
 
 class SubmitScreen extends StatefulWidget {
   final String url;
   final String initialCode;
   final String initialLanguage;
-  const SubmitScreen({super.key, required this.url, required this.initialCode, required this.initialLanguage});
+  const SubmitScreen({
+    super.key,
+    required this.url,
+    required this.initialCode,
+    required this.initialLanguage,
+  });
 
   @override
   State<SubmitScreen> createState() => _SubmitScreenState();
@@ -15,20 +48,42 @@ class SubmitScreen extends StatefulWidget {
 
 class _SubmitScreenState extends State<SubmitScreen> {
   late final WebViewController _controller;
+  int _loadingProgress = 0;
+  bool _hasPageError = false;
+  String _statusMessage = '提出ページを読み込んでいます';
 
   @override
   void initState() {
     super.initState();
     // JavaScript チャンネル追加（デバッグ用）
     _controller = WebViewController()
-      ..addJavaScriptChannel('Debug', onMessageReceived: (message) {
-        log('JS> ${message.message}', name: 'SubmitScreen');
-      })
+      ..addJavaScriptChannel(
+        'Debug',
+        onMessageReceived: (message) {
+          log('JS> ${message.message}', name: 'SubmitScreen');
+        },
+      )
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(NavigationDelegate(
-        onPageFinished: (url) {
-          _controller.runJavaScript(
-            '''(function() {
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onProgress: (progress) {
+            if (!mounted) return;
+            setState(() {
+              _loadingProgress = progress;
+            });
+          },
+          onPageStarted: (_) {
+            if (!mounted) return;
+            setState(() {
+              _hasPageError = false;
+              _statusMessage = '提出ページを読み込んでいます';
+            });
+          },
+          onPageFinished: (url) {
+            // ログイン等のAtCoder内ページは遷移を許可するが、ソースコードを
+            // DOMへ渡すのは提出ページだけに限定する。
+            if (!SubmitNavigationPolicy.isSubmissionPage(url)) return;
+            _controller.runJavaScript('''(function() {
   // debug: select[name="language_id"] presence
   var sel = document.querySelector('select[name="language_id"]');
   window.Debug.postMessage('select[name="language_id"] found: ' + (sel !== null));
@@ -72,18 +127,73 @@ class _SubmitScreenState extends State<SubmitScreen> {
               ed.setValue(code, -1);
               ed.clearSelection();
             }
-})();'''
-          );
-        },
-      ))
+})();''');
+            if (!mounted) return;
+            setState(() {
+              _statusMessage = 'コードを提出フォームへ自動入力しました';
+              _loadingProgress = 100;
+            });
+          },
+          onWebResourceError: (error) {
+            if (!mounted || error.isForMainFrame == false) return;
+            setState(() {
+              _hasPageError = true;
+              _statusMessage = '提出ページを読み込めませんでした';
+            });
+          },
+          onNavigationRequest: (request) {
+            // 外部オリジンへの遷移をWebView内で継続させると、そのページの
+            // DOMへ提出コードを注入する境界が再び生じるため、常に遮断する。
+            return SubmitNavigationPolicy.isAllowedAtCoderUrl(request.url)
+                ? NavigationDecision.navigate
+                : NavigationDecision.prevent;
+          },
+        ),
+      )
       ..loadRequest(Uri.parse(widget.url));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('提出画面')),
-      body: WebViewWidget(controller: _controller),
+      appBar: AppBarM3E(
+        title: const Text('提出'),
+        actions: [
+          IconButtonM3E(
+            tooltip: '再読み込み',
+            icon: const Icon(Icons.refresh),
+            onPressed: _reload,
+          ),
+        ],
+      ),
+      body: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            WebContentStatusHeader(
+              statusMessage: _statusMessage,
+              detail:
+                  '${widget.initialLanguage} / ${widget.initialCode.length}文字',
+              icon: Icons.cloud_upload_outlined,
+              loadingProgress: _loadingProgress,
+              isLoading: !_hasPageError && _loadingProgress < 100,
+              hasError: _hasPageError,
+              progressSemanticsLabel: '提出ページの読み込み進捗',
+              onRetry: _reload,
+            ),
+            Expanded(child: WebViewWidget(controller: _controller)),
+          ],
+        ),
+      ),
     );
+  }
+
+  void _reload() {
+    setState(() {
+      _loadingProgress = 0;
+      _hasPageError = false;
+      _statusMessage = '提出ページを読み込んでいます';
+    });
+    _controller.reload();
   }
 }

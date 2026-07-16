@@ -2,8 +2,10 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:m3e_collection/m3e_collection.dart';
 import 'package:flutter_monaco/flutter_monaco.dart';
+
+import 'shared/app_loading_indicator.dart';
+import 'shared/app_state_card.dart';
 
 /// Monaco Editor wrapper widget for the editor screen.
 /// This provides VS Code-like editing experience.
@@ -185,14 +187,26 @@ class MonacoCodeEditorState extends State<MonacoCodeEditor> {
     }
 
     if (!_isInitialized || _controller == null) {
-      return const Center(child: LoadingIndicatorM3E());
+      return _buildStateCard(
+        icon: Icons.integration_instructions,
+        title: 'Monaco Editorを起動中',
+        message: 'エディタの初期化が完了するまでお待ちください。',
+        child: const Padding(
+          padding: EdgeInsets.only(top: 16),
+          child: Center(
+            child: AppLoadingIndicator(semanticsLabel: 'エディタを読み込み中'),
+          ),
+        ),
+      );
     }
 
     return Card(
       elevation: 2,
       margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      clipBehavior: Clip.antiAlias,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(24.0),
+        borderRadius: BorderRadius.circular(8.0),
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () async {
@@ -200,6 +214,7 @@ class MonacoCodeEditorState extends State<MonacoCodeEditor> {
             if (_controller != null && _isInitialized) {
               await _controller!.focus();
             }
+            if (!context.mounted) return;
 
             // モバイルでは TextInput 経由でキーボードを表示させる
             if (Platform.isAndroid || Platform.isIOS) {
@@ -274,38 +289,28 @@ class MonacoCodeEditorState extends State<MonacoCodeEditor> {
   }
 
   Widget _buildUnsupportedPlatformMessage() {
-    return Card(
-      elevation: 2,
+    return _buildStateCard(
+      icon: Icons.warning_amber_rounded,
+      title: 'Monaco Editorはこのプラットフォームで使用できません',
+      message: '設定から「従来のエディタ」を選択してください。',
+      isError: true,
+    );
+  }
+
+  Widget _buildStateCard({
+    required IconData icon,
+    required String title,
+    required String message,
+    bool isError = false,
+    Widget? child,
+  }) {
+    return AppStateCard(
       margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.warning_amber_rounded,
-                size: 48,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Monaco Editor はこのプラットフォームでサポートされていません',
-                style: Theme.of(context).textTheme.titleMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '設定から「従来のエディタ」を選択してください',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
+      icon: icon,
+      title: title,
+      message: message,
+      isError: isError,
+      child: child,
     );
   }
 }

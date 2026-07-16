@@ -3,32 +3,48 @@ import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
 class NotificationService {
+  static const androidSmallIcon = 'ic_launcher_monochrome';
+  static const reminderChannelId = 'shojin_app_channel_id';
+  static const reminderChannelName = 'コンテスト通知';
+  static const reminderChannelDescription = 'AtCoderコンテスト開始前のリマインダー';
+
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
+  bool _isInitialized = false;
 
   Future<void> initialize() async {
+    if (_isInitialized) return;
+
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher'); // TODO: アプリアイコンを確認・設定
+        AndroidInitializationSettings(
+          // Android通知バーは単色マスクを前提とするため、
+          // フルカラーのランチャーアイコンとは分ける。
+          androidSmallIcon,
+        );
 
     // iOS の初期化設定 (macOS も同様)
-    const DarwinInitializationSettings initializationSettingsIOS =
-        DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
+    const DarwinInitializationSettings
+    initializationSettingsIOS = DarwinInitializationSettings(
+      // 初回起動では要求せず、設定画面で有効化した時にだけ尋ねる。
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
       // onDidReceiveLocalNotification: onDidReceiveLocalNotification, // 古いiOSバージョン用
     );
 
-    const InitializationSettings initializationSettings = InitializationSettings(
+    const InitializationSettings
+    initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
       iOS: initializationSettingsIOS,
-      macOS: initializationSettingsIOS, // macOS も DarwinInitializationSettings を使用
+      macOS:
+          initializationSettingsIOS, // macOS も DarwinInitializationSettings を使用
     );
 
     await flutterLocalNotificationsPlugin.initialize(
-      initializationSettings,
+      settings: initializationSettings,
       // onDidReceiveNotificationResponse: onDidReceiveNotificationResponse, // 通知タップ時の処理
     );
+    _isInitialized = true;
 
     // タイムゾーンの初期化
     tz_data.initializeTimeZones(); // tz.initializeTimeZones(); から変更
@@ -50,30 +66,45 @@ class NotificationService {
   //   // display a dialog with the notification details, tap ok to go to another page
   // }
 
-  Future<void> requestPermissions() async {
+  Future<bool> requestPermissions() async {
+    await initialize();
     final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-        flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
-    await androidImplementation?.requestNotificationsPermission(); // requestPermission から requestNotificationsPermission に修正
+        flutterLocalNotificationsPlugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
+    final granted = await androidImplementation
+        ?.requestNotificationsPermission();
+    if (androidImplementation != null) {
+      // Android 12以前では実行時権限がなくnullになる場合がある。
+      return granted ?? true;
+    }
 
-    // iOS の通知許可
-    await flutterLocalNotificationsPlugin
+    final iosImplementation = flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin>()
-        ?.requestPermissions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
-    // macOS の通知許可
-    await flutterLocalNotificationsPlugin
+          IOSFlutterLocalNotificationsPlugin
+        >();
+    if (iosImplementation != null) {
+      return await iosImplementation.requestPermissions(
+            alert: true,
+            badge: true,
+            sound: true,
+          ) ??
+          false;
+    }
+    final macosImplementation = flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
-            MacOSFlutterLocalNotificationsPlugin>()
-        ?.requestPermissions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
+          MacOSFlutterLocalNotificationsPlugin
+        >();
+    if (macosImplementation != null) {
+      return await macosImplementation.requestPermissions(
+            alert: true,
+            badge: true,
+            sound: true,
+          ) ??
+          false;
+    }
+    return false;
   }
 
   Future<void> scheduleNotification({
@@ -83,16 +114,17 @@ class NotificationService {
     required DateTime scheduledTime,
     String? payload,
   }) async {
+    await initialize();
     await flutterLocalNotificationsPlugin.zonedSchedule(
-      id,
-      title,
-      body,
-      tz.TZDateTime.from(scheduledTime, tz.local),
-      NotificationDetails(
+      id: id,
+      title: title,
+      body: body,
+      scheduledDate: tz.TZDateTime.from(scheduledTime.toUtc(), tz.UTC),
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
-          'shojin_app_channel_id',
-          'Shojin App Notifications',
-          channelDescription: 'Notifications for Shojin App contests',
+          reminderChannelId,
+          reminderChannelName,
+          channelDescription: reminderChannelDescription,
           importance: Importance.max,
           priority: Priority.high,
         ),
@@ -107,16 +139,25 @@ class NotificationService {
           presentSound: true,
         ),
       ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       payload: payload,
     );
   }
 
+  Future<List<PendingNotificationRequest>> pendingRequests() async {
+    // OFF操作では権限要求を通らないため、このサービスのインスタンスがまだ
+    // 初期化されていない場合がある。予約確認だけの経路でも必ず初期化する。
+    await initialize();
+    return flutterLocalNotificationsPlugin.pendingNotificationRequests();
+  }
+
   Future<void> cancelNotification(int id) async {
-    await flutterLocalNotificationsPlugin.cancel(id);
+    await initialize();
+    await flutterLocalNotificationsPlugin.cancel(id: id);
   }
 
   Future<void> cancelAllNotifications() async {
+    await initialize();
     await flutterLocalNotificationsPlugin.cancelAll();
   }
 }

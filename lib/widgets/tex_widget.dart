@@ -18,44 +18,132 @@ class TexWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final defaultTextStyle = textStyle ?? theme.textTheme.bodyMedium!;
-    
-    // TeX記法を検出するための正規表現
-    final texPattern = RegExp(r'(\$\$[^$]+\$\$|\$[^$]+\$|\\[a-zA-Z]+(?:\{[^}]*\})*|\\[^a-zA-Z]?)');
-    
+    final displayPattern = RegExp(r'\$\$([\s\S]*?)\$\$');
+    final displayMatches = displayPattern.allMatches(content).toList();
+
+    if (displayMatches.isEmpty) {
+      return _buildInlineContent(content, defaultTextStyle);
+    }
+
+    final blocks = <Widget>[];
+    var lastEnd = 0;
+    for (final match in displayMatches) {
+      if (match.start > lastEnd) {
+        final inlineContent = content.substring(lastEnd, match.start);
+        if (inlineContent.isNotEmpty) {
+          blocks.add(_buildInlineContent(inlineContent, defaultTextStyle));
+        }
+      }
+      blocks.add(_buildDisplayMath(match.group(1)!, defaultTextStyle));
+      lastEnd = match.end;
+    }
+    if (lastEnd < content.length) {
+      blocks.add(
+        _buildInlineContent(content.substring(lastEnd), defaultTextStyle),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: blocks,
+    );
+  }
+
+  Widget _buildDisplayMath(String mathContent, TextStyle defaultTextStyle) {
+    try {
+      return SizedBox(
+        width: double.infinity,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Math.tex(
+            mathContent,
+            textStyle: defaultTextStyle.copyWith(
+              fontSize:
+                  (defaultTextStyle.fontSize ?? 14) *
+                  (mathTextScaleFactor ?? 1.2),
+            ),
+            mathStyle: MathStyle.display,
+          ),
+        ),
+      );
+    } catch (_) {
+      return Text(r'$$' + mathContent + r'$$', style: defaultTextStyle);
+    }
+  }
+
+  Widget _buildInlineContent(String inlineContent, TextStyle defaultTextStyle) {
+    // Display formulas are handled as independent scrollable blocks above.
+    // 行頭のMarkdown記号だけを表示用の箇条書きへ変換し、数式中の
+    // 演算子として使われる * はそのまま残す。
+    final normalizedContent = inlineContent.replaceAllMapped(
+      RegExp(r'^(\s*)[-*+]\s+', multiLine: true),
+      (match) => '${match.group(1)}• ',
+    );
+    final texPattern = RegExp(
+      r'(\*\*[^*\n]+\*\*|__[^_\n]+__|\*[^*\n]+\*|`[^`\n]+`|\$[^$]+\$|\\[a-zA-Z]+(?:\{[^}]*\})*|\\[^a-zA-Z]?)',
+    );
     final spans = <InlineSpan>[];
     int lastEnd = 0;
-    
-    for (final match in texPattern.allMatches(content)) {
+
+    for (final match in texPattern.allMatches(normalizedContent)) {
       // マッチ前の通常テキストを追加
       if (match.start > lastEnd) {
-        final text = content.substring(lastEnd, match.start);
+        final text = normalizedContent.substring(lastEnd, match.start);
         if (text.isNotEmpty) {
           spans.add(TextSpan(text: text, style: defaultTextStyle));
         }
       }
-      
+
       final texContent = match.group(0)!;
-      
+
+      if ((texContent.startsWith('**') && texContent.endsWith('**')) ||
+          (texContent.startsWith('__') && texContent.endsWith('__'))) {
+        spans.add(
+          TextSpan(
+            text: texContent.substring(2, texContent.length - 2),
+            style: defaultTextStyle.copyWith(fontWeight: FontWeight.w700),
+          ),
+        );
+        lastEnd = match.end;
+        continue;
+      }
+      if (texContent.startsWith('`') && texContent.endsWith('`')) {
+        spans.add(
+          TextSpan(
+            text: texContent.substring(1, texContent.length - 1),
+            style: defaultTextStyle.copyWith(fontFamily: 'monospace'),
+          ),
+        );
+        lastEnd = match.end;
+        continue;
+      }
+      if (texContent.startsWith('*') && texContent.endsWith('*')) {
+        spans.add(
+          TextSpan(
+            text: texContent.substring(1, texContent.length - 1),
+            style: defaultTextStyle.copyWith(fontStyle: FontStyle.italic),
+          ),
+        );
+        lastEnd = match.end;
+        continue;
+      }
+
       try {
         // 数式として解析を試みる
         Widget mathWidget;
-        
-        if (texContent.startsWith(r'$$') && texContent.endsWith(r'$$')) {
-          // ディスプレイ数式 ($$...$$)
-          final mathContent = texContent.substring(2, texContent.length - 2);
-          mathWidget = Math.tex(
-            mathContent,
-            textStyle: defaultTextStyle.copyWith(
-              fontSize: (defaultTextStyle.fontSize ?? 14) * (mathTextScaleFactor ?? 1.2),
-            ),
-            mathStyle: MathStyle.display,
-          );
-        } else if (texContent.startsWith(r'$') && texContent.endsWith(r'$')) {
+
+        if (texContent.startsWith(r'$') && texContent.endsWith(r'$')) {
           // インライン数式 ($...$)
           final mathContent = texContent.substring(1, texContent.length - 1);
           mathWidget = Math.tex(
             mathContent,
-            textStyle: defaultTextStyle,
+            // 本文と同寸では記号の細部が潰れやすいため、行間を大きく
+            // 変えない範囲でインライン数式だけをわずかに拡大する。
+            textStyle: defaultTextStyle.copyWith(
+              fontSize:
+                  (defaultTextStyle.fontSize ?? 14) *
+                  (mathTextScaleFactor ?? 1),
+            ),
             mathStyle: MathStyle.text,
           );
         } else {
@@ -72,41 +160,40 @@ class TexWidget extends StatelessWidget {
             continue;
           }
         }
-        
+
         // 数式ウィジェットを埋め込む
-        spans.add(WidgetSpan(
-          child: mathWidget,
-          alignment: PlaceholderAlignment.baseline,
-          baseline: TextBaseline.alphabetic,
-        ));
+        spans.add(
+          WidgetSpan(
+            child: mathWidget,
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+          ),
+        );
       } catch (e) {
         // 数式の解析に失敗した場合は基本的な置換を行う
         final replacement = _getTexReplacement(texContent);
-        spans.add(TextSpan(
-          text: replacement ?? texContent,
-          style: defaultTextStyle,
-        ));
+        spans.add(
+          TextSpan(text: replacement ?? texContent, style: defaultTextStyle),
+        );
       }
-      
+
       lastEnd = match.end;
     }
-    
+
     // 残りのテキストを追加
-    if (lastEnd < content.length) {
-      final text = content.substring(lastEnd);
+    if (lastEnd < normalizedContent.length) {
+      final text = normalizedContent.substring(lastEnd);
       if (text.isNotEmpty) {
         spans.add(TextSpan(text: text, style: defaultTextStyle));
       }
     }
-    
+
     // スパンがない場合は通常のテキストとして表示
     if (spans.isEmpty) {
-      return Text(content, style: defaultTextStyle);
+      return Text(normalizedContent, style: defaultTextStyle);
     }
-    
-    return RichText(
-      text: TextSpan(children: spans),
-    );
+
+    return RichText(text: TextSpan(children: spans));
   }
 
   /// 基本的なTeXコマンドをUnicode文字に置換
@@ -256,23 +343,25 @@ class TexDocument extends StatelessWidget {
     // 改行で分割してそれぞれを処理
     final lines = content.split('\n');
     final widgets = <Widget>[];
-    
+
     for (int i = 0; i < lines.length; i++) {
       final line = lines[i];
       if (line.trim().isEmpty) {
         widgets.add(const SizedBox(height: 8));
       } else {
-        widgets.add(TexWidget(
-          content: line,
-          textStyle: textStyle,
-          mathTextScaleFactor: mathTextScaleFactor,
-        ));
+        widgets.add(
+          TexWidget(
+            content: line,
+            textStyle: textStyle,
+            mathTextScaleFactor: mathTextScaleFactor,
+          ),
+        );
         if (i < lines.length - 1) {
           widgets.add(const SizedBox(height: 4));
         }
       }
     }
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: widgets,

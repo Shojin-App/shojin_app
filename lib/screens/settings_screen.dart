@@ -13,15 +13,21 @@ import '../services/auto_update_manager.dart'; // Import auto update manager
 import '../services/enhanced_update_service.dart'; // Use enhanced service
 import '../services/settings_service.dart';
 import '../utils/app_fonts.dart'; // Import app fonts helper
+import '../utils/responsive_layout.dart';
 import '../utils/text_style_helper.dart';
 import '../widgets/shared/custom_sliver_app_bar.dart'; // Import CustomSliverAppBar
+import '../widgets/shared/app_loading_indicator.dart';
+import '../widgets/shared/responsive_action.dart';
+import '../widgets/programming_language_icon.dart';
 import 'licenses_screen.dart'; // Third-party licenses screen
 import 'template_edit_screen.dart';
 import 'package:m3e_collection/m3e_collection.dart';
 import 'tex_test_screen.dart'; // TeX表示テスト画面をインポート
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  const SettingsScreen({super.key, this.aboutInfoLoader});
+
+  final Future<Map<String, dynamic>> Function()? aboutInfoLoader;
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -36,9 +42,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _autoUpdateCheckEnabled = true;
   bool _showUpdateDialog = true; // アップデート通知の表示設定
   Map<String, dynamic>? _aboutInfo;
+  bool _developerModeEnabled = false;
+  int _buildNumberTapCount = 0;
   // AtCoder ユーザー名設定
   final TextEditingController _atcoderUsernameController =
       TextEditingController();
+  String _savedAtCoderUsername = '';
+  bool _isSavingAtCoderUsername = false;
   @override
   void initState() {
     super.initState();
@@ -47,6 +57,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _loadShowUpdateDialogPreference(); // Load show update dialog preference
     _loadAboutInfo(); // Load about info
     _loadAtCoderUsername(); // Load AtCoder username
+    _loadDeveloperMode();
+  }
+
+  Future<void> _loadDeveloperMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _developerModeEnabled = prefs.getBool('developer_mode_enabled') ?? false;
+    });
+  }
+
+  Future<void> _handleBuildNumberTap() async {
+    if (_developerModeEnabled) return;
+    _buildNumberTapCount++;
+    final remaining = 5 - _buildNumberTapCount;
+    if (_buildNumberTapCount >= 5) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('developer_mode_enabled', true);
+      if (!mounted) return;
+      setState(() {
+        _developerModeEnabled = true;
+        _buildNumberTapCount = 0;
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('開発者モードを有効にしました')));
+    } else if (remaining <= 3 && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('開発者モードまであと$remaining回'),
+          duration: const Duration(milliseconds: 700),
+        ),
+      );
+    }
   }
 
   Future<void> _loadCurrentVersion() async {
@@ -71,9 +115,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _loadAtCoderUsername() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final saved = prefs.getString('atcoder_username');
-      if (mounted && saved != null) {
+      final saved = prefs.getString('atcoder_username') ?? '';
+      if (mounted) {
         setState(() {
+          _savedAtCoderUsername = saved;
           _atcoderUsernameController.text = saved;
         });
       }
@@ -83,18 +128,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _saveAtCoderUsername() async {
+    final username = _atcoderUsernameController.text.trim();
+    if (_isSavingAtCoderUsername || username == _savedAtCoderUsername) return;
+
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    setState(() {
+      _isSavingAtCoderUsername = true;
+    });
+
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(
-        'atcoder_username',
-        _atcoderUsernameController.text.trim(),
-      );
+      await prefs.setString('atcoder_username', username);
       // If theme uses AtCoder accent, refresh it
       try {
-        final themeProvider = Provider.of<ThemeProvider>(
-          context,
-          listen: false,
-        );
         if (themeProvider.useAtcoderRatingColor) {
           await themeProvider.refreshAtcoderAccentColor();
         }
@@ -102,6 +148,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         // ignore UI refresh errors
       }
       if (!mounted) return;
+      setState(() {
+        _savedAtCoderUsername = username;
+      });
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('AtCoderユーザー名を保存しました')));
@@ -110,6 +159,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('保存に失敗しました: $e')));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSavingAtCoderUsername = false;
+        });
+      }
     }
   }
 
@@ -166,7 +221,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadAboutInfo() async {
     try {
-      final info = await AboutInfo.getInfo();
+      final info =
+          await (widget.aboutInfoLoader?.call() ?? AboutInfo.getInfo());
       if (mounted) {
         setState(() {
           _aboutInfo = info;
@@ -232,6 +288,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final horizontalInset = ResponsiveLayout.horizontalPadding(
+      context,
+      minimum: 8,
+    );
+
     return CustomScrollView(
       slivers: [
         // カスタムSliverAppBar
@@ -248,44 +309,78 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
 
         // 設定項目のリスト
-        SliverList(
-          delegate: SliverChildListDelegate([
-            // AtCoder 設定セクション（最上部）
-            _buildAtcoderSection(),
-            const SizedBox(height: 16),
+        SliverPadding(
+          padding: EdgeInsets.symmetric(horizontal: horizontalInset),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
+              const SizedBox(height: 8),
+              // AtCoder 設定セクション（最上部）
+              _buildAtcoderSection(),
+              const SizedBox(height: 12),
 
-            // テーマ設定セクション
-            _buildThemeSection(),
-            const SizedBox(height: 16),
+              // テーマ設定セクション
+              _buildThemeSection(),
+              const SizedBox(height: 12),
 
-            // エディタ設定セクション
-            _buildEditorSection(),
-            const SizedBox(height: 16),
+              // エディタ設定セクション
+              _buildEditorSection(),
+              const SizedBox(height: 12),
 
-            // 言語設定セクション
-            _buildLanguageSection(),
-            const SizedBox(height: 16),
+              // テンプレート設定セクション
+              _buildTemplateSection(),
+              const SizedBox(height: 12),
 
-            // テンプレート設定セクション
-            _buildTemplateSection(),
-            const SizedBox(height: 16),
+              // 更新設定セクション
+              _buildUpdateSection(),
+              const SizedBox(height: 12),
 
-            // 更新設定セクション
-            _buildUpdateSection(),
-            const SizedBox(height: 16),
+              // バックアップ設定セクション
+              _buildExportSection(),
+              const SizedBox(height: 12),
 
-            // エクスポート/インポート設定セクション
-            _buildExportSection(),
-            const SizedBox(height: 16),
-
-            // アプリについてセクション
-            _buildAboutSection(),
-            const SizedBox(height: 32),
-          ]),
+              // アプリについてセクション
+              _buildAboutSection(),
+              SizedBox(
+                height: ResponsiveLayout.bottomNavigationClearance(
+                  context,
+                  spacing: 32,
+                ),
+              ),
+            ]),
+          ),
         ),
       ],
     );
   } // 新しいセクションウィジェット群
+
+  InputDecoration _settingsInputDecoration({
+    required String labelText,
+    String? hintText,
+    required IconData prefixIcon,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+      borderSide: BorderSide(color: colorScheme.outlineVariant),
+    );
+
+    return InputDecoration(
+      labelText: labelText,
+      hintText: hintText,
+      prefixIcon: Icon(prefixIcon),
+      filled: true,
+      fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+      border: border,
+      enabledBorder: border,
+      focusedBorder: border.copyWith(
+        borderSide: BorderSide(color: colorScheme.primary, width: 1.6),
+      ),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 12.0,
+        vertical: 12.0,
+      ),
+    );
+  }
 
   Widget _buildAtcoderSection() {
     return _SettingsSection(
@@ -296,10 +391,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           padding: const EdgeInsets.fromLTRB(20.0, 12.0, 20.0, 0.0),
           child: TextField(
             controller: _atcoderUsernameController,
-            decoration: const InputDecoration(
+            decoration: _settingsInputDecoration(
               labelText: 'AtCoderユーザー名',
               hintText: '例: tourist',
-              border: OutlineInputBorder(),
+              prefixIcon: Icons.person_outline,
             ),
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _saveAtCoderUsername(),
@@ -308,13 +403,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SizedBox(height: 12),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          child: SizedBox(
-            width: double.infinity,
-            child: ButtonM3E(
-              onPressed: _saveAtCoderUsername,
-              icon: const Icon(Icons.save_outlined),
-              label: const Text('保存'),
-              style: ButtonM3EStyle.filled,
+          child: ResponsiveAction(
+            maxWidth: 200,
+            child: ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _atcoderUsernameController,
+              builder: (context, value, child) {
+                final hasChanges = value.text.trim() != _savedAtCoderUsername;
+                final isSaved = !hasChanges && !_isSavingAtCoderUsername;
+                return ButtonM3E(
+                  onPressed: hasChanges && !_isSavingAtCoderUsername
+                      ? _saveAtCoderUsername
+                      : null,
+                  icon: _isSavingAtCoderUsername
+                      ? const AppLoadingIndicator(
+                          size: 18,
+                          semanticsLabel: 'AtCoderユーザー名を保存中',
+                        )
+                      : Icon(
+                          isSaved
+                              ? Icons.check_circle_outline
+                              : Icons.save_outlined,
+                        ),
+                  label: Text(
+                    _isSavingAtCoderUsername
+                        ? '保存中'
+                        : isSaved
+                        ? '保存済み'
+                        : '保存',
+                  ),
+                  style: isSaved ? ButtonM3EStyle.tonal : ButtonM3EStyle.filled,
+                );
+              },
             ),
           ),
         ),
@@ -382,17 +501,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      '${(themeProvider.navBarOpacity * 100).round()}%',
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
                   SliderM3E(
                     min: 0.0,
                     max: 1.0,
                     divisions: 20,
-                    label: themeProvider.navBarOpacity.toStringAsFixed(2),
+                    label: '${(themeProvider.navBarOpacity * 100).round()}%',
                     value: themeProvider.navBarOpacity,
                     onChanged: (value) {
                       HapticFeedback.lightImpact();
                       themeProvider.setNavBarOpacity(value);
                     },
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '透明',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      Text(
+                        '不透明',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -449,14 +595,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               padding: const EdgeInsets.fromLTRB(20.0, 16.0, 20.0, 8.0),
               child: DropdownButtonFormField<String>(
                 initialValue: themeProvider.codeFontFamily,
-                decoration: InputDecoration(
+                isExpanded: true,
+                borderRadius: BorderRadius.circular(8),
+                decoration: _settingsInputDecoration(
                   labelText: 'コードブロックのフォント',
-                  border: const OutlineInputBorder(),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12.0,
-                    vertical: 8.0,
-                  ),
-                  prefixIcon: const Icon(Icons.font_download_outlined),
+                  prefixIcon: Icons.font_download_outlined,
                 ),
                 items: themeProvider.availableCodeFontFamilies.map((
                   String fontFamily,
@@ -465,6 +608,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     value: fontFamily,
                     child: Text(
                       fontFamily,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: getMonospaceTextStyle(fontFamily),
                     ),
                   );
@@ -499,14 +644,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           title: 'テンプレート設定',
           icon: Icons.code,
           children: templateProvider.supportedLanguages.map((language) {
-            return ListTile(
-              title: Text(
-                language,
-                style: AppFonts.notoSansJp(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
+            return _SettingsActionListTile(
+              title: language,
+              leading: ProgrammingLanguageIcon(language: language),
               trailing: Icon(
                 Icons.edit_outlined,
                 color: Theme.of(context).colorScheme.primary,
@@ -529,6 +669,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildUpdateSection() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return _SettingsSection(
       title: '更新設定',
       icon: Icons.system_update_alt,
@@ -554,18 +696,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             child: Column(
               children: [
-                SizedBox(
-                  width: double.infinity,
+                ResponsiveAction(
                   child: ButtonM3E(
                     onPressed: _isLoadingUpdate ? null : _checkForUpdates,
                     icon: const Icon(Icons.update),
-                    label: const Text('アップデートを手動で確認'),
+                    label: const Text('更新を確認'),
                     style: ButtonM3EStyle.filled,
                   ),
                 ),
                 if (_isLoadingUpdate) ...[
                   const SizedBox(height: 16),
-                  const LoadingIndicatorM3E(),
+                  const AppLoadingIndicator(semanticsLabel: 'アップデート情報を読み込み中'),
                 ],
                 if (_updateCheckResult.isNotEmpty) ...[
                   const SizedBox(height: 16),
@@ -581,18 +722,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ] else ...[
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(Icons.info_outline, color: Colors.grey),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'このビルドでは自己アップデート機能は無効化されています。最新バージョンは公式GitHubリリースまたはF-Droidリポジトリ経由で入手してください。',
-                    style: AppFonts.notoSansJp(fontSize: 14),
-                  ),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.45,
                 ),
-              ],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 20,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'このビルドでは自己アップデート機能は無効化されています。最新バージョンは公式GitHubリリースまたはF-Droidリポジトリ経由で入手してください。',
+                      style: AppFonts.notoSansJp(
+                        fontSize: 14,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -600,129 +761,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildLanguageSection() {
-    return _SettingsSection(
-      title: '言語設定',
-      icon: Icons.language,
-      children: [
-        ListTile(
-          title: Text(
-            '日本語',
-            style: AppFonts.notoSansJp(
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-          subtitle: const Text('Japanese'),
-          leading: const Icon(Icons.language),
-          trailing: const Icon(Icons.check, color: Colors.green),
-          onTap: () {
-            HapticFeedback.lightImpact();
-            // 将来的に多言語対応する際の実装場所
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('現在は日本語のみサポートしています')));
-          },
-        ),
-      ],
-    );
-  }
-
   Widget _buildExportSection() {
     return _SettingsSection(
-      title: 'エクスポート/インポート',
-      icon: Icons.import_export,
+      title: 'バックアップ',
+      icon: Icons.cloud_sync_outlined,
       children: [
-        ListTile(
-          title: Text(
-            '設定をクリップボードにコピー',
-            style: AppFonts.notoSansJp(
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-          subtitle: const Text('現在の設定をクリップボードにコピーします'),
-          leading: const Icon(Icons.copy_all_outlined),
+        _SettingsActionListTile(
+          title: '設定をコピー',
+          subtitle: 'クリップボードにバックアップ',
+          icon: Icons.copy_all_outlined,
           onTap: () async {
             HapticFeedback.lightImpact();
             await _exportSettingsToClipboard();
           },
         ),
-        ListTile(
-          title: Text(
-            'クリップボードから設定をインポート',
-            style: AppFonts.notoSansJp(
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-          subtitle: const Text('クリップボードから設定を復元します'),
-          leading: const Icon(Icons.paste_outlined),
+        _SettingsActionListTile(
+          title: 'コピーした設定を復元',
+          subtitle: 'クリップボードから読み込み',
+          icon: Icons.paste_outlined,
           onTap: () async {
             HapticFeedback.lightImpact();
             await _importSettingsFromClipboard();
           },
         ),
         const Divider(),
-        ListTile(
-          title: Text(
-            '設定をファイルにエクスポート',
-            style: AppFonts.notoSansJp(
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-          subtitle: const Text('現在の設定をファイルに保存/共有'),
-          leading: const Icon(Icons.upload_file),
+        _SettingsActionListTile(
+          title: '設定ファイルを共有',
+          subtitle: 'ファイルとして保存または送信',
+          icon: Icons.ios_share_outlined,
           onTap: () async {
             HapticFeedback.lightImpact();
             await _exportSettings();
           },
         ),
-        ListTile(
-          title: Text(
-            'ファイルから設定をインポート',
-            style: AppFonts.notoSansJp(
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-          subtitle: const Text('ファイルから設定を復元'),
-          leading: const Icon(Icons.file_download),
+        _SettingsActionListTile(
+          title: '設定ファイルから復元',
+          subtitle: '保存したファイルを読み込み',
+          icon: Icons.file_open_outlined,
           onTap: () async {
             HapticFeedback.lightImpact();
             await _importSettings();
-          },
-        ),
-        const Divider(),
-        ListTile(
-          title: Text(
-            'テンプレートをエクスポート',
-            style: AppFonts.notoSansJp(
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-          subtitle: const Text('カスタムテンプレートをファイルに保存'),
-          leading: const Icon(Icons.code_rounded),
-          onTap: () async {
-            HapticFeedback.lightImpact();
-            await _exportTemplates();
-          },
-        ),
-        ListTile(
-          title: Text(
-            'テンプレートをインポート',
-            style: AppFonts.notoSansJp(
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-          subtitle: const Text('ファイルからテンプレートを復元'),
-          leading: const Icon(Icons.code_outlined),
-          onTap: () async {
-            HapticFeedback.lightImpact();
-            await _importTemplates();
           },
         ),
       ],
@@ -743,19 +821,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
         // 開発者セクション（ソーシャルメディアリンク付き）
         _buildDeveloperSection(),
         const Divider(),
-        ListTile(
-          leading: const Icon(Icons.rule_folder_outlined),
-          title: const Text('ライセンス'),
-          subtitle: const Text('直接 / 全依存 / 標準 Flutter'),
+        _SettingsActionListTile(
+          icon: Icons.rule_folder_outlined,
+          title: 'ライセンス',
+          subtitle: '直接 / 全依存 / 標準 Flutter',
+          trailing: const Icon(Icons.chevron_right),
           onTap: () {
             Navigator.of(
               context,
             ).push(MaterialPageRoute(builder: (_) => const LicensesScreen()));
           },
         ),
-        ListTile(
-          leading: const Icon(Icons.privacy_tip_outlined),
-          title: const Text('プライバシーポリシー'),
+        _SettingsActionListTile(
+          icon: Icons.privacy_tip_outlined,
+          title: 'プライバシーポリシー',
+          trailing: const Icon(Icons.open_in_new, size: 20),
           onTap: () {
             launchUrl(
               Uri.parse(
@@ -764,9 +844,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             );
           },
         ),
-        ListTile(
-          leading: const Icon(Icons.article_outlined),
-          title: const Text('利用規約'),
+        _SettingsActionListTile(
+          icon: Icons.article_outlined,
+          title: '利用規約',
+          trailing: const Icon(Icons.open_in_new, size: 20),
           onTap: () {
             launchUrl(
               Uri.parse(
@@ -775,32 +856,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
             );
           },
         ),
-        const Divider(),
-        ListTile(
-          leading: const Icon(Icons.functions),
-          title: const Text('TeX表示テスト'),
-          subtitle: const Text('LaTeX数式レンダリングの動作確認'),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const TexTestScreen()),
-            );
-          },
-        ),
+        if (_developerModeEnabled) ...[
+          const Divider(),
+          const _SettingsActionListTile(
+            icon: Icons.developer_mode,
+            title: '開発者向け機能',
+            subtitle: '内部機能の動作確認',
+          ),
+          _SettingsActionListTile(
+            icon: Icons.functions,
+            title: 'TeX表示テスト',
+            subtitle: 'LaTeX数式レンダリングの動作確認',
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const TexTestScreen()),
+              );
+            },
+          ),
+        ],
         if (_aboutInfo != null) ...[
           const Divider(),
           if (_aboutInfo!['error'] != null)
-            ListTile(
-              title: const Text('エラー'),
-              subtitle: Text(_aboutInfo!['error']),
-              leading: const Icon(Icons.error),
+            _SettingsActionListTile(
+              icon: Icons.error_outline,
+              title: 'エラー',
+              subtitle: _aboutInfo!['error'],
             )
           else
-            ..._buildAboutDetails(),
+            _buildAboutDetailsExpansion(),
         ] else
-          const ListTile(
-            title: Text('情報の読み込み中...'),
-            leading: LoadingIndicatorM3E(),
+          const _SettingsActionListTile(
+            title: '情報の読み込み中...',
+            subtitle: '端末とアプリの情報を確認しています',
+            leading: SizedBox(
+              width: 24,
+              height: 24,
+              child: LoadingIndicatorM3E(),
+            ),
           ),
       ],
     );
@@ -820,11 +914,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
         icon: Icons.inventory,
         onCopy: _copyAllAppInfo,
       ),
-      _CopyableListTile(
+      _SettingsActionListTile(
+        icon: Icons.build,
         title: 'ビルド番号',
         subtitle: _aboutInfo!['buildNumber'] ?? '不明',
-        icon: Icons.build,
-        onCopy: _copyAllAppInfo,
+        onTap: _handleBuildNumberTap,
+        onLongPress: () => _copyAllAppInfo(context),
       ),
       _CopyableListTile(
         title: 'プラットフォーム',
@@ -862,14 +957,70 @@ class _SettingsScreenState extends State<SettingsScreen> {
     ];
   }
 
+  Widget _buildAboutDetailsExpansion() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return ExpansionTile(
+      tilePadding: const EdgeInsets.symmetric(horizontal: 20),
+      shape: const Border(),
+      collapsedShape: const Border(),
+      iconColor: colorScheme.onSurfaceVariant,
+      collapsedIconColor: colorScheme.onSurfaceVariant,
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(Icons.data_object, color: colorScheme.onSecondaryContainer),
+      ),
+      title: Text(
+        '詳細情報',
+        style: theme.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      subtitle: Text(
+        '端末・パッケージ・ビルド情報',
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: colorScheme.onSurfaceVariant,
+        ),
+      ),
+      children: _buildAboutDetails(),
+    );
+  }
+
   Widget _buildDeveloperSection() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return ExpansionTile(
       title: Text(
         '開発者',
-        style: AppFonts.notoSansJp(fontSize: 16, fontWeight: FontWeight.w400),
+        style: AppFonts.notoSansJp(fontSize: 16, fontWeight: FontWeight.w500),
       ),
-      subtitle: const Text('〒«ゆうびんきょく»'),
-      leading: const Icon(Icons.code),
+      subtitle: Text(
+        '〒«ゆうびんきょく»',
+        style: AppFonts.notoSansJp(
+          fontSize: 14,
+          color: colorScheme.onSurfaceVariant,
+        ),
+      ),
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Center(
+          child: Icon(Icons.code, color: colorScheme.onSecondaryContainer),
+        ),
+      ),
+      iconColor: colorScheme.onSurfaceVariant,
+      collapsedIconColor: colorScheme.onSurfaceVariant,
+      tilePadding: const EdgeInsets.symmetric(horizontal: 20),
       shape: const Border(), // 白い線を非表示にする
       collapsedShape: const Border(), // 折りたたみ時の白い線も非表示にする
       children: [
@@ -967,33 +1118,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await settingsService.importSettingsFromClipboard();
   }
 
-  Future<void> _exportTemplates() async {
-    try {
-      // TemplateProvider からテンプレート取得しファイル保存する処理を今後実装予定。
-      // 将来的にテンプレートをファイルとして保存する実装を追加
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('テンプレートのエクスポート機能は開発中です')));
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('テンプレートのエクスポートに失敗しました: $e')));
-    }
-  }
-
-  Future<void> _importTemplates() async {
-    try {
-      // 将来的にファイルからテンプレートを読み込む実装を追加
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('テンプレートのインポート機能は開発中です')));
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('テンプレートのインポートに失敗しました: $e')));
-    }
-  }
-
   String _getAllAppInfo() {
     List<String> infoLines = [];
 
@@ -1056,42 +1180,54 @@ class _SettingsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-      elevation: 0,
+    return Material(
       color: colorScheme.surfaceContainerLow,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16.0),
+        borderRadius: BorderRadius.circular(8.0),
         side: BorderSide(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.6),
+          // 暗色テーマでも枠線が本文より先に目立たない強さに留める。
+          color: colorScheme.outlineVariant.withValues(alpha: 0.35),
         ),
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 8.0),
+            padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 8.0),
             child: Row(
               children: [
-                Icon(
-                  icon,
-                  size: 20,
-                  color: Theme.of(context).colorScheme.primary,
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      icon,
+                      size: 20,
+                      color: colorScheme.onPrimaryContainer,
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  title,
-                  style: AppFonts.notoSansJp(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w500,
-                    color: Theme.of(context).colorScheme.onSurface,
+                Expanded(
+                  child: Text(
+                    title,
+                    style: AppFonts.notoSansJp(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onSurface,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
           ...children,
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
         ],
       ),
     );
@@ -1116,11 +1252,33 @@ class _HapticSwitchListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return SwitchListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20.0),
+      secondary: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: value
+              ? colorScheme.primaryContainer
+              : colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Center(
+          child: Icon(
+            icon,
+            color: value
+                ? colorScheme.onPrimaryContainer
+                : colorScheme.onSecondaryContainer,
+          ),
+        ),
+      ),
       title: Text(
         title,
-        style: AppFonts.notoSansJp(fontSize: 16, fontWeight: FontWeight.w400),
+        style: AppFonts.notoSansJp(
+          fontSize: 16,
+          fontWeight: value ? FontWeight.w600 : FontWeight.w400,
+        ),
       ),
       subtitle: subtitle != null
           ? Text(
@@ -1136,7 +1294,6 @@ class _HapticSwitchListTile extends StatelessWidget {
         HapticFeedback.lightImpact();
         onChanged(newValue);
       },
-      secondary: Icon(icon),
     );
   }
 }
@@ -1162,13 +1319,39 @@ class _HapticRadioListTile<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isSelected = value == groupValue;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20.0),
-      leading: secondary,
+      tileColor: isSelected
+          ? colorScheme.primaryContainer.withValues(alpha: 0.28)
+          : null,
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: isSelected
+              ? colorScheme.primaryContainer
+              : colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Center(
+          child: IconTheme(
+            data: IconThemeData(
+              color: isSelected
+                  ? colorScheme.onPrimaryContainer
+                  : colorScheme.onSecondaryContainer,
+            ),
+            child: secondary,
+          ),
+        ),
+      ),
       title: Text(
         title,
-        style: AppFonts.notoSansJp(fontSize: 16, fontWeight: FontWeight.w400),
+        style: AppFonts.notoSansJp(
+          fontSize: 16,
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+        ),
       ),
       subtitle: subtitle != null
           ? Text(
@@ -1181,14 +1364,73 @@ class _HapticRadioListTile<T> extends StatelessWidget {
           : null,
       trailing: Icon(
         isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-        color: isSelected
-            ? Theme.of(context).colorScheme.primary
-            : Theme.of(context).colorScheme.onSurfaceVariant,
+        color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
       ),
       onTap: () {
         HapticFeedback.lightImpact();
         onChanged(value);
       },
+    );
+  }
+}
+
+class _SettingsActionListTile extends StatelessWidget {
+  final String title;
+  final String? subtitle;
+  final IconData? icon;
+  final Widget? leading;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+
+  const _SettingsActionListTile({
+    required this.title,
+    this.subtitle,
+    this.icon,
+    this.leading,
+    this.trailing,
+    this.onTap,
+    this.onLongPress,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final leadingChild =
+        leading ?? Icon(icon, color: colorScheme.onSecondaryContainer);
+
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20.0),
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Center(
+          child: IconTheme(
+            data: IconThemeData(color: colorScheme.onSecondaryContainer),
+            child: leadingChild,
+          ),
+        ),
+      ),
+      title: Text(
+        title,
+        style: AppFonts.notoSansJp(fontSize: 16, fontWeight: FontWeight.w500),
+      ),
+      subtitle: subtitle != null
+          ? Text(
+              subtitle!,
+              style: AppFonts.notoSansJp(
+                fontSize: 14,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            )
+          : null,
+      trailing: trailing,
+      onTap: onTap,
+      onLongPress: onLongPress,
     );
   }
 }
@@ -1209,8 +1451,25 @@ class _CopyableListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    void copy() {
+      HapticFeedback.lightImpact();
+      onCopy(context);
+    }
+
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20.0),
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Center(
+          child: Icon(icon, color: colorScheme.onSecondaryContainer),
+        ),
+      ),
       title: Text(
         title,
         style: AppFonts.notoSansJp(fontSize: 16, fontWeight: FontWeight.w400),
@@ -1219,22 +1478,16 @@ class _CopyableListTile extends StatelessWidget {
         subtitle,
         style: AppFonts.notoSansJp(
           fontSize: 14,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          color: colorScheme.onSurfaceVariant,
         ),
       ),
-      leading: Icon(icon),
-      onLongPress: () => onCopy(context),
-      onTap: () {
-        HapticFeedback.lightImpact();
-        // 短いタップでも説明を表示
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('長押しでアプリ情報をすべてコピーします'),
-            duration: const Duration(seconds: 1),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      },
+      trailing: IconButton(
+        tooltip: '$titleをコピー',
+        icon: const Icon(Icons.copy_outlined),
+        onPressed: copy,
+      ),
+      onLongPress: copy,
+      onTap: copy,
     );
   }
 }
@@ -1272,6 +1525,7 @@ class _SocialMediaItem extends StatelessWidget {
         await launchUrl(Uri.parse(url), mode: LaunchMode.platformDefault);
         HapticFeedback.lightImpact();
       } catch (fallbackError) {
+        if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('URLを開けませんでした: $url'),
@@ -1296,11 +1550,22 @@ class _SocialMediaItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
-      leading: icon is IconData
-          ? Icon(icon as IconData, color: Theme.of(context).colorScheme.primary)
-          : icon as Widget,
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Center(
+          child: icon is IconData
+              ? Icon(icon as IconData, color: colorScheme.onSecondaryContainer)
+              : icon as Widget,
+        ),
+      ),
       title: Text(
         title,
         style: AppFonts.notoSansJp(fontSize: 16, fontWeight: FontWeight.w500),
@@ -1309,12 +1574,12 @@ class _SocialMediaItem extends StatelessWidget {
         subtitle,
         style: AppFonts.notoSansJp(
           fontSize: 14,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          color: colorScheme.onSurfaceVariant,
         ),
       ),
       trailing: Icon(
         Icons.open_in_new,
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
+        color: colorScheme.onSurfaceVariant,
         size: 20,
       ),
       onTap: () => _launchUrl(context),

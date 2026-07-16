@@ -868,6 +868,17 @@ class EnhancedUpdateService {
       final downloadedPath = await downloadUpdateWithProgress(releaseInfo);
 
       if (downloadedPath != null && !_cancelDownload) {
+        if (!context.mounted) {
+          _updateProgress(
+            UpdateProgress(
+              progress: 0.0,
+              status: 'アップデート画面が閉じられました',
+              isCompleted: true,
+              errorMessage: 'Update context is no longer mounted',
+            ),
+          );
+          return;
+        }
         // ダウンロード成功後、インストール開始
         await applyUpdate(downloadedPath, context);
       } else if (_cancelDownload) {

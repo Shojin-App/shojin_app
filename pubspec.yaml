@@ -4,7 +4,7 @@ homepage: https://github.com/Shojin-App/shojin_app
 
 publish_to: "none"
 
-version: 1.3.0
+version: 2.0.0
 
 environment:
   sdk: ^3.8.1
@@ -14,44 +14,57 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  package_info_plus: ^9.0.0
-  device_info_plus: ^12.3.0
-  path_provider: ^2.1.3
+  package_info_plus:
+    git:
+      url: https://github.com/fluttercommunity/plus_plugins.git
+      ref: 952753a7840f3e6529ac216867c86d70bb457024
+      path: packages/package_info_plus/package_info_plus
+  device_info_plus:
+    git:
+      url: https://github.com/fluttercommunity/plus_plugins.git
+      ref: 396b362e42622f10f3e7361f7d2853675d0bd0a4
+      path: packages/device_info_plus/device_info_plus
+  path_provider: ^2.1.6
   pub_semver: ^2.1.4
   url_launcher: ^6.3.2
-  permission_handler: ^12.0.1
-  archive: ^4.0.7
+  permission_handler: ^12.0.3
+  archive: ^4.0.9
   crypto: ^3.0.7
-  cupertino_icons: ^1.0.8
+  cupertino_icons: ^1.0.9
   dynamic_color: ^1.8.1
-  google_fonts: ^6.3.3
-  flutter_svg: ^2.2.2
-  flutter_local_notifications: ^19.5.0
-  timezone: ^0.10.0 # flutter_local_notifications の依存関係に合わせて修正
+  google_fonts: ^8.2.0
+  flutter_svg: ^2.3.0
+  simple_icons: ^16.23.0
+  flutter_local_notifications: ^22.0.1
+  timezone: ^0.11.1 # flutter_local_notifications の依存関係に合わせて修正
 
   # AtCoder問題のスクレイピングに必要なパッケージ
   http: ^1.6.0
   html: ^0.15.6
-  flutter_markdown_plus: ^1.0.5
+  flutter_markdown_plus: ^1.0.12
   flutter_code_editor: ^0.3.5
   code_text_field: ^1.1.0
   highlight: ^0.7.0
   flutter_highlight: ^0.7.0
   # 設定の保存に必要
-  shared_preferences: ^2.2.3
+  shared_preferences: ^2.5.5
   provider: ^6.1.5
-  webview_flutter: ^4.7.0
+  webview_flutter: ^4.14.1
   favicon: ^1.1.0
-  share_plus: ^12.0.1
-  file_picker: ^10.3.6
-  open_file: ^3.5.10
+  share_plus:
+    git:
+      url: https://github.com/fluttercommunity/plus_plugins.git
+      ref: 5926e8e7bc56b8577900c0cc0d41c44e7947f6dc
+      path: packages/share_plus/share_plus
+  file_picker: 12.0.0-beta.7
+  open_file: ^4.0.0
   intl: ^0.20.2
-  animations: ^2.1.1
+  animations: ^2.2.0
   yaml: ^3.1.2
   # LaTeX/TeX数式レンダリング用
   flutter_math_fork: ^0.7.3
   # Monaco Editor (VS Code's editor) for Flutter
-  flutter_monaco: ^1.1.1
+  flutter_monaco: ^2.1.1
   # Material 3 Expressive collection
   m3e_collection: ^0.3.7
   # NOTE: The following Git-based dependencies were removed for F-Droid compliance.
@@ -69,7 +82,11 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   change_app_package_name: ^1.5.0
   # Automatically aggregate and generate third-party license list
-  flutter_oss_licenses: ^3.0.10
+  flutter_oss_licenses: ^3.2.0
+
+dependency_overrides:
+  dynamic_color:
+    path: third_party/dynamic_color
 
 flutter:
   generate: true
@@ -80,12 +97,6 @@ flutter:
     - assets/icon/youtube_logo.svg
     - assets/icon/github_logo.svg
   fonts:
-    - family: HackGen
-      fonts:
-        - asset: assets/fonts/HackGen-Regular.ttf
-          weight: 400
-        - asset: assets/fonts/HackGen-Bold.ttf
-          weight: 700
     - family: HackGen35
       fonts:
         - asset: assets/fonts/HackGen35-Regular.ttf

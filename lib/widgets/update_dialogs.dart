@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:m3e_collection/m3e_collection.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../services/enhanced_update_service.dart';
@@ -245,12 +246,33 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
+        final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
+
         return AlertDialog(
-          title: const Row(
+          title: Row(
             children: [
-              Icon(Icons.download_done, color: Colors.green),
-              SizedBox(width: 8),
-              Text('ダウンロード完了'),
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.download_done,
+                  color: colorScheme.onPrimaryContainer,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'ダウンロード完了',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
             ],
           ),
           content: SingleChildScrollView(
@@ -261,24 +283,22 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryContainer,
+                    color: colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
                     children: [
                       Icon(
                         Icons.check_circle,
-                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        color: colorScheme.onPrimaryContainer,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'アップデートファイルのダウンロードが完了しました！',
-                          style: TextStyle(
+                          style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onPrimaryContainer,
+                            color: colorScheme.onPrimaryContainer,
                           ),
                         ),
                       ),
@@ -286,31 +306,36 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
+                Text(
                   'あと少しでアップデートが完了します。ファイルマネージャーでAPKファイルをタップしてインストールしてください。',
-                  style: TextStyle(fontSize: 16),
+                  style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
                 ),
                 const SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest,
+                    color: colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.45,
+                    ),
                     borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.touch_app, color: Colors.blue),
+                          Icon(
+                            Icons.touch_app,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
                           const SizedBox(width: 8),
                           Text(
                             '簡単手順:',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onSurface,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],
@@ -321,8 +346,8 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
                         '2. 「app-arm64-v8a-release.apk」をタップ\n'
                         '3. 「インストール」をタップ\n'
                         '4. インストール完了！',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
                           height: 1.5,
                         ),
                       ),
@@ -333,7 +358,9 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withValues(alpha: 0.1),
+                    color: colorScheme.tertiaryContainer.withValues(
+                      alpha: 0.55,
+                    ),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Column(
@@ -341,13 +368,16 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.security, color: Colors.orange),
+                          Icon(
+                            Icons.security,
+                            color: colorScheme.onTertiaryContainer,
+                          ),
                           const SizedBox(width: 8),
                           Text(
                             '権限が必要な場合:',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onSurface,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              color: colorScheme.onTertiaryContainer,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],
@@ -355,8 +385,8 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
                       const SizedBox(height: 8),
                       Text(
                         '「不明なアプリのインストールを許可しますか？」と表示されたら「許可」をタップしてください。',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onTertiaryContainer,
                         ),
                       ),
                     ],
@@ -366,13 +396,14 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
             ),
           ),
           actions: [
-            TextButton(
+            TextButton.icon(
               onPressed: () {
                 Navigator.of(context).pop(); // ガイダンスダイアログを閉じる
                 Navigator.of(context).pop(); // アップデートダイアログも閉じる
                 widget.onCancelled?.call();
               },
-              child: const Text('後で手動で実行'),
+              icon: const Icon(Icons.schedule),
+              label: const Text('後で手動で実行'),
             ),
             FilledButton.icon(
               onPressed: () async {
@@ -427,14 +458,35 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return PopScope(
       canPop: !_isDownloading,
       child: AlertDialog(
         title: Row(
           children: [
-            const Icon(Icons.download, color: Colors.blue),
-            const SizedBox(width: 8),
-            const Text('アップデートダウンロード'),
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.download,
+                color: colorScheme.onPrimaryContainer,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'アップデートダウンロード',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
           ],
         ),
         content: SizedBox(
@@ -449,23 +501,29 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest,
+                    color: colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.45,
+                    ),
                     borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'バージョン ${widget.updateInfo.version}',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.bold),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       if (widget.updateInfo.fileSize != null)
                         Text(
                           'ファイルサイズ: ${(widget.updateInfo.fileSize! / 1024 / 1024).toStringAsFixed(1)} MB',
-                          style: Theme.of(context).textTheme.bodySmall,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
                         ),
                     ],
                   ),
@@ -474,21 +532,31 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
                 // Progress section
                 Text(
                   _currentProgress?.status ?? '準備中...',
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(height: 8),
 
                 // Progress bar
                 if (_currentProgress?.progress != null &&
                     _currentProgress!.progress >= 0)
-                  LinearProgressIndicator(
-                    value: _currentProgress!.progress,
-                    backgroundColor: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest,
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(999),
+                    child: LinearProgressIndicator(
+                      value: _currentProgress!.progress,
+                      minHeight: 6,
+                      backgroundColor: colorScheme.surfaceContainerHighest,
+                    ),
                   )
                 else
-                  const LinearProgressIndicator(), // Indeterminate
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(999),
+                    child: LinearProgressIndicator(
+                      minHeight: 6,
+                      backgroundColor: colorScheme.surfaceContainerHighest,
+                    ),
+                  ), // Indeterminate
 
                 const SizedBox(height: 8),
 
@@ -498,13 +566,17 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
                   children: [
                     Text(
                       _currentProgress?.formattedProgress ?? '0.0%',
-                      style: Theme.of(context).textTheme.bodySmall,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                     ),
                     if (_currentProgress?.progress != null &&
                         _currentProgress!.progress >= 0)
                       Text(
                         '${(_currentProgress!.progress * 100).toStringAsFixed(0)}%',
-                        style: Theme.of(context).textTheme.bodySmall,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                       ),
                   ],
                 ),
@@ -515,7 +587,7 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.errorContainer,
+                      color: colorScheme.errorContainer,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Column(
@@ -525,22 +597,17 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
                           children: [
                             Icon(
                               Icons.error_outline,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onErrorContainer,
+                              color: colorScheme.onErrorContainer,
                               size: 20,
                             ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 'エラーが発生しました',
-                                style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onErrorContainer,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: colorScheme.onErrorContainer,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
                           ],
@@ -553,12 +620,9 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
                           child: SingleChildScrollView(
                             child: Text(
                               _currentProgress!.errorMessage!,
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onErrorContainer,
-                                  ),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onErrorContainer,
+                              ),
                             ),
                           ),
                         ),
@@ -573,28 +637,23 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primaryContainer,
+                      color: colorScheme.primaryContainer,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
                       children: [
                         Icon(
                           Icons.check_circle_outline,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onPrimaryContainer,
+                          color: colorScheme.onPrimaryContainer,
                           size: 20,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             'ダウンロード完了！インストールを開始します。',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onPrimaryContainer,
-                                ),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onPrimaryContainer,
+                            ),
                           ),
                         ),
                       ],
@@ -608,22 +667,31 @@ class _UpdateProgressDialogState extends State<UpdateProgressDialog> {
         actions: [
           // Cancel button (always show unless completed)
           if (!_isCompleted)
-            TextButton(onPressed: _cancelDownload, child: const Text('キャンセル')),
+            TextButton.icon(
+              onPressed: _cancelDownload,
+              icon: const Icon(Icons.close),
+              label: const Text('キャンセル'),
+            ),
 
           // Retry button (only show on error)
           if (_hasError)
-            TextButton(onPressed: _retryDownload, child: const Text('再試行')),
+            TextButton.icon(
+              onPressed: _retryDownload,
+              icon: const Icon(Icons.refresh),
+              label: const Text('再試行'),
+            ),
 
           // Close button (only show when completed or error)
           if ((_isCompleted && !_isDownloading) || _hasError)
-            FilledButton(
+            FilledButton.icon(
               onPressed: () {
                 Navigator.of(context).pop();
                 if (_isCompleted) {
                   widget.onCompleted?.call();
                 }
               },
-              child: const Text('閉じる'),
+              icon: const Icon(Icons.check),
+              label: const Text('閉じる'),
             ),
         ],
       ),
@@ -647,6 +715,8 @@ class EnhancedUpdateDialog extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     // Ensure version string has 'v' prefix for URL
     String versionTag = updateInfo.releaseTag ?? updateInfo.version;
     if (!versionTag.startsWith('v')) {
@@ -656,135 +726,240 @@ class EnhancedUpdateDialog extends StatelessWidget {
     return AlertDialog(
       title: Row(
         children: [
-          Icon(
-            Icons.system_update_alt,
-            color: Theme.of(context).colorScheme.primary,
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.system_update_alt,
+              color: colorScheme.onPrimaryContainer,
+            ),
           ),
-          const SizedBox(width: 8),
-          const Text("アップデート利用可能"),
-        ],
-      ),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Version info card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "新しいバージョン",
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-                  Text(
-                    "v${updateInfo.version}",
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  if (updateInfo.releaseDate != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      "リリース日: ${updateInfo.releaseDate!.year}/${updateInfo.releaseDate!.month}/${updateInfo.releaseDate!.day}",
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onPrimaryContainer,
-                      ),
-                    ),
-                  ],
-                  if (updateInfo.fileSize != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      "ファイルサイズ: ${(updateInfo.fileSize! / 1024 / 1024).toStringAsFixed(1)} MB",
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onPrimaryContainer,
-                      ),
-                    ),
-                  ],
-                ],
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              "アップデート利用可能",
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
               ),
             ),
-
-            const SizedBox(height: 16),
-
-            // Release notes
-            if (updateInfo.releaseNotes != null &&
-                updateInfo.releaseNotes!.isNotEmpty) ...[
-              Text(
-                "リリースノート",
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
+          ),
+        ],
+      ),
+      content: SingleChildScrollView(
+        child: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Version info card
               Container(
                 width: double.infinity,
-                constraints: const BoxConstraints(maxHeight: 200),
-                child: SingleChildScrollView(
-                  child: Text(
-                    updateInfo.releaseNotes!,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "新しいバージョン",
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      "v${updateInfo.version}",
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        color: colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (updateInfo.releaseDate != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        "リリース日: ${updateInfo.releaseDate!.year}/${updateInfo.releaseDate!.month}/${updateInfo.releaseDate!.day}",
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                    ],
+                    if (updateInfo.fileSize != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        "ファイルサイズ: ${(updateInfo.fileSize! / 1024 / 1024).toStringAsFixed(1)} MB",
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-            ] else ...[
-              Text(
-                "リリースノート",
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                "リリースノートはありません。",
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
+
+              const SizedBox(height: 16),
+
+              // Release notes
+              if (updateInfo.releaseNotes != null &&
+                  updateInfo.releaseNotes!.isNotEmpty) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.45,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.notes_outlined,
+                            size: 18,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            "リリースノート",
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 200),
+                        child: SingleChildScrollView(
+                          child: Text(
+                            updateInfo.releaseNotes!,
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ] else ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.45,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.notes_outlined,
+                        size: 18,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          "リリースノートはありません。",
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.secondaryContainer.withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 18,
+                      color: colorScheme.onSecondaryContainer,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'アップデートを開始するとダウンロード画面へ進みます。',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSecondaryContainer,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
-          ],
+          ),
         ),
       ),
       actions: [
         // Later button
-        TextButton(
+        ButtonM3E(
+          style: ButtonM3EStyle.text,
           onPressed: () {
             Navigator.of(context).pop();
             onLaterPressed?.call();
           },
-          child: const Text('後で'),
+          icon: const Icon(Icons.schedule),
+          label: const Text('後で'),
         ),
+        if (onSkipPressed != null)
+          ButtonM3E(
+            style: ButtonM3EStyle.text,
+            onPressed: () {
+              Navigator.of(context).pop();
+              onSkipPressed?.call();
+            },
+            icon: const Icon(Icons.skip_next_outlined),
+            label: const Text('スキップ'),
+          ),
         // View on GitHub button
-        TextButton(
+        ButtonM3E(
+          style: ButtonM3EStyle.text,
           onPressed: () async {
-            Navigator.of(context).pop();
             final String releaseUrl =
                 "https://github.com/Shojin-App/Shojin_App/releases/tag/$versionTag";
-            // You can use url_launcher here if available
-            // await launchUrl(Uri.parse(releaseUrl));
-            debugPrint('GitHub URL: $releaseUrl');
+            await launchUrl(
+              Uri.parse(releaseUrl),
+              mode: LaunchMode.externalApplication,
+            );
+            if (context.mounted) Navigator.of(context).pop();
           },
-          child: const Text('GitHubで見る'),
+          icon: const Icon(Icons.open_in_new),
+          label: const Text('GitHub'),
         ),
 
         // Update button
-        FilledButton(
+        ButtonM3E(
+          style: ButtonM3EStyle.filled,
           onPressed: () {
             Navigator.of(context).pop();
             onUpdatePressed?.call();
           },
-          child: const Text('アップデート'),
+          icon: const Icon(Icons.download),
+          label: const Text('更新'),
         ),
       ],
     );

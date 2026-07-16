@@ -3,9 +3,23 @@ import 'package:flutter/services.dart'; // TextInputFormatterのため
 import 'package:m3e_collection/m3e_collection.dart';
 import '../models/reminder_setting.dart';
 import '../services/reminder_storage_service.dart';
+import '../services/contest_reminder_service.dart';
+import '../services/notification_service.dart';
+import '../utils/responsive_layout.dart';
+import '../widgets/shared/app_loading_indicator.dart';
+import '../widgets/shared/app_state_card.dart';
 
 class ReminderSettingsScreen extends StatefulWidget {
-  const ReminderSettingsScreen({super.key});
+  const ReminderSettingsScreen({
+    super.key,
+    this.notificationService,
+    this.storageService,
+    this.reminderService,
+  });
+
+  final NotificationService? notificationService;
+  final ReminderStorageService? storageService;
+  final ContestReminderService? reminderService;
 
   @override
   State<ReminderSettingsScreen> createState() => _ReminderSettingsScreenState();
@@ -19,7 +33,9 @@ class _NotificationTimeOption {
 }
 
 class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
-  final ReminderStorageService _storageService = ReminderStorageService();
+  late final NotificationService _notificationService;
+  late final ReminderStorageService _storageService;
+  late final ContestReminderService _reminderService;
   List<ReminderSetting> _reminderSettings = [];
   bool _isLoading = true;
 
@@ -28,6 +44,13 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
     ContestType.arc: 'AtCoder Regular Contest',
     ContestType.agc: 'AtCoder Grand Contest',
     ContestType.ahc: 'AtCoder Heuristic Contest',
+  };
+
+  final Map<ContestType, String> _contestTypeLabels = {
+    ContestType.abc: 'ABC',
+    ContestType.arc: 'ARC',
+    ContestType.agc: 'AGC',
+    ContestType.ahc: 'AHC',
   };
 
   static const List<_NotificationTimeOption> _timeOptions = [
@@ -44,6 +67,14 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
   @override
   void initState() {
     super.initState();
+    _notificationService = widget.notificationService ?? NotificationService();
+    _storageService = widget.storageService ?? ReminderStorageService();
+    _reminderService =
+        widget.reminderService ??
+        ContestReminderService(
+          notificationService: _notificationService,
+          storageService: _storageService,
+        );
     _loadSettings();
   }
 
@@ -52,13 +83,16 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
       _isLoading = true;
     });
     final loadedSettings = await _storageService.loadReminderSettings();
+    for (final setting in loadedSettings) {
+      setting.minutesBefore = setting.minutesBefore.toSet().toList()..sort();
+    }
     for (var type in _contestTypeNames.keys) {
       if (!loadedSettings.any((s) => s.contestType == type)) {
         loadedSettings.add(
           ReminderSetting(
             contestType: type,
             minutesBefore: [15],
-            isEnabled: true,
+            isEnabled: false,
           ),
         );
       }
@@ -82,43 +116,149 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
       }
     }
     await _storageService.saveReminderSettings(_reminderSettings);
+    await _reminderService.synchronize();
+  }
+
+  Future<void> _setReminderEnabled(int index, bool value) async {
+    if (value) {
+      var granted = false;
+      try {
+        granted = await _notificationService.requestPermissions();
+      } catch (_) {
+        // プラグインが権限状態を返せない端末でも、有効表示だけが先行して
+        // 実際には通知されない状態を作らない。
+      }
+      if (!mounted) return;
+      if (!granted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('通知が許可されなかったため、リマインダーは有効にできませんでした')),
+        );
+        return;
+      }
+    }
+
+    setState(() {
+      _reminderSettings[index].isEnabled = value;
+    });
+    await _saveSettings();
   }
 
   Future<void> _showCustomTimeInputDialog(int settingIndex) async {
     final TextEditingController controller = TextEditingController();
     final newTime = await showDialog<int>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('通知時間を入力 (分前)'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          decoration: const InputDecoration(hintText: '例: 10'),
-        ),
-        actions: [
-          ButtonM3E(
-            style: ButtonM3EStyle.text,
-            onPressed: () => Navigator.of(context).pop(),
-            label: const Text('キャンセル'),
+      builder: (context) {
+        final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
+
+        return AlertDialog(
+          title: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.timer_outlined,
+                  color: colorScheme.onPrimaryContainer,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  '通知時間を入力',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
           ),
-          ButtonM3E(
-            style: ButtonM3EStyle.text,
-            onPressed: () {
-              final value = int.tryParse(controller.text);
-              if (value != null && value >= 0) {
-                // 0分前も許可
-                Navigator.of(context).pop(value);
-              } else {
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('有効な数値を入力してください')));
-              }
-            },
-            label: const Text('決定'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.45,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+                  ),
+                ),
+                child: Text(
+                  'コンテスト開始の何分前に通知するかを入力してください。0分前も指定できます。',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: InputDecoration(
+                  labelText: '分前',
+                  hintText: '例: 10',
+                  prefixIcon: const Icon(Icons.schedule),
+                  filled: true,
+                  fillColor: colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.35,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: colorScheme.outlineVariant),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: colorScheme.outlineVariant),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: colorScheme.primary,
+                      width: 1.6,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+          actions: [
+            ButtonM3E(
+              style: ButtonM3EStyle.text,
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.close),
+              label: const Text('キャンセル'),
+            ),
+            ButtonM3E(
+              style: ButtonM3EStyle.text,
+              onPressed: () {
+                final value = int.tryParse(controller.text);
+                if (value != null && value >= 0) {
+                  // 0分前も許可
+                  Navigator.of(context).pop(value);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('有効な数値を入力してください')),
+                  );
+                }
+              },
+              icon: const Icon(Icons.check),
+              label: const Text('決定'),
+            ),
+          ],
+        );
+      },
     );
 
     if (newTime != null) {
@@ -133,19 +273,69 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
   }
 
   Future<void> _addNotificationTime(int settingIndex) async {
+    final selectedTimes = _reminderSettings[settingIndex].minutesBefore.toSet();
     final selectedOption = await showDialog<_NotificationTimeOption>(
       context: context,
       builder: (BuildContext context) {
-        return SimpleDialog(
-          title: const Text('通知時間を選択'),
-          children: _timeOptions.map((option) {
-            return SimpleDialogOption(
-              onPressed: () {
-                Navigator.pop(context, option);
-              },
-              child: Text(option.label),
-            );
-          }).toList(),
+        final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
+
+        return AlertDialog(
+          scrollable: true,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          title: Row(
+            children: [
+              Icon(Icons.add_alarm_outlined, color: colorScheme.primary),
+              const SizedBox(width: 12),
+              const Expanded(child: Text('通知時間を選択')),
+            ],
+          ),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 320),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: _timeOptions.map((option) {
+                final isSelected =
+                    option.value != null &&
+                    selectedTimes.contains(option.value);
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Material(
+                    color: isSelected
+                        ? colorScheme.primaryContainer.withValues(alpha: 0.6)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    child: ListTile(
+                      dense: true,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      leading: Icon(
+                        option.value == null
+                            ? Icons.tune
+                            : Icons.schedule_outlined,
+                      ),
+                      title: Text(option.label),
+                      trailing: isSelected
+                          ? Icon(Icons.check, color: colorScheme.primary)
+                          : const Icon(Icons.chevron_right),
+                      enabled: !isSelected,
+                      onTap: isSelected
+                          ? null
+                          : () => Navigator.pop(context, option),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          actions: [
+            TextButton.icon(
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.close),
+              label: const Text('キャンセル'),
+            ),
+          ],
         );
       },
     );
@@ -178,77 +368,242 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
     _saveSettings();
   }
 
+  Widget _buildStateCard({
+    required IconData icon,
+    required String title,
+    required String message,
+    Widget? child,
+  }) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: AppStateCard(
+          icon: icon,
+          title: title,
+          message: message,
+          child: child,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReminderCard(int index) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final setting = _reminderSettings[index];
+    final contestName = _contestTypeNames[setting.contestType] ?? 'その他';
+    final label = _contestTypeLabels[setting.contestType] ?? 'OTHER';
+    final typeColors = _contestTypeColors(context, setting.contestType);
+    final labelColor = setting.isEnabled
+        ? typeColors.container
+        : colorScheme.surfaceContainerHighest;
+    final onLabelColor = setting.isEnabled
+        ? typeColors.foreground
+        : colorScheme.onSurfaceVariant;
+
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.only(bottom: 12),
+      color: setting.isEnabled
+          ? Color.alphaBlend(
+              typeColors.container.withValues(alpha: 0.12),
+              colorScheme.surface,
+            )
+          : null,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(
+          color: setting.isEnabled
+              ? typeColors.foreground.withValues(alpha: 0.14)
+              : colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: labelColor,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(
+                    child: Text(
+                      label,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: onLabelColor,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        contestName,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        setting.isEnabled ? '通知は有効です' : '通知は無効です',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: setting.isEnabled
+                              ? colorScheme.primary
+                              : colorScheme.onSurfaceVariant,
+                          fontWeight: setting.isEnabled
+                              ? FontWeight.w700
+                              : FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Semantics(
+                  label: '$contestNameのリマインダー',
+                  child: Switch(
+                    value: setting.isEnabled,
+                    onChanged: (value) => _setReminderEnabled(index, value),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.45,
+                ),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.notifications_active_outlined,
+                        size: 18,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '通知タイミング',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8.0,
+                    runSpacing: 8.0,
+                    children: [
+                      ...setting.minutesBefore.map((time) {
+                        return InputChip(
+                          label: Text('$time分前'),
+                          deleteButtonTooltipMessage: 'この通知時間を削除',
+                          onDeleted: setting.minutesBefore.length > 1
+                              ? () => _removeNotificationTime(index, time)
+                              : null,
+                        );
+                      }),
+                      Tooltip(
+                        message: '通知時間を追加',
+                        child: ActionChip(
+                          avatar: const Icon(
+                            Icons.add_alarm_outlined,
+                            size: 18,
+                          ),
+                          label: const Text('追加'),
+                          onPressed: () => _addNotificationTime(index),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  ({Color container, Color foreground}) _contestTypeColors(
+    BuildContext context,
+    ContestType type,
+  ) {
+    final colors = Theme.of(context).colorScheme;
+
+    switch (type) {
+      case ContestType.abc:
+        return (
+          container: colors.primaryContainer,
+          foreground: colors.onPrimaryContainer,
+        );
+      case ContestType.arc:
+        return (
+          container: colors.tertiaryContainer,
+          foreground: colors.onTertiaryContainer,
+        );
+      case ContestType.agc:
+        return (
+          container: colors.errorContainer,
+          foreground: colors.onErrorContainer,
+        );
+      case ContestType.ahc:
+        return (
+          container: colors.secondaryContainer,
+          foreground: colors.onSecondaryContainer,
+        );
+      case ContestType.other:
+        return (
+          container: colors.surfaceContainerHighest,
+          foreground: colors.onSurfaceVariant,
+        );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBarM3E(title: const Text('リマインダー設定')),
       body: _isLoading
-          ? const Center(child: LoadingIndicatorM3E())
+          ? _buildStateCard(
+              icon: Icons.notifications_active_outlined,
+              title: 'リマインダー設定を読み込み中',
+              message: '保存済みの通知タイミングを確認しています。',
+              child: const Padding(
+                padding: EdgeInsets.only(top: 16),
+                child: AppLoadingIndicator(semanticsLabel: 'リマインダー設定を読み込み中'),
+              ),
+            )
           : _reminderSettings.isEmpty
-          ? const Center(child: Text('設定項目がありません。'))
+          ? _buildStateCard(
+              icon: Icons.notifications_off_outlined,
+              title: '設定項目がありません',
+              message: 'コンテスト種別のリマインダー設定を読み込めませんでした。',
+            )
           : ListView.builder(
+              padding: ResponsiveLayout.listPadding(context),
               itemCount: _reminderSettings.length,
-              itemBuilder: (context, index) {
-                final setting = _reminderSettings[index];
-                final contestName =
-                    _contestTypeNames[setting.contestType] ?? 'その他';
-
-                return Card(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SwitchListTile(
-                          title: Text(
-                            contestName,
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          value: setting.isEnabled,
-                          onChanged: (bool value) {
-                            setState(() {
-                              setting.isEnabled = value;
-                            });
-                            _saveSettings();
-                          },
-                        ),
-                        const SizedBox(height: 8),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('通知タイミング (分前):'),
-                              const SizedBox(height: 8),
-                              Wrap(
-                                spacing: 8.0,
-                                runSpacing: 4.0,
-                                children: setting.minutesBefore.map((time) {
-                                  return Chip(
-                                    label: Text('$time 分前'),
-                                    onDeleted: () =>
-                                        _removeNotificationTime(index, time),
-                                  );
-                                }).toList(),
-                              ),
-                              ButtonM3E(
-                                style: ButtonM3EStyle.text,
-                                icon: const Icon(Icons.add_alarm_outlined),
-                                label: const Text('時間を追加'),
-                                onPressed: () => _addNotificationTime(index),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+              itemBuilder: (context, index) => _buildReminderCard(index),
             ),
     );
   }
