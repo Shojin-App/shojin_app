@@ -10058,13 +10058,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
   );
 
-/// shojin_app 2.0.0
+/// shojin_app 2.0.1
 const _shojin_app = Package(
     name: 'shojin_app',
     description: 'AtCoderの精進をスマホでも。',
     homepage: 'https://github.com/Shojin-App/shojin_app',
     authors: [],
-    version: '2.0.0',
+    version: '2.0.1',
     spdxIdentifiers: ['GPL-3.0'],
     isMarkdown: false,
     isSdk: false,

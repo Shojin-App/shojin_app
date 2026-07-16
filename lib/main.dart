@@ -300,7 +300,7 @@ class MyApp extends StatelessWidget {
         );
 
         return MaterialApp(
-          title: '精進アプリ',
+          title: 'Shojin',
           localizationsDelegates: const [
             AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
