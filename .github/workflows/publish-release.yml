@@ -7,6 +7,9 @@ on:
     paths:
       - "pubspec.yaml"
       - "CHANGELOG.md"
+      # Run release-pipeline fixes through the same end-to-end path they change.
+      - ".github/workflows/publish-release.yml"
+      - ".github/workflows/release.yaml"
 
 permissions:
   contents: write
