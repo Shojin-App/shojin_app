@@ -109,18 +109,27 @@ jobs:
           GITHUB_REF: ${{ github.ref }}
         run: |
           set -e
-          case "$EVENT_NAME" in
-            release)
-              if [ -z "$RELEASE_TAG" ]; then echo "::error::Release tag not detected." >&2; exit 1; fi
-              TAG="$RELEASE_TAG" ;;
-            push)
-              # refs/tags/v1.2.3 -> v1.2.3
-              TAG="${GITHUB_REF##refs/tags/}" ;;
-            workflow_dispatch|workflow_call)
-              if [ -z "$INPUT_TAG" ]; then echo "::error::Please provide tag_name when running manually." >&2; exit 1; fi
-              TAG="$INPUT_TAG" ;;
-            *) echo "::error::Unsupported event $EVENT_NAME" >&2; exit 1 ;;
-          esac
+          # Reusable workflows inherit the caller's event context. Prefer the
+          # explicit input so a call from a main-branch push cannot mistake
+          # refs/heads/main for a release tag.
+          if [ -n "$INPUT_TAG" ]; then
+            TAG="$INPUT_TAG"
+          else
+            case "$EVENT_NAME" in
+              release)
+                if [ -z "$RELEASE_TAG" ]; then echo "::error::Release tag not detected." >&2; exit 1; fi
+                TAG="$RELEASE_TAG" ;;
+              push)
+                case "$GITHUB_REF" in
+                  refs/tags/*) TAG="${GITHUB_REF##refs/tags/}" ;;
+                  *) echo "::error::Tag push expected, got $GITHUB_REF" >&2; exit 1 ;;
+                esac ;;
+              workflow_dispatch|workflow_call)
+                echo "::error::Please provide tag_name when running manually." >&2
+                exit 1 ;;
+              *) echo "::error::Unsupported event $EVENT_NAME" >&2; exit 1 ;;
+            esac
+          fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Using tag: $TAG"
 
