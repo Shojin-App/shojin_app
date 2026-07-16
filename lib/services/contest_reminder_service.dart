@@ -26,14 +26,23 @@ class ContestReminderService {
     try {
       final storedSettings = await _storageService.loadReminderSettings();
       // 未設定の新規ユーザーには通知を自動登録しない。権限要求と有効化は
-      // リマインダー設定画面での明示操作に限定する。
-      if (storedSettings.isEmpty) return;
+      // リマインダー設定画面での明示操作に限定する。一方、設定の削除や
+      // バックアップ復元後に古い予約だけが残ることは避ける必要がある。
+      if (storedSettings.isEmpty) {
+        await _cancelExistingContestReminders();
+        return;
+      }
       final settings = storedSettings;
       final enabledSettings = {
         for (final setting in settings)
           if (setting.isEnabled) setting.contestType: setting,
       };
-      if (enabledSettings.isEmpty) return;
+      if (enabledSettings.isEmpty) {
+        // 最後のリマインダーを無効にした時点で、OSに渡した予約も取り消す。
+        // ここでreturnするだけだと、設定上は無効でもAndroidから通知される。
+        await _cancelExistingContestReminders();
+        return;
+      }
 
       // 通信失敗時に、まだ有効な既存通知まで失われないようにする。
       // 新しい予定を取得できてから、このアプリが管理する通知だけを置換する。

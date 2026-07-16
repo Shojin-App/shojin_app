@@ -144,15 +144,20 @@ class NotificationService {
     );
   }
 
-  Future<List<PendingNotificationRequest>> pendingRequests() {
+  Future<List<PendingNotificationRequest>> pendingRequests() async {
+    // OFF操作では権限要求を通らないため、このサービスのインスタンスがまだ
+    // 初期化されていない場合がある。予約確認だけの経路でも必ず初期化する。
+    await initialize();
     return flutterLocalNotificationsPlugin.pendingNotificationRequests();
   }
 
   Future<void> cancelNotification(int id) async {
+    await initialize();
     await flutterLocalNotificationsPlugin.cancel(id: id);
   }
 
   Future<void> cancelAllNotifications() async {
+    await initialize();
     await flutterLocalNotificationsPlugin.cancelAll();
   }
 }
