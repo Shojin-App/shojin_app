@@ -65,9 +65,10 @@ jobs:
         id: notes
         run: |
           VER='${{ steps.version.outputs.value }}'
-          # Match the complete heading literally, then stop at the next version.
+          # Match the bracketed version literally while allowing a date or
+          # release name after it, then stop at the next version heading.
           awk -v heading="## [$VER]" '
-            $0 == heading { capture=1; next }
+            index($0, heading) == 1 { capture=1; next }
             capture && /^## \[/ { exit }
             capture { print }
           ' CHANGELOG.md > /tmp/section.txt
