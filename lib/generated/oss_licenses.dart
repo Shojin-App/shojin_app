@@ -84,7 +84,6 @@ const allDependencies = <Package>[
   _image,
   _intl,
   _io,
-  _js,
   _json_annotation,
   _leak_tracker,
   _leak_tracker_flutter_testing,
@@ -1091,13 +1090,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
   );
 
-/// characters 1.4.0
+/// characters 1.4.1
 const _characters = Package(
     name: 'characters',
     description: 'String replacement with operations that are Unicode/grapheme cluster aware.',
     repository: 'https://github.com/dart-lang/core/tree/main/pkgs/characters',
     authors: [],
-    version: '1.4.0',
+    version: '1.4.1',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
@@ -3101,13 +3100,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// flutter 3.38.5
+/// flutter 3.44.6
 const _flutter = Package(
     name: 'flutter',
     description: 'A framework for writing Flutter applications',
     homepage: 'https://flutter.dev',
     authors: [],
-    version: '3.38.5',
+    version: '3.44.6',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: true,
@@ -4799,47 +4798,6 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// js 0.7.2
-const _js = Package(
-    name: 'js',
-    description: 'Annotations to create static Dart interfaces for JavaScript APIs.',
-    repository: 'https://github.com/dart-lang/sdk/tree/main/pkg/js',
-    authors: [],
-    version: '0.7.2',
-    spdxIdentifiers: ['BSD-3-Clause'],
-    isMarkdown: false,
-    isSdk: false,
-    dependencies: [],
-    devDependencies: [PackageRef('lints')],
-    license: '''Copyright 2012, the Dart project authors.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-    * Neither the name of Google LLC nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
-  );
-
 /// json_annotation 4.9.0
 const _json_annotation = Package(
     name: 'json_annotation',
@@ -5273,18 +5231,18 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// matcher 0.12.17
+/// matcher 0.12.19
 const _matcher = Package(
     name: 'matcher',
     description: 'Support for specifying test expectations via an extensible Matcher class. Also includes a number of built-in Matcher implementations for common cases.',
     repository: 'https://github.com/dart-lang/test/tree/master/pkgs/matcher',
     authors: [],
-    version: '0.12.17',
+    version: '0.12.19',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
     dependencies: [PackageRef('async'), PackageRef('meta'), PackageRef('stack_trace'), PackageRef('term_glyph'), PackageRef('test_api')],
-    devDependencies: [PackageRef('fake_async'), PackageRef('lints'), PackageRef('test')],
+    devDependencies: [PackageRef('fake_async'), PackageRef('test')],
     license: '''Copyright 2014, the Dart project authors. 
 
 Redistribution and use in source and binary forms, with or without
@@ -5314,18 +5272,18 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// material_color_utilities 0.11.1
+/// material_color_utilities 0.13.0
 const _material_color_utilities = Package(
     name: 'material_color_utilities',
     description: 'Algorithms and utilities that power the Material Design 3 color system, including choosing theme colors from images and creating tones of colors; all in a new color space.',
     repository: 'https://github.com/material-foundation/material-color-utilities/tree/main/dart',
     authors: [],
-    version: '0.11.1',
+    version: '0.13.0',
     spdxIdentifiers: ['Apache-2.0'],
     isMarkdown: false,
     isSdk: false,
     dependencies: [PackageRef('collection')],
-    devDependencies: [PackageRef('matcher'), PackageRef('lints'), PackageRef('test')],
+    devDependencies: [PackageRef('matcher'), PackageRef('test')],
     license: '''Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -5565,13 +5523,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
   );
 
-/// meta 1.17.0
+/// meta 1.18.0
 const _meta = Package(
     name: 'meta',
     description: "Annotations used to express developer intentions that can't otherwise be deduced by statically analyzing source code.",
     repository: 'https://github.com/dart-lang/sdk/tree/main/pkg/meta',
     authors: [],
-    version: '1.17.0',
+    version: '1.18.0',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
@@ -8595,17 +8553,17 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// test 1.26.3
+/// test 1.31.0
 const _test = Package(
     name: 'test',
     description: 'A full featured library for writing and running Dart tests across platforms.',
     repository: 'https://github.com/dart-lang/test/tree/master/pkgs/test',
     authors: [],
-    version: '1.26.3',
+    version: '1.31.0',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
-    dependencies: [PackageRef('analyzer'), PackageRef('async'), PackageRef('boolean_selector'), PackageRef('collection'), PackageRef('coverage'), PackageRef('http_multi_server'), PackageRef('io'), PackageRef('js'), PackageRef('matcher'), PackageRef('node_preamble'), PackageRef('package_config'), PackageRef('path'), PackageRef('pool'), PackageRef('shelf'), PackageRef('shelf_packages_handler'), PackageRef('shelf_static'), PackageRef('shelf_web_socket'), PackageRef('source_span'), PackageRef('stack_trace'), PackageRef('stream_channel'), PackageRef('test_api'), PackageRef('test_core'), PackageRef('typed_data'), PackageRef('web_socket_channel'), PackageRef('webkit_inspection_protocol'), PackageRef('yaml')],
+    dependencies: [PackageRef('analyzer'), PackageRef('async'), PackageRef('boolean_selector'), PackageRef('collection'), PackageRef('coverage'), PackageRef('http_multi_server'), PackageRef('io'), PackageRef('matcher'), PackageRef('node_preamble'), PackageRef('package_config'), PackageRef('path'), PackageRef('pool'), PackageRef('shelf'), PackageRef('shelf_packages_handler'), PackageRef('shelf_static'), PackageRef('shelf_web_socket'), PackageRef('source_span'), PackageRef('stack_trace'), PackageRef('stream_channel'), PackageRef('test_api'), PackageRef('test_core'), PackageRef('typed_data'), PackageRef('web_socket_channel'), PackageRef('webkit_inspection_protocol'), PackageRef('yaml')],
     devDependencies: [PackageRef('fake_async'), PackageRef('glob')],
     license: '''Copyright 2014, the Dart project authors. 
 
@@ -8636,13 +8594,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// test_api 0.7.7
+/// test_api 0.7.11
 const _test_api = Package(
     name: 'test_api',
     description: 'The user facing API for structuring Dart tests and checking expectations.',
     repository: 'https://github.com/dart-lang/test/tree/master/pkgs/test_api',
     authors: [],
-    version: '0.7.7',
+    version: '0.7.11',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
@@ -8677,13 +8635,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// test_core 0.6.12
+/// test_core 0.6.17
 const _test_core = Package(
     name: 'test_core',
     description: 'A basic library for writing tests and running them on the VM.',
     repository: 'https://github.com/dart-lang/test/tree/master/pkgs/test_core',
     authors: [],
-    version: '0.6.12',
+    version: '0.6.17',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
