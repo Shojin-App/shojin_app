@@ -3729,18 +3729,18 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// flutter_markdown_plus 1.0.7
+/// flutter_markdown_plus 1.0.12
 const _flutter_markdown_plus = Package(
     name: 'flutter_markdown_plus',
     description: 'A Markdown renderer for Flutter. Create rich text output, including text styles, tables, links, and more, from plain text data formatted with simple Markdown tags.',
     repository: 'https://github.com/foresightmobile/flutter_markdown_plus',
     authors: [],
-    version: '1.0.7',
+    version: '1.0.12',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
     dependencies: [PackageRef('flutter'), PackageRef('markdown'), PackageRef('meta'), PackageRef('path')],
-    devDependencies: [PackageRef('leak_tracker_flutter_testing')],
+    devDependencies: [PackageRef('flutter_lints'), PackageRef('leak_tracker_flutter_testing')],
     license: '''Copyright 2013 The Flutter Authors. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -4244,13 +4244,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// google_fonts 8.1.0
+/// google_fonts 8.2.0
 const _google_fonts = Package(
     name: 'google_fonts',
     description: 'A Flutter package to use fonts from fonts.google.com. Supports HTTP fetching, caching, and asset bundling.',
     repository: 'https://github.com/flutter/packages/tree/main/packages/google_fonts',
     authors: [],
-    version: '8.1.0',
+    version: '8.2.0',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
@@ -5227,13 +5227,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
   );
 
-/// markdown 7.3.0
+/// markdown 7.3.1
 const _markdown = Package(
     name: 'markdown',
     description: 'A portable Markdown library written in Dart that can parse Markdown into HTML.',
     repository: 'https://github.com/dart-lang/tools/tree/main/pkgs/markdown',
     authors: [],
-    version: '7.3.0',
+    version: '7.3.1',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
@@ -9664,13 +9664,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// webview_flutter 4.14.0
+/// webview_flutter 4.14.1
 const _webview_flutter = Package(
     name: 'webview_flutter',
     description: 'A Flutter plugin that provides a WebView widget backed by the system webview.',
     repository: 'https://github.com/flutter/packages/tree/main/packages/webview_flutter/webview_flutter',
     authors: [],
-    version: '4.14.0',
+    version: '4.14.1',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
@@ -10058,13 +10058,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
   );
 
-/// shojin_app 1.3.0
+/// shojin_app 2.0.0
 const _shojin_app = Package(
     name: 'shojin_app',
     description: 'AtCoderの精進をスマホでも。',
     homepage: 'https://github.com/Shojin-App/shojin_app',
     authors: [],
-    version: '1.3.0',
+    version: '2.0.0',
     spdxIdentifiers: ['GPL-3.0'],
     isMarkdown: false,
     isSdk: false,
