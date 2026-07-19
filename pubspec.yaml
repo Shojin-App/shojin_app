@@ -64,7 +64,7 @@ dependencies:
   # LaTeX/TeX数式レンダリング用
   flutter_math_fork: ^0.7.3
   # Monaco Editor (VS Code's editor) for Flutter
-  flutter_monaco: ^2.1.1
+  flutter_monaco: ^3.4.2
   # Material 3 Expressive collection
   m3e_collection: ^0.3.7
   # NOTE: The following Git-based dependencies were removed for F-Droid compliance.
